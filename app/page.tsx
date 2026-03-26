@@ -18,6 +18,7 @@ const stateLabs: Record<string, string> = {
 const results: Record<string, {
   title: string;
   body: string;
+  why: string;
   days: { t: string; d: string }[];
   uTitle: string;
   uBody: string;
@@ -25,6 +26,7 @@ const results: Record<string, {
   ai: {
     title: "The ideas are there. You keep skipping past them.",
     body: "Every time you open AI before you've thought it through, you hand away the most valuable part — your actual perspective. The output feels hollow because the input was empty. These three days are about getting your thinking on the page before anything else gets to it.",
+    why: "The thinking you do before you reach for any tool is the most valuable thinking you'll do all day. Behavioural science shows that consistently outsourcing decisions before forming your own weakens the brain's capacity for independent reasoning — like any muscle, it atrophies without use. 15 minutes of daily writing, before anything else, rebuilds that capacity. Not because writing is magic. Because answering questions yourself, repeatedly, rewires the default toward your own thinking first.",
     days: [
       { t: "The Brain Dump", d: "Set a 10-minute timer. Write everything you know, think, and half-believe about your work. No editing. No structure. Just get it out." },
       { t: "The One Problem", d: "Without searching or prompting anything — write the core of what you're making or solving in a single sentence. Then write why that matters to you specifically." },
@@ -36,6 +38,7 @@ const results: Record<string, {
   overwhelmed: {
     title: "You have enough ideas. What you need is permission to choose.",
     body: "The overwhelm isn't coming from having too many ideas — it's coming from not trusting yourself to pick one. Keeping everything alive is a way of not losing anything. These three days are about finding the thread that's actually yours.",
+    why: "Having too many ideas isn't a creativity problem. It's a commitment problem. Somatic research shows that the inability to choose often lives in the body before the mind — a low-level tension that keeps all options alive because choosing feels like loss. A daily practice works on both levels. It gives your nervous system a consistent signal that choosing is safe. Each day the field narrows naturally — not through willpower, through repetition.",
     days: [
       { t: "The Complete Inventory", d: "Write down every idea, direction, and possibility competing for your attention. Don't filter. Don't rank. Just get everything out of your head." },
       { t: "The Energy Test", d: "For each idea — close your eyes and imagine a Tuesday morning six months from now, working on it. What do you feel? Energised or drained?" },
@@ -47,6 +50,7 @@ const results: Record<string, {
   fear: {
     title: "You already know what you want.",
     body: "You've probably known for a while. What's in the way isn't confusion — it's the weight of committing to something that matters to you. These three days don't ask you to be brave. They just help you take one step without the whole path being clear.",
+    why: "Fear doesn't respond to logic. It responds to evidence accumulated through small repeated actions. Behavioural science calls this exposure — each small act toward the thing you fear slightly recalibrates your nervous system's threat response. A daily practice keeps the exposure consistent and low-stakes. You're not asked to launch or commit. Just to show up for 15 minutes and answer one honest question. Over time, the body learns this is safe. The mind follows.",
     days: [
       { t: "The Worst Case", d: "Write your worst case scenario in full detail. All of it. Then at the bottom, write one question: is that survivable? Sit with the answer." },
       { t: "The Evidence Audit", d: "List every piece of evidence that you are capable of doing this. Not what you hope — what you know. Don't be modest." },
@@ -58,6 +62,7 @@ const results: Record<string, {
   blank: {
     title: "The well isn't empty. It's just been ignored.",
     body: "Creative flatness isn't the absence of ideas — it's what happens when you've been in output mode too long without refilling. You can't think your way back to creative energy. You have to feel your way back. These three days aren't about producing anything.",
+    why: "Creative depletion isn't a thinking problem — it's a nervous system problem. Somatic research shows that creative energy is physical before it's mental. It lives in sensation and presence, not effort. Which is why trying harder makes it worse. 15 minutes a day. No output required. Just showing up to yourself — consistently, gently, before the day's demands arrive.",
     days: [
       { t: "Back to Basics", d: "Do one thing today that has nothing to do with productivity or self-improvement. Just pleasure. Notice what you feel during and after." },
       { t: "The Attention Walk", d: "Go outside for 20 minutes with no headphones. Write down 10 things you observed that you would normally walk straight past." },
@@ -72,6 +77,8 @@ export default function Home() {
   const [screen, setScreen] = useState(1);
   const [userStage, setUserStage] = useState("");
   const [userState, setUserState] = useState("");
+  const [hoveredStage, setHoveredStage] = useState<string | null>(null);
+  const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const cursorRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -195,7 +202,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", padding:"120px 48px 80px", position:"relative", overflow:"hidden" }}>
+        <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 48px", paddingTop:80, position:"relative", overflow:"hidden" }}>
           <div style={{
             position:"absolute", width:600, height:600,
             background:"radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -212,23 +219,23 @@ export default function Home() {
               fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase",
               marginBottom:36
             }}>
-              <div style={{ width:6, height:6, background:"#ff9090", borderRadius:"50", animation:"blink 2s ease infinite" }} />
-              think before you build
+              <div style={{ width:6, height:6, background:"#ff9090", borderRadius:"50%", animation:"blink 2s ease infinite" }} />
+              think before you create
             </div>
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
             <h1 style={{
-              fontSize:"clamp(44px,7vw,84px)", fontWeight:700,
-              lineHeight:1.0, letterSpacing:"-0.02em", marginBottom:24
+              fontSize:"clamp(36px, 5vw, 64px)", fontWeight:700,
+              lineHeight:1.0, letterSpacing:"-0.02em", marginBottom:16
             }}>
-              AI can&apos;t give you<br />
-              clarity you haven&apos;t<br />
-              found{" "}
-              <span style={{ color:"#ff9090" }}>yourself.</span>
+              the daily practice<br />
+              for creatives<br />
+              and builders<br />
+              <span style={{ color:"#ff9090" }}>in the age of AI.</span>
             </h1>
 
-            <p style={{ fontSize:17, lineHeight:1.7, color:"rgba(0,3,50,0.55)", maxWidth:480, marginBottom:48, fontWeight:400 }}>
-              This is where you find it. A daily thinking practice for creatives and builders — before the prompts, before the noise, before anyone else&apos;s opinion.
+            <p style={{ fontSize:18, lineHeight:1.7, color:"rgba(0,3,50,0.7)", maxWidth:480, marginBottom:32, fontWeight:400 }}>
+              think first. play often. create before you prompt.
             </p>
 
             <button
@@ -269,24 +276,29 @@ export default function Home() {
               { val:"building", label:"I'm building but I've lost the thread", sub:"busy but quietly unsure I'm making the right thing" },
               { val:"restart", label:"I need to start over or change direction", sub:"the old thing isn't working and I know it" },
             ].map((c, i) => (
+              (() => {
+                const activeOrHover = userStage === c.val || hoveredStage === c.val;
+                return (
               <button
                 key={c.val}
                 onClick={() => pickStage(c.val)}
                 style={{
                   display:"flex", alignItems:"flex-start", gap:16,
                   padding:"20px 24px", border:"1.5px solid rgba(0,3,50,0.12)",
-                  borderRadius:16, background: userStage === c.val ? "#000332" : "transparent",
+                  borderRadius:16, background: activeOrHover ? "#000332" : "transparent",
                   cursor:"none", textAlign:"left", transition:"all 0.22s"
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background="#000332"; (e.currentTarget as HTMLElement).style.color="#f4f2ee"; }}
-                onMouseLeave={e => { if(userStage !== c.val){ (e.currentTarget as HTMLElement).style.background="transparent"; (e.currentTarget as HTMLElement).style.color="#000332"; } }}
+                onMouseEnter={() => setHoveredStage(c.val)}
+                onMouseLeave={() => setHoveredStage(null)}
               >
-                <span style={{ fontSize:11, fontWeight:700, color: userStage === c.val ? "rgba(244,242,238,0.4)" : "rgba(0,3,50,0.25)", minWidth:20, paddingTop:2 }}>0{i+1}</span>
+                <span style={{ fontSize:11, fontWeight:700, color: activeOrHover ? "rgba(244,242,238,0.4)" : "rgba(0,3,50,0.25)", minWidth:20, paddingTop:2 }}>0{i+1}</span>
                 <div>
-                  <div style={{ fontSize:15, fontWeight:700, color: userStage === c.val ? "#f4f2ee" : "#000332", marginBottom:3 }}>{c.label}</div>
-                  <div style={{ fontSize:13, color: userStage === c.val ? "rgba(244,242,238,0.55)" : "rgba(0,3,50,0.5)", fontWeight:400 }}>{c.sub}</div>
+                  <div style={{ fontSize:15, fontWeight:700, color: activeOrHover ? "#f4f2ee" : "#000332", marginBottom:3 }}>{c.label}</div>
+                  <div style={{ fontSize:13, color: activeOrHover ? "rgba(244,242,238,0.65)" : "rgba(0,3,50,0.5)", fontWeight:400 }}>{c.sub}</div>
                 </div>
               </button>
+                );
+              })()
             ))}
           </div>
         </div>
@@ -309,24 +321,29 @@ export default function Home() {
               { val:"fear", label:"I know what I want but I can't make myself move", sub:"it's not confusion — it's something closer to fear" },
               { val:"blank", label:"My thinking feels flat and uninspired", sub:"like the creative part of my brain has gone quiet" },
             ].map((c, i) => (
+              (() => {
+                const activeOrHover = userState === c.val || hoveredState === c.val;
+                return (
               <button
                 key={c.val}
                 onClick={() => pickState(c.val)}
                 style={{
                   display:"flex", alignItems:"flex-start", gap:16,
                   padding:"20px 24px", border:"1.5px solid rgba(0,3,50,0.12)",
-                  borderRadius:16, background: userState === c.val ? "#000332" : "transparent",
+                  borderRadius:16, background: activeOrHover ? "#000332" : "transparent",
                   cursor:"none", textAlign:"left", transition:"all 0.22s"
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background="#000332"; }}
-                onMouseLeave={e => { if(userState !== c.val){ (e.currentTarget as HTMLElement).style.background="transparent"; } }}
+                onMouseEnter={() => setHoveredState(c.val)}
+                onMouseLeave={() => setHoveredState(null)}
               >
-                <span style={{ fontSize:11, fontWeight:700, color:"rgba(0,3,50,0.25)", minWidth:20, paddingTop:2 }}>0{i+1}</span>
+                <span style={{ fontSize:11, fontWeight:700, color: activeOrHover ? "rgba(244,242,238,0.4)" : "rgba(0,3,50,0.25)", minWidth:20, paddingTop:2 }}>0{i+1}</span>
                 <div>
-                  <div style={{ fontSize:15, fontWeight:700, color: userState === c.val ? "#f4f2ee" : "#000332", marginBottom:3 }}>{c.label}</div>
-                  <div style={{ fontSize:13, color: userState === c.val ? "rgba(244,242,238,0.55)" : "rgba(0,3,50,0.5)", fontWeight:400 }}>{c.sub}</div>
+                  <div style={{ fontSize:15, fontWeight:700, color: activeOrHover ? "#f4f2ee" : "#000332", marginBottom:3 }}>{c.label}</div>
+                  <div style={{ fontSize:13, color: activeOrHover ? "rgba(244,242,238,0.65)" : "rgba(0,3,50,0.5)", fontWeight:400 }}>{c.sub}</div>
                 </div>
               </button>
+                );
+              })()
             ))}
           </div>
         </div>
@@ -348,6 +365,9 @@ export default function Home() {
               <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#ff9090", marginBottom:14, position:"relative" }}>your path</p>
               <h2 style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#f4f2ee", lineHeight:1.2, marginBottom:14, position:"relative" }}>{r.title}</h2>
               <p style={{ fontSize:14, lineHeight:1.75, color:"rgba(244,242,238,0.7)", position:"relative" }}>{r.body}</p>
+
+              <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"rgba(244,242,238,0.4)", margin:"28px 0 12px", position:"relative" }}>why a daily practice</p>
+              <p style={{ fontSize:13, lineHeight:1.75, color:"rgba(244,242,238,0.7)", position:"relative" }}>{r.why}</p>
 
               <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"rgba(244,242,238,0.4)", margin:"28px 0 16px", position:"relative" }}>your free 3-day challenge</p>
               <div style={{ display:"flex", flexDirection:"column", gap:8, position:"relative" }}>

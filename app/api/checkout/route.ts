@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +16,22 @@ export async function POST(req: NextRequest) {
         { error: "Missing STRIPE_PRODUCT_ID" },
         { status: 500 }
       );
+    }
+
+    const authorization = req.headers.get("authorization") || "";
+    const accessToken = authorization.startsWith("Bearer ")
+      ? authorization.slice("Bearer ".length)
+      : authorization;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
+
+    if (userError || !userData?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -28,6 +47,10 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: "payment",
+      metadata: {
+        userId: userData.user.id,
+        programId,
+      },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?success=true&program=${programId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?canceled=true`,
     });

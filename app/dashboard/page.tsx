@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [purchasingProgramId, setPurchasingProgramId] = useState<string | null>(null);
   const [hoveredProgramId, setHoveredProgramId] = useState<string | null>(null);
+  const [purchases, setPurchases] = useState<Array<{ program_id: string }>>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -54,7 +55,19 @@ export default function Dashboard() {
         window.location.href = "/auth";
         return;
       }
+
       setUser(user);
+
+      const { data: purchasesData, error: purchasesError } = await supabase
+        .from("purchases")
+        .select("program_id")
+        .eq("user_id", user.id);
+
+      if (purchasesError) {
+        console.error("Failed to fetch purchases:", purchasesError);
+      }
+
+      setPurchases(purchasesData ?? []);
       setLoading(false);
     };
     getUser();
@@ -177,18 +190,22 @@ export default function Dashboard() {
 
         {/* PROGRAMS GRID */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(380px, 1fr))", gap:16 }}>
-          {programs.map(p => (
+          {programs.map(p => {
+            const isUnlocked = purchases.some(pu => pu.program_id === p.id);
+            const locked = !isUnlocked;
+
+            return (
             <div
               key={p.id}
               style={{
-                background: p.locked ? "rgba(0,3,50,0.03)" : "#000332",
-                border: `1.5px solid ${p.locked ? "rgba(0,3,50,0.1)" : "#000332"}`,
+                background: locked ? "rgba(0,3,50,0.03)" : "#000332",
+                border: `1.5px solid ${locked ? "rgba(0,3,50,0.1)" : "#000332"}`,
                 borderRadius:20, padding:"32px",
                 position:"relative", overflow:"hidden",
                 transition:"all 0.2s ease",
               }}
             >
-              {p.locked && (
+              {locked && (
                 <div style={{
                   position:"absolute", top:20, right:20,
                   background:"rgba(0,3,50,0.08)", borderRadius:100,
@@ -202,14 +219,14 @@ export default function Dashboard() {
 
               <div style={{
                 width:40, height:40, borderRadius:12,
-                background: p.locked ? "rgba(0,3,50,0.06)" : p.accent,
+                background: locked ? "rgba(0,3,50,0.06)" : p.accent,
                 marginBottom:20
               }} />
 
               <p style={{
                 fontSize:11, fontWeight:700, letterSpacing:"0.12em",
                 textTransform:"uppercase", marginBottom:8,
-                color: p.locked ? "rgba(0,3,50,0.35)" : "rgba(244,242,238,0.5)"
+                color: locked ? "rgba(0,3,50,0.35)" : "rgba(244,242,238,0.5)"
               }}>
                 {p.subtitle}
               </p>
@@ -217,26 +234,26 @@ export default function Dashboard() {
               <h2 style={{
                 fontSize:22, fontWeight:700, letterSpacing:"-0.01em",
                 lineHeight:1.15, marginBottom:10,
-                color: p.locked ? "#000332" : "#f4f2ee"
+                color: locked ? "#000332" : "#f4f2ee"
               }}>
                 {p.title}
               </h2>
 
               <p style={{
                 fontSize:14, lineHeight:1.65, marginBottom:24,
-                color: p.locked ? "rgba(0,3,50,0.5)" : "rgba(244,242,238,0.65)"
+                color: locked ? "rgba(0,3,50,0.5)" : "rgba(244,242,238,0.65)"
               }}>
                 {p.description}
               </p>
 
               <button
                 type="button"
-                onClick={p.locked ? () => handlePurchase(p.id) : undefined}
-                disabled={p.locked ? purchasingProgramId === p.id : false}
-                onMouseEnter={p.locked ? () => setHoveredProgramId(p.id) : undefined}
-                onMouseLeave={p.locked ? () => setHoveredProgramId(null) : undefined}
+                onClick={locked ? () => handlePurchase(p.id) : undefined}
+                disabled={locked ? purchasingProgramId === p.id : false}
+                onMouseEnter={locked ? () => setHoveredProgramId(p.id) : undefined}
+                onMouseLeave={locked ? () => setHoveredProgramId(null) : undefined}
                 style={{
-                  background: p.locked
+                  background: locked
                     ? hoveredProgramId === p.id
                       ? "#ff9090"
                       : "#000332"
@@ -245,14 +262,15 @@ export default function Dashboard() {
                   padding:"12px 24px", borderRadius:100,
                   fontFamily:"'Codec Pro',sans-serif", fontSize:13,
                   fontWeight:700, cursor: "pointer",
-                  color: p.locked ? "#f4f2ee" : "#000332",
+                  color: locked ? "#f4f2ee" : "#000332",
                   opacity: 1
                 }}
               >
-                {p.locked ? "unlock program — $49" : "start today →"}
+                {locked ? "unlock program — $49" : "start today →"}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
 
       </main>
