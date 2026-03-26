@@ -89,7 +89,7 @@ export default function Dashboard() {
       setPurchasingProgramId(programId);
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + (await supabase.auth.getSession()).data.session?.access_token },
         body: JSON.stringify({ priceId, programId }),
       });
 
