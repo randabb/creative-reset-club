@@ -266,7 +266,7 @@ export default function Dashboard() {
                   opacity: 1
                 }}
               >
-                {locked ? "unlock program — $49" : "start today →"}
+                {locked ? "unlock program — $49" : <a href={`/programs/${p.id}`} style={{color:"inherit",textDecoration:"none"}}>start today →</a>}
               </button>
             </div>
             );
