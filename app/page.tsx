@@ -162,13 +162,20 @@ export default function Home() {
 
     const userId = data.user?.id;
     if (userId) {
-      await supabase.from("profiles").insert({
-        id: userId,
-        email,
-        username,
-        matched_program: userState,
-        cohort_waitlist: cohortWaitlist,
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          email,
+          username,
+          matched_program: userState,
+          cohort_waitlist: cohortWaitlist,
+        }),
       });
+      if (!res.ok) {
+        console.error("Failed to save profile:", await res.text());
+      }
     }
 
     router.push("/dashboard");
