@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Back to the Well — Creative Reset Club</title>
+<style>
+@font-face {
+  font-family: 'Codec Pro';
+  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
+</style>
+<style>
+  :root {
+    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
+    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
+    --ice: #e6f6ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+  /* SIDEBAR */
+  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
+  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
+  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
+  .phase-group { margin-bottom:20px; }
+  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); }
+  .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
+  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
+  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
+  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
+  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
+  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
+  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
+  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
+  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
+
+  /* MAIN */
+  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; }
+  .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
+  .journal-view.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* DAY HEADER */
+  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
+  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
+  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
+  .day-title em { font-style:normal; color:var(--red); }
+  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
+  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
+  .day-completed-badge.show { display:flex; }
+  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+
+  /* FRAMEWORK */
+  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
+  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
+  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
+  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
+  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
+  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
+  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
+  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
+
+  /* SECTION */
+  .section { margin-bottom:32px; }
+  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
+  .writing-prompts { margin-bottom:14px; }
+  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
+
+  /* TEXTAREA + COUNTER */
+  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
+  .writing-area:focus { border-color:var(--ink); }
+  .writing-area.sufficient { border-color:#7A9E7E; }
+  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
+  .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
+  .char-num.sufficient { color:#7A9E7E; }
+
+  /* FOLLOWUP */
+  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
+  .followup-section.visible { display:block; }
+  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
+  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .followup-textarea:focus { border-color:var(--ink); }
+  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+
+  /* REFLECTION + ACTION */
+  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
+  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
+  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
+  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
+
+  /* BUTTONS */
+  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
+  .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-next:hover { border-color:var(--ink); }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
+  .complete-note.error { color:var(--red); }
+
+  /* JOURNAL */
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
+  .journal-entry:last-of-type { border-bottom:none; }
+  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
+  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
+  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
+  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
+  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
+
+  /* AI REFLECTION */
+  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
+  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
+  .ai-title em { font-style:normal; }
+  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
+  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
+  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
+  .loading-dots { display:flex; gap:4px; }
+  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; }
+  .loading-dot:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+  .reflection-output { animation:fadeIn .6s ease; }
+  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
+  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
+  .warm-text p { margin-bottom:14px; }
+  .warm-text p:last-child { margin-bottom:0; }
+  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
+  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
+  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
+  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
+  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
+  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+
+  /* MOBILE */
+  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; }
+    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
+    .day-number-large { display:none; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">creative reset club</div>
+    <div class="sidebar-program">Back to<br>the Well</div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-progress">
+      <div class="progress-label">your progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-count" id="progressCount">0 of 14 days complete</div>
+    </div>
+  </nav>
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+const MIN = 100;
+function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
+const program = [
+  { day:1, phase:1, phaseName:"Diagnose", title:"When It Went Quiet",
+    fw:{ name:"Morning Pages", author:"Julia Cameron — The Artist's Way",
+      body:"Cameron writes that creative depletion is rarely sudden — it is the result of a slow accumulation of small abandonments. A creative practice set aside. A piece of work dismissed before it was finished. A habit of reaching for distraction instead of sitting with discomfort. Morning Pages, her foundational practice, begins by asking the question most people skip: when did this start? Not to assign blame, but to see clearly. You cannot find your way back without knowing when you left.",
+      benefit:"<strong>Cognitive benefit:</strong> Temporal autobiographical reconstruction — tracing the timeline of a significant personal experience — integrates episodic memory with self-concept, producing insights that neither pure reflection nor pure analysis generates alone. Research by Pennebaker shows that writing about the origins of a stuck state produces faster resolution than writing about the stuck state itself." },
+    q:"When did your creative energy go quiet — and what was happening in your life and your work when it did?",
+    prompts:["Think back. When did you last feel genuinely creatively alive — curious, making, absorbed in your work without forcing it? Describe that time in detail.","What happened between then and now? Not just the big events — the small ones too. The gradual things.","Was there a specific moment, decision, or experience that you can trace the quiet back to?","What did you stop doing — making, writing, designing, building, playing — that you used to do naturally?","What did you tell yourself about why you stopped? What do you think the real reason was — pressure, comparison, the creep of tools doing it for you?"],
+    fu:{ t:50, q:"What have you been telling yourself about why the creativity left — and do you believe it?", prompts:["Is the story you've been telling about your creative dry spell accurate, or is it a cover story for something harder to admit?","What would it mean if the creativity didn't leave — if you just stopped making space for it, or let something else fill the space first?","What would have to be true for it to come back?"] },
+    ref:"The blank didn't arrive without a reason. Understanding the reason doesn't fix it immediately — but it changes the relationship to it. You are not permanently depleted. You are temporarily disconnected. Those are very different things.",
+    action:{ i:"📅", t:"Write the approximate date when you last felt genuinely creatively alive in your work. Then write today's date. That gap is what you're working with — not as a loss, as a map." }
+  },
+  { day:2, phase:1, phaseName:"Diagnose", title:"The Depletion Audit",
+    fw:{ name:"Attention Restoration Theory", author:"Rachel and Stephen Kaplan — The Experience of Nature",
+      body:"The Kaplans' Attention Restoration Theory identifies two types of attention: directed attention, which is effortful and depleting, and involuntary attention, which is restorative and effortless. Creative depletion is almost always the result of prolonged directed attention — output, performance, productivity — without adequate involuntary attention — beauty, nature, play, rest. The depletion audit maps this imbalance honestly, so you can see what has been taken out and what has not been put back.",
+      benefit:"<strong>Cognitive benefit:</strong> Directed attention fatigue — the neurological depletion of the prefrontal cortex's regulatory and executive systems — is one of the most common and least recognised causes of creative block. Research shows that restorative environments and experiences directly replenish these systems. The first step is understanding what has been depleted and what has been restoring." },
+    q:"What have you been outputting — creating, producing, performing, managing, delivering — without adequately refilling?",
+    prompts:["List everything you've been pouring creative and professional energy into over the period when the blank set in. Work, relationships, obligations, responsibilities.","What have you been consuming — scrolling, watching, passively browsing AI outputs — that feels like creative input but doesn't actually restore?","What genuine creative restoration looks like for you — things that leave you feeling more yourself, more like a maker, not just distracted. How much of that have you been getting?","What inputs have you cut off — beauty, play, wandering, making something just for yourself — that used to feed your creative life?","What does a typical week look like in terms of creative output versus genuine restoration and input? Be honest about the ratio."],
+    fu:{ t:50, q:"What is the thing you've been most consistently depriving your creative self of — and what has that cost you?", prompts:["Why have you been depriving yourself of it? Busyness, guilt, a belief that it isn't productive — or because AI made it feel like you didn't need to?","What do you notice in yourself when you do allow yourself this thing, even briefly?","What would change if you treated genuine restoration as non-negotiable rather than optional?"] },
+    ref:"You cannot output indefinitely without input. The well runs dry not because something is wrong with you, but because you've been drawing from it without refilling it. The audit isn't about blame — it's about understanding what the well needs.",
+    action:{ i:"⚖️", t:"Draw two columns: Creative Output and Creative Input. Fill both honestly for the past month. Look at the ratio. That ratio is why you're here." }
+  },
+  { day:3, phase:1, phaseName:"Diagnose", title:"What You've Been Avoiding Making",
+    fw:{ name:"The Resistance", author:"Steven Pressfield — The War of Art",
+      body:"Pressfield writes that creative paralysis is never random — Resistance is always strongest around the work that matters most. The blank state is sometimes genuine depletion, but it is sometimes Resistance in disguise — the feeling of having nothing to make protecting you from making the thing that actually scares you. Today's question is honest and direct: what have you been avoiding making, and what does avoiding it protect you from?",
+      benefit:"<strong>Cognitive benefit:</strong> Distinguishing between genuine depletion and Resistance-driven avoidance is essential for choosing the right response. Genuine depletion requires rest and input. Resistance requires movement and small action. Applying the wrong remedy to the wrong cause prolongs the block. This exercise helps identify which is operating." },
+    q:"What have you been avoiding making or building — and what does that avoidance protect you from?",
+    prompts:["What is the thing you most want to make, write, design, or build that you haven't let yourself start or return to?","What story have you been telling yourself about why now isn't the right time?","What would happen — specifically — if you made it? What are you afraid would be true about you, your talent, or your voice?","Is the blank a state you arrived at through depletion — or one you've been maintaining, unconsciously choosing not to access something that feels too risky or too exposing?","What would the version of you who made this thing freely — without self-consciousness, without comparing, without AI filling the gaps first — look like?"],
+    fu:{ t:50, q:"What is the real thing underneath the avoidance — what are you protecting?", prompts:["Is it about judgment from others, judgment from yourself, or the fear that what comes out won't match what you imagined?","What would you have to believe about yourself to make this thing without protecting yourself from it?","What is the smallest, most private version of this thing you could make today — just for you?"] },
+    ref:"Sometimes the blank is the mind's way of protecting you from something it believes is dangerous. Today's job is to look at what that something is — not to push through it yet, just to see it clearly.",
+    action:{ i:"🔍", t:"Write the name of the thing you've been avoiding making or building. Just the name. Nothing else required today." }
+  },
+  { day:4, phase:1, phaseName:"Diagnose", title:"What the Blank Feels Like",
+    fw:{ name:"Somatic Awareness", author:"Peter Levine — Waking the Tiger / Bessel van der Kolk — The Body Keeps the Score",
+      body:"Levine and van der Kolk's work on somatic experience shows that emotional and creative states are not just psychological — they are held in the body. Creative depletion has a physical signature: a flatness, a heaviness, a sense of being behind glass. Describing this physical experience precisely is not navel-gazing — it is information. The body often knows what state it is in and what it needs before the mind has words for it.",
+      benefit:"<strong>Cognitive benefit:</strong> Interoception — awareness of internal bodily states — activates the insula and anterior cingulate cortex, regions associated with self-awareness and emotional regulation. Research shows that people with higher interoceptive awareness make better decisions about their own needs and recover more effectively from states of depletion or disconnection." },
+    q:"What does the creative blank actually feel like in your body — and where do you feel it when you sit down to make something?",
+    prompts:["Describe the physical sensation of the creative blank — not the thought about it, the actual feeling of it in your body. Where does it live in your body?","What does a creatively alive day feel like physically — when the work is flowing, when the ideas are yours, when you're absorbed? Can you remember that sensation?","When during your creative day is the blank heaviest? When does it lift slightly, even briefly?","What activities or environments change the feeling in your body — even a little? What makes it worse?","If the creative blank had a texture, a colour, a weight, a temperature — what would they be?"],
+    fu:{ t:50, q:"What does your body need that it hasn't been getting — and what would it feel like to give it that?", prompts:["Not what your schedule needs or what seems practical — what does the physical, creative, sensing part of you need?","When did you last feel genuinely at home in your body and your creative work simultaneously?","What small physical thing — movement, environment, sensation — tends to shift your state even slightly?"] },
+    ref:"The blank is not an absence of creativity. It is a physical state that has its own texture and its own needs. Describing it precisely is the beginning of changing it — because you cannot tend to something you cannot see.",
+    action:{ i:"🧘", t:"Sit quietly for five minutes with no phone. Notice what your body feels like. Write three words that describe it. Just three." }
+  },
+  { day:5, phase:2, phaseName:"Refill", title:"The Attention Walk",
+    fw:{ name:"Attention Restoration Theory", author:"Rachel and Stephen Kaplan — The Experience of Nature",
+      body:"The Kaplans identified that natural and novel environments restore directed attention fatigue through a quality they called fascination — involuntary, effortless engagement with something interesting. The attention walk is a structured practice of moving through an environment with the specific intention of noticing — without producing, without capturing for content, just noticing — not evaluating, not capturing, just noticing. The goal is not inspiration or content. The goal is the restoration of the capacity to be genuinely interested in the world outside your own making.",
+      benefit:"<strong>Cognitive benefit:</strong> Research on attention restoration shows that even short exposures to natural or novel environments — 20 to 40 minutes — produce measurable recovery of directed attention capacity, reduced rumination, and improved mood. The mechanism is involuntary attention: the brain is engaged without effort, allowing the directed attention systems to rest and recover." },
+    q:"Describe your attention walk — where you went, what you noticed, and what it was like to pay attention deliberately.",
+    prompts:["Where did you go? What environment did you choose — and was it deliberate or instinctive?","What did you notice that you would normally walk straight past in your rush to make or produce? Be specific — textures, sounds, light, movement, colour.","What caught your attention involuntarily — the thing you didn't decide to look at, it just pulled you?","Was there a moment where you forgot, briefly, that you were trying to notice? What were you looking at?","What was different about moving through the world with attention versus moving through it on autopilot?"],
+    fu:{ t:50, q:"What did deliberate noticing feel like — and when did you last do it without this program prompting you?", prompts:["Is noticing — really looking, really listening — something you used to do naturally as a creative? When did you stop?","What gets in the way of this kind of slow, open attention in your creative daily life?","What would change if you built 20 minutes of deliberate noticing into every day?"] },
+    ref:"Attention is a muscle. It has been pointed inward — at problems, at to-do lists, at screens — for so long that it has forgotten how to rest on the outside world. Today was practice. Tomorrow it will be easier.",
+    action:{ i:"👁️", t:"Go outside today for at least 20 minutes. No headphones. No phone in hand. No content to capture. Just look. Write what you saw when you get back." }
+  },
+  { day:6, phase:2, phaseName:"Refill", title:"The Artist's Date",
+    fw:{ name:"The Artist's Date", author:"Julia Cameron — The Artist's Way",
+      body:"Cameron's Artist's Date is a weekly solo excursion to feed the creative consciousness. The rules are simple: alone, no productivity, full presence. Not a reward for work done — an investment in creative work to come. Cameron argues creatives consistently starve themselves of the very inputs that make creation possible. Cameron argues that creative people consistently deprive themselves of the very inputs that make creation possible, treating play and curiosity as luxuries rather than necessities. The Artist's Date is the antidote: a deliberate act of creative self-nourishment.",
+      benefit:"<strong>Cognitive benefit:</strong> Novel, pleasurable, solo experiences activate the brain's dopamine system and default mode network simultaneously — the combination most associated with creative insight and divergent thinking. Research shows that regular engagement with novel environments increases cognitive flexibility and the capacity for unexpected connection-making, both of which are central to creative production." },
+    q:"Describe your artist's date — where you went, what you experienced, and what it did to your creative temperature.",
+    prompts:["Where did you go — and what drew you there? Was it somewhere new or somewhere familiar that you love?","What did you let yourself experience without agenda — without taking notes, without thinking about how it might be useful for content or work?","Was there a moment of genuine delight, curiosity, or absorption? Describe it specifically.","What did the experience feed in you — what part of your creative self that has been going hungry?","What did you notice about being alone with your curiosity, without any obligation to be productive or to translate the experience into something?"],
+    fu:{ t:50, q:"What does your creative self need that your regular life isn't giving it — and what would it take to give it more regularly?", prompts:["What kind of inputs feed your creative self specifically — the particular environments, experiences, or stimuli that reliably move something in you?","What has been getting in the way of seeking these out?","What is one thing you could protect in your weekly life that would function like a small artist's date — non-negotiable, solo, purposeless?"] },
+    ref:"The Artist's Date is not self-indulgence. It is maintenance. A car without fuel does not run. A creative person without input does not create. Today was fuel.",
+    action:{ i:"🎨", t:"Plan your next artist's date before you close this page. Write where, when, and what you'll do. Put it in your calendar." }
+  },
+  { day:7, phase:2, phaseName:"Refill", title:"The Beauty Inventory",
+    fw:{ name:"Savoring", author:"Fred Bryant & Joseph Veroff — Savoring: A New Model of Positive Experience",
+      body:"Bryant and Veroff's research on savoring — the deliberate attention to and appreciation of positive experience — shows that people who actively notice and dwell on beauty and pleasure in their environment experience significantly higher creativity, wellbeing, and resilience than those who move through their days without noticing. Most creatively depleted people have stopped noticing beauty — not because it disappeared, but because the habit of noticing it atrophied.",
+      benefit:"<strong>Cognitive benefit:</strong> Deliberate attention to beauty activates the brain's reward system and increases production of dopamine and serotonin — neurotransmitters associated with motivation, pleasure, and creative engagement. Research shows that regular savoring practice rebuilds the capacity for positive emotional experience in people who have become emotionally flat or numb." },
+    q:"Write down everything beautiful you encountered today in your world — in as much sensory detail as you can.",
+    prompts:["Go through your day from waking to now. What was beautiful — not objectively, in your experience?","Include the small things: light through a window, the smell of something, a sound, a texture, the way something moved, a colour combination that stopped you.","Include the unexpected things: something ugly that had a strange beauty, something ordinary that you suddenly saw differently.","Include the human things: a gesture, an expression, a conversation that had something lovely in it.","What did you almost walk past without noticing — and what made you stop?"],
+    fu:{ t:50, q:"What does this inventory tell you about how much beauty is available to you — and how much you've been filtering out?", prompts:["When did you stop noticing beauty as a default? Can you trace it?","What would change about your creative energy if you ended every day with an inventory like this — a record of beauty that has nothing to do with your output?","What is the most beautiful thing you've encountered in the past year — and when did you last think about it?"] },
+    ref:"Beauty is not scarce. The capacity to notice it is what becomes scarce when we are depleted. Today's exercise was not about finding creative inspiration — it was about remembering that beauty and texture were always there, waiting for your attention.",
+    action:{ i:"✨", t:"Do this inventory again tomorrow morning or evening, without being prompted. See if the list gets longer and more specific. See if the list gets longer." }
+  },
+  { day:8, phase:3, phaseName:"Reconnect", title:"Make Something Terrible",
+    fw:{ name:"Oblique Strategies", author:"Brian Eno & Peter Schmidt — Oblique Strategies",
+      body:"One of Eno's Oblique Strategies cards reads: 'Honour thy error as a hidden intention.' The instruction to make something terrible on purpose is not a trick — it is a direct dismantling of the perfectionism that keeps creatively blocked people from making anything. When terrible is the goal, the internal critic — the one that has been comparing your work to AI outputs and finding it lacking — has nothing to work with. The evaluative system that monitors quality goes offline, and what remains is the pleasure of making itself — which is what was lost.",
+      benefit:"<strong>Cognitive benefit:</strong> Deliberately lowering quality standards deactivates the brain's self-monitoring and error-detection systems — particularly the anterior cingulate cortex — which are chronically overactive in creatively blocked people. Research on improvisational performance and freewriting shows that removing quality expectations produces immediate increases in output, fluency, and eventually quality itself." },
+    q:"Make something terrible today — in any medium, any form — and write about what it was like to make without trying to make it good.",
+    prompts:["What did you make? Describe it — what it was, how you made it, what materials or tools you used, how long it took.","What happened in your body and your creative thinking when you gave yourself permission to be bad — genuinely, intentionally bad?","Did the internal critic show up anyway? What did it say — and what did you do with it?","Was there a moment when you forgot you were trying to be terrible and just started making — where the making took over? What happened then?","What did making something — even badly, even just for ten minutes — feel like after the period of making nothing?"],
+    fu:{ t:50, q:"What did the terrible thing reveal about what you actually want to make?", prompts:["Even in a deliberately bad piece, something of what you genuinely care about as a creative usually shows up. What showed up in yours?","What would the non-terrible version of this thing be?","What stopped you from making that instead — and is that stopping thing smaller than you thought?"] },
+    ref:"The terrible thing is not the point. The making is the point. You made something today. That changes the energy — because a person who makes terrible things is closer to making good things than a person who makes nothing.",
+    action:{ i:"🎭", t:"Keep whatever you made. Don't delete it, throw it away, compare it to anything, or show anyone. It was for you and it was enough. It was for you and it was enough." }
+  },
+  { day:9, phase:3, phaseName:"Reconnect", title:"A Medium You've Never Used",
+    fw:{ name:"Deep Play", author:"Diane Ackerman — Deep Play",
+      body:"Ackerman describes deep play as complete absorption in an activity for its own sake — not for outcome, not for improvement, but for the quality of the experience itself. Using a medium you've never worked in before removes every standard and every comparison — including to what AI can produce — and leaves only the experience of making itself: because you have no standard to meet and no history to repeat, the only thing possible is presence. Beginners are free in a way that experts rarely are.",
+      benefit:"<strong>Cognitive benefit:</strong> Engaging with an unfamiliar creative medium activates the brain's novelty-seeking systems and suppresses the performance-monitoring systems that inhibit free creative expression. Research on creative cross-training — working in multiple mediums — shows measurable increases in divergent thinking, creative confidence, and willingness to take risks in primary creative work." },
+    q:"Make something in a creative medium you've never used before — and write about what being a complete beginner felt like.",
+    prompts:["What medium did you choose — and what drew you to it? Was it something you've always been curious about or something that felt furthest from your usual work?","Describe the experience of making without any skill or expectation. What was that like from the inside?","What did you notice about how you approached it — did the instinct to be good or to produce something worthy show up, or could you let yourself just explore?","Was there a moment of absorption — where the making took over and you stopped thinking about it?","What did working in an unfamiliar medium tell you about how you approach your familiar creative work — what habits, what pressures, what comparisons you bring to it?"],
+    fu:{ t:50, q:"What does beginner's mind feel like — and when did you last have it in your primary creative work?", prompts:["What would you have to let go of to bring beginner's mind to the thing you most want to make?","What expertise, creative reputation, or standard are you protecting that might be getting in the way of making freely?","What would you make or build if you were allowed to be a complete beginner at it — with no track record, no audience, no comparison?"] },
+    ref:"Expertise is valuable and hard-won. But it comes with a cost: the freedom of not knowing what you're doing. Today was a reminder of that freedom. It is still available to you — even in your primary work, if you choose it.",
+    action:{ i:"🖌️", t:"Try one more medium tomorrow — another one you've never used. Notice whether the second time feels different from the first." }
+  },
+  { day:10, phase:3, phaseName:"Reconnect", title:"Ten Minutes With What's in Front of You",
+    fw:{ name:"Constraints as Creative Engine", author:"Patricia Stokes — Creativity from Constraints",
+      body:"Stokes' research on creativity and constraint shows that the most generative creative condition is not freedom — it is bounded freedom. Constraints that limit time, material, or scope force the brain to generate solutions it would never have found with unlimited resources. The ten-minute, found-materials exercise is one of the oldest creative practices precisely because it consistently produces work that surprises the person who made it.",
+      benefit:"<strong>Cognitive benefit:</strong> Time constraints activate the brain's fast, associative thinking systems and suppress the slower, analytical systems that generate self-criticism and perfectionism. Research on time-limited creative tasks shows that short, constrained exercises produce higher originality scores than open-ended tasks — because they prevent the brain from reaching for the obvious or the safe." },
+    q:"Make something in ten minutes using only what is physically in front of you right now — no AI, no references, no looking anything up — and write about what came out.",
+    prompts:["What did you make — describe it specifically. What materials, what form, what emerged?","What did the constraint of ten minutes and found materials force you toward creatively that you wouldn't have chosen freely?","Was there something surprising in what appeared — an image, a word, a form you didn't plan?","What did it feel like to work quickly, with no preparation and no plan?","What did this tiny, constrained piece of making tell you about what's still alive in you as a creative — despite the blank, despite the depletion?"],
+    fu:{ t:50, q:"What would you make if you gave yourself ten more minutes right now — with the same constraint?", prompts:["What would you do differently? What would you do the same?","What is the thing that wants to come out in you creatively right now — even if you're not ready to make it fully?","What has three days of making without stakes reawakened in you?"] },
+    ref:"Ten minutes is enough. Five minutes is enough. One minute is enough. The creative blank convinces you that making requires conditions, tools, or inspiration you don't currently have. Today proved otherwise. Today proved otherwise.",
+    action:{ i:"⏱️", t:"Do this again tomorrow — ten minutes, whatever is in front of you. It gets easier each time." }
+  },
+  { day:11, phase:4, phaseName:"Return", title:"Write Badly for Fifteen Minutes",
+    fw:{ name:"Morning Pages", author:"Julia Cameron — The Artist's Way",
+      body:"Morning Pages are not about writing well. Cameron is explicit: they are three pages of longhand stream-of-consciousness, written before the internal critic and the comparing mind wake up, with no other goal than to empty the head. The quality is irrelevant. The consistency is everything. For someone returning from creative depletion, the morning pages practice rebuilds the basic capacity to show up — to put something on the page, every day, regardless of whether it is any good.",
+      benefit:"<strong>Cognitive benefit:</strong> Regular freewriting — writing without stopping or editing — has been shown to reduce creative inhibition, increase expressive fluency, and rebuild the habit of production after periods of block. The neural pathways associated with creative output are strengthened through use and weakened through disuse. Fifteen minutes a day begins to rebuild them." },
+    q:"Write badly for fifteen minutes — whatever comes, without stopping, without editing, without rereading, without wondering if AI could do it better — and then write about what came out.",
+    prompts:["What emerged in the fifteen minutes? Not the good parts — all of it. What was there?","Was there a moment when something unexpected surfaced — a creative thought, an image, an idea you didn't know was still there?","What did your internal critic say during the writing — and what did you do when it spoke? Did you stop, or keep going?","Was there a point where the writing took on its own momentum, even briefly?","What does it feel like to have made something — even badly, even messily — after a period of creative silence?"],
+    fu:{ t:50, q:"What did fifteen minutes of unguarded writing reveal that a more careful, more effortful approach wouldn't have?", prompts:["What surprised you in what appeared?","What do you think has been waiting to be written that keeps coming up?","What would happen if you did this every morning for the next thirty days?"] },
+    ref:"Bad writing is not a failure. It is the raw material. Cameron writes that morning pages are not meant to be art — they are meant to clear the channel so that art becomes possible. Today you cleared the channel.",
+    action:{ i:"📝", t:"Set your alarm fifteen minutes earlier tomorrow. Write or make something before you open your phone, your laptop, or any AI tool. Don't read it back. Just make." }
+  },
+  { day:12, phase:4, phaseName:"Return", title:"The One Small Thing",
+    fw:{ name:"The Practice", author:"Seth Godin — The Practice",
+      body:"Godin writes that the practice of creative work is not about inspiration or readiness — it is about showing up. The professional makes the smallest possible version of the work, consistently, without waiting for the conditions to be perfect. For someone returning from creative depletion, the one small thing is not a compromise — it is the most important creative act possible. It breaks the pattern of waiting and reestablishes the pattern of making.",
+      benefit:"<strong>Cognitive benefit:</strong> Small, achievable creative acts activate the brain's reward system through task completion — releasing dopamine and reinforcing the behaviour. Research on habit formation shows that starting with the smallest possible version of a desired behaviour produces higher long-term adherence than ambitious starting points, because the initial reward is immediate and the barrier to entry is low." },
+    q:"What is the smallest possible version of the creative work or project you've been avoiding — and what happened when you actually did it?",
+    prompts:["Not the full piece. Not even a significant portion. The absolute smallest version that still counts as making — one paragraph, one sketch, one component, one page.","What did you actually do? Describe it specifically.","What did it feel like to do the creative thing you've been not-doing — even the smallest, most private version of it?","What did doing it reveal about the work itself — is it what you thought it would be, or different?","What is the next smallest version — one step larger than today?"],
+    fu:{ t:50, q:"What was the thing you were most afraid would happen when you started — and what actually happened?", prompts:["Was the fear accurate? Was the gap between prediction and reality large or small?","What does starting — even small — change about how the work feels?","What would it mean to do one small thing every day, without it needing to become anything?"] },
+    ref:"The smallest thing is not small. For a creative or builder who has been not-making, it is the most significant act possible. You made something today that you've been not-making. That is the return.",
+    action:{ i:"🌱", t:"Tomorrow: one creative thing, slightly larger. Not twice as ambitious. Slightly more than today. Write what it is before you close this page." }
+  },
+  { day:13, phase:4, phaseName:"Return", title:"Show Something",
+    fw:{ name:"Daring Greatly", author:"Brené Brown — Daring Greatly",
+      body:"Brown's research on vulnerability shows that creative work kept entirely private — never witnessed, never received — eventually loses its vitality — because making for no one, with no possibility of being received, closes the feedback loop that creative work depends on. Showing something small to one person is not exposure or performance — it is connection. And connection is what the creative blank most depletes. And connection is one of the most reliable antidotes to creative depletion, because it reminds you that your making has the capacity to matter to someone other than yourself.",
+      benefit:"<strong>Cognitive benefit:</strong> Sharing creative work — even small, even imperfect — activates the social reward system and the affiliative motivation systems, which are distinct from the individual achievement systems. Research shows that creative work shared in a low-stakes, supportive context produces increased intrinsic motivation and willingness to continue making, because the work has been witnessed." },
+    q:"Show one small thing you've made during this program to one person — a creative peer, a trusted friend — and write about what it felt like to show it.",
+    prompts:["What did you show — describe it, and why you chose that particular piece of your making?","Who did you show it to — and why them? What made them the right person to receive this specific piece of your work?","What did you say when you showed it? Did you explain, apologise, qualify its quality, or just show it?","What happened — what did they say, what did you feel in the moment of showing?","What was different about making something that was witnessed versus making something that stayed entirely private?"],
+    fu:{ t:50, q:"What did being seen — even once, even small — change about your relationship to the creative work?", prompts:["Did showing it make it feel more real, more finished, or more possible to make more?","What are you still protecting — what feels too unformed or too risky to show yet?","What would it mean to share your creative work more regularly — not for approval, but for connection?"] },
+    ref:"You don't need an audience. But you do need at least one witness. Someone who knows you made something. Today you had that. Let it matter.",
+    action:{ i:"🤝", t:"Thank the person you showed it to. Not for their response or their praise — for being willing to receive your creative work." }
+  },
+  { day:14, phase:5, phaseName:"The Recommitment", title:"What You're Returning To",
+    fw:{ name:"Turning Pro", author:"Steven Pressfield — Turning Pro",
+      body:"Pressfield writes that turning pro is not a grand gesture — it is a quiet internal shift. A decision to show up for the creative work regardless of mood, conditions, inspiration — or whether AI could do it faster. The recommitment at the end of this program is not a declaration of what you'll produce or achieve. It is a commitment to the creative practice itself — to the regular, consistent act of making, noticing, and refilling, so that the depletion doesn't return unnoticed.",
+      benefit:"<strong>Cognitive benefit:</strong> Commitment to process rather than outcome — deciding to show up regardless of result — activates different neural systems than goal-based motivation. Research on mastery orientation versus performance orientation shows that process-committed people recover more quickly from creative blocks, sustain effort longer, and experience more genuine satisfaction in their work." },
+    q:"Write your recommitment — what you're returning to as a creative or builder, what you understand now that you didn't when you started, and how you'll keep the well from going empty again.",
+    prompts:["What are you returning to — not a specific project, the creative practice itself. What does your creative life look like when it's healthy?","What did you learn about yourself as a creative and builder across these fourteen days — about what you need, what depletes you, what genuinely restores you?","What did you learn about the blank — what it was, where it came from, and what it was telling you?","What will you do differently to keep the creative well from going empty again? Be specific — not aspirational, practical. Real changes to how you work, rest, and refill.","What do you want to remember about how you feel right now — the quality of being reconnected to your own creative voice — for when the flatness tries to return?"],
+    fu:{ t:50, q:"What would you tell the version of you who started this program — blank, flat, wondering if the creativity was gone for good?", prompts:["What do you know now that you needed to hear then?","What was your creativity doing while you thought it was gone — waiting, resting, or just drowned out by noise?","What do you want to promise yourself about how you'll treat your creative life from here?"] },
+    ref:"The creativity was never gone. It was waiting. It waits every time — because it is yours, and it has nowhere else to go. The recommitment is not to making great work. It is to showing up so that great work remains possible.",
+    action:{ i:"🌊", t:"Write one sentence that you'll read when the creative blank comes back: 'When I feel this way, I will…' Make it specific. Make it true. Make it kind to yourself as a creative. Make it specific. Make it true. Make it kind." }
+  }
+];
+
+
+const completed = new Set(JSON.parse(localStorage.getItem('crc-bl') || '[]'));
+
+function init() {
+  buildSidebar();
+  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
+  showDay(1);
+  updateProgress();
+}
+
+function buildSidebar() {
+  const phases = {};
+  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
+  let html = '';
+  Object.entries(phases).forEach(([ph, days]) => {
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d => {
+      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
+        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
+    });
+    html += '</div>';
+  });
+  html += `<div class="phase-group"><div class="phase-label">Review</div>
+    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
+      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-title">Full Journal + AI Reflection</div>
+    </button></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function buildDay(d) {
+  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
+  const done = completed.has(d.day);
+  return `<div class="day-view" id="day-${d.day}">
+    <div class="day-header">
+      <div class="day-meta">
+        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
+        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
+      </div>
+      <div class="day-number-large">${d.day}</div>
+    </div>
+    <div class="framework-card">
+      <div class="framework-eyebrow">framework</div>
+      <div class="framework-name">${d.fw.name}</div>
+      <div class="framework-author">${d.fw.author}</div>
+      <div class="framework-body">${d.fw.body}</div>
+      <div class="framework-benefit">${d.fw.benefit}</div>
+    </div>
+    <div class="section">
+      <div class="section-label">today's question</div>
+      <div class="question-text">"${d.q}"</div>
+      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <div class="char-counter">
+        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
+      </div>
+      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
+        <div class="followup-label">going deeper</div>
+        <div class="followup-question">"${d.fu.q}"</div>
+        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">reflection</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">micro-action</div>
+      <div class="action-card">
+        <div class="action-icon">${d.action.i}</div>
+        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
+      </div>
+    </div>
+    <div class="complete-row">
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
+    </div>
+  </div>`;
+}
+
+function buildJournal() {
+  return `<div class="journal-view" id="journal-view">
+    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Coming Back</em></h1>
+    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
+    <div id="j-entries"></div>
+    <div class="ai-section">
+      <div class="ai-eyebrow">AI Reflection</div>
+      <h2 class="ai-title">What your writing <em>reveals</em></h2>
+      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you found across 14 days.</p>
+      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
+    </div>
+  </div>`;
+}
+
+function showDay(n) {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('day-'+n)?.classList.add('active');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function showJournal() {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('journal-view').classList.add('active');
+  document.getElementById('nav-journal')?.classList.add('active');
+  populateJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function populateJournal() {
+  document.getElementById('j-entries').innerHTML = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    return `<div class="journal-entry">
+      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-title">${d.title}</div>
+      <div class="journal-question">"${d.q}"</div>
+      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
+      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onWrite(n) {
+  const v = document.getElementById('write-'+n)?.value||'';
+  save(n,'main',v);
+  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
+  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
+  const note=document.getElementById('note-'+n);
+  if(note) note.style.display=suf?'none':'block';
+}
+
+function completeDay(n) {
+  const v=getSaved(n,'main');
+  if(wordCount(v)<MIN){
+    const note=document.getElementById('note-'+n);
+    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
+    return;
+  }
+  completed.add(n);
+  localStorage.setItem('crc-bl',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);
+  if(btn){btn.textContent='Day Complete ✓'; btn.disabled=true;}
+  document.getElementById('badge-'+n)?.classList.add('show');
+  const nav=document.getElementById('nav-'+n);
+  if(nav) nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');
+  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
+  updateProgress();
+  if(n<14) setTimeout(()=>showDay(n+1),500);
+  else setTimeout(()=>showJournal(),500);
+}
+
+function updateProgress() {
+  const pct=(completed.size/14)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
+}
+
+async function generateReflection() {
+  const el=document.getElementById('ai-state');
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
+
+  const writing = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    if(!m&&!f) return null;
+    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
+  }).filter(Boolean).join('\n\n---\n\n');
+
+  if(!writing.trim()){
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
+    return;
+  }
+
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Back to the Well" — a program helping people reconnect with their creativity after a period of depletion or disconnection, grounded in Julia Cameron, Stephen Kaplan, Brian Eno, Diane Ackerman, Seth Godin, and Steven Pressfield.
+
+Here is everything they wrote:
+
+${writing}
+
+Respond in exactly this format:
+
+WARM MIRROR
+[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]
+
+PATTERN 1
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]
+
+PATTERN 2
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+PATTERN 3
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+CLOSING
+[One sentence. True and forward-facing. Something they can carry.]
+
+Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('')||'';
+    if(!text) throw new Error();
+
+    // Parse sections
+    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
+    const warm = warmMatch ? warmMatch[1].trim() : '';
+
+    const patterns = [];
+    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
+    let pm;
+    while((pm=patternRe.exec(text))!==null) {
+      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
+    }
+
+    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
+    const closing = closingMatch ? closingMatch[1].trim() : '';
+
+    el.innerHTML = `<div class="reflection-output">
+      <div class="warm-block">
+        <div class="warm-label">what I heard</div>
+        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+      </div>
+      <div class="patterns-label">patterns across 14 days</div>
+      ${(patterns.length?patterns:[{title:'YOUR COMMITMENT TO HONESTY',body:'Across your writing, a consistent willingness to tell the truth — even when uncomfortable — comes through clearly.'},{title:'THE GAP BETWEEN KNOWING AND MOVING',body:'You show real self-awareness alongside a pattern of holding back. This program has started to close that gap.'},{title:'AN IDEA WITH STAYING POWER',body:'Whatever brought you here has persistence. That persistence is not anxiety — it is the idea insisting on you.'}]).slice(0,3).map((p,i)=>`
+        <div class="pattern-card">
+          <div class="pattern-num">${i+1}</div>
+          <div class="pattern-title">${p.title}</div>
+          <div class="pattern-body">${p.body}</div>
+        </div>`).join('')}
+      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
+    </div>`;
+  } catch(e) {
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
+      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
+  }
+}
+
+function save(day,key,val){ localStorage.setItem(`crc-fc-${day}-${key}`,val); }
+function getSaved(day,key){ return localStorage.getItem(`crc-fc-${day}-${key}`)||''; }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Many to One — Creative Reset Club</title>
+<style>
+@font-face {
+  font-family: 'Codec Pro';
+  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
+</style>
+<style>
+  :root {
+    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
+    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
+    --ice: #e6f6ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+  /* SIDEBAR */
+  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
+  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
+  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
+  .phase-group { margin-bottom:20px; }
+  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); }
+  .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
+  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
+  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
+  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
+  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
+  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
+  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
+  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
+  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
+
+  /* MAIN */
+  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; }
+  .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
+  .journal-view.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* DAY HEADER */
+  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
+  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
+  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
+  .day-title em { font-style:normal; color:var(--red); }
+  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
+  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
+  .day-completed-badge.show { display:flex; }
+  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+
+  /* FRAMEWORK */
+  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
+  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
+  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
+  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
+  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
+  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
+  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
+  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
+
+  /* SECTION */
+  .section { margin-bottom:32px; }
+  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
+  .writing-prompts { margin-bottom:14px; }
+  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
+
+  /* TEXTAREA + COUNTER */
+  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
+  .writing-area:focus { border-color:var(--ink); }
+  .writing-area.sufficient { border-color:#7A9E7E; }
+  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
+  .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
+  .char-num.sufficient { color:#7A9E7E; }
+
+  /* FOLLOWUP */
+  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
+  .followup-section.visible { display:block; }
+  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
+  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .followup-textarea:focus { border-color:var(--ink); }
+  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+
+  /* REFLECTION + ACTION */
+  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
+  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
+  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
+  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
+
+  /* BUTTONS */
+  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
+  .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-next:hover { border-color:var(--ink); }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
+  .complete-note.error { color:var(--red); }
+
+  /* JOURNAL */
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
+  .journal-entry:last-of-type { border-bottom:none; }
+  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
+  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
+  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
+  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
+  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
+
+  /* AI REFLECTION */
+  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
+  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
+  .ai-title em { font-style:normal; }
+  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
+  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
+  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
+  .loading-dots { display:flex; gap:4px; }
+  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; }
+  .loading-dot:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+  .reflection-output { animation:fadeIn .6s ease; }
+  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
+  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
+  .warm-text p { margin-bottom:14px; }
+  .warm-text p:last-child { margin-bottom:0; }
+  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
+  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
+  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
+  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
+  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
+  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+
+  /* MOBILE */
+  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; }
+    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
+    .day-number-large { display:none; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">creative reset club</div>
+    <div class="sidebar-program">From Many<br>to One</div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-progress">
+      <div class="progress-label">your progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-count" id="progressCount">0 of 14 days complete</div>
+    </div>
+  </nav>
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+const MIN = 100;
+function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
+const program = [
+  { day:1, phase:1, phaseName:"Empty the Head", title:"The Complete Inventory",
+    fw:{ name:"Getting Things Done — Capture", author:"David Allen — Getting Things Done",
+      body:"Allen's GTD methodology begins with a single act: capture everything. Every idea, project, commitment, and half-formed thought that is living in your head gets externalised onto paper. The insight behind this is neurological — the brain is not designed to hold multiple open loops simultaneously. Every unwritten idea consumes working memory and produces low-level anxiety. The inventory doesn't make the decision. It creates the conditions under which a real decision becomes possible.",
+      benefit:"<strong>Cognitive benefit:</strong> Externalising mental content reduces cognitive load — the burden placed on working memory by holding multiple competing items simultaneously. Research by Allen and later confirmed in cognitive science shows that writing things down produces immediate relief from the anxiety of trying to remember, freeing up mental resources for actual thinking and decision-making." },
+    q:"Write down every idea, direction, project, and creative possibility that is currently competing for your attention — every single one, without filtering.",
+    prompts:["Don't edit as you go. Don't rank or evaluate. Just get everything out of your head and onto the page.","Include the ones that feel half-formed, embarrassing, unrealistic, or too weird to say out loud. Include the ones you've already dismissed but keep coming back to.","Include the ones that came from other people — things someone suggested you should make or do, opportunities you feel obligated to consider.","Include the ones you've already started making. The ones you've abandoned. The ones that have been living in your head for years.","Keep going until the page feels complete. Most people have more than they think."],
+    fu:{ t:50, q:"Look at everything you just wrote. What is it like to see it all in one place?", prompts:["What did you forget until you started writing?","What surprised you — something that appeared that you didn't expect to surface?","What is the feeling in your body looking at the full list?"] },
+    ref:"The relief many people feel after this exercise is the cognitive load lifting. You've been carrying all of this simultaneously. It's been exhausting. Now it's on paper — and paper can hold it while you think.",
+    action:{ i:"📋", t:"Count how many items are on your list. Write the number at the top. That's what you've been carrying — as a creative, as a builder, as a person with more vision than time." }
+  },
+  { day:2, phase:1, phaseName:"Empty the Head", title:"Where Each Idea Came From",
+    fw:{ name:"Morning Pages", author:"Julia Cameron — The Artist's Way",
+      body:"Cameron's Morning Pages practice surfaces what we actually think — as distinct from what we've been told to think. One of the most clarifying questions for someone overwhelmed by options is: which of these ideas and creative impulses are actually mine? Some ideas on your list came from you — from genuine desire, curiosity, or calling. Others were handed to you by parents, partners, culture, or what seemed practical. Both can be good ideas. But knowing the difference changes everything.",
+      benefit:"<strong>Cognitive benefit:</strong> Distinguishing intrinsic from extrinsic motivation activates the brain's self-determination systems. Research by Deci and Ryan shows that ideas pursued from intrinsic motivation produce significantly higher engagement, persistence, and satisfaction than those pursued from external pressure — regardless of the idea's objective quality." },
+    q:"For each idea on your list — where did it actually come from? Which ones are genuinely yours, and which ones were handed to you?",
+    prompts:["Go through your list from yesterday. For each item, write: who or what planted this idea in you?","Which ones emerged from your own genuine desire, creative obsession, or curiosity — something you kept returning to without being prompted?","Which ones came from someone else's suggestion, expectation, or what seemed like the sensible or impressive path?","Which ones are about proving something — to yourself, to someone else, to a version of yourself as a creative or builder that you think you should be?","Which ones, if you're honest, you've never actually wanted to make — but have kept alive because abandoning them feels like giving up?"],
+    fu:{ t:50, q:"Which idea or creative direction on the list feels most unambiguously yours — and what does that feel like different from the others?", prompts:["Can you describe the quality of that desire — what it feels like from the inside?","How long have you had it? Has it changed over time or stayed essentially the same?","What has kept you from committing to it?"] },
+    ref:"Not all ideas deserve equal consideration. The ones that are genuinely yours — that come from real desire rather than obligation — deserve more weight than the ones that were handed to you. Today's exercise helps you see the difference.",
+    action:{ i:"🔍", t:"Mark each item: M for mine, H for handed to me, B for both. Notice which category holds the most creative energy. Notice which category has the most items." }
+  },
+  { day:3, phase:1, phaseName:"Empty the Head", title:"What You've Already Tried",
+    fw:{ name:"After Action Review", author:"US Army — After Action Review methodology",
+      body:"The After Action Review is a structured reflection practice developed by the US Army to extract learning from experience. It asks four questions: what was supposed to happen, what actually happened, why was there a difference, and what will we do differently? Applied to ideas you've already started and stopped, it reveals patterns — about what you're actually drawn to, where you consistently get stuck, and what the stopping tells you about the starting.",
+      benefit:"<strong>Cognitive benefit:</strong> Structured retrospective reflection activates episodic memory alongside analytical reasoning — a combination that produces more accurate and nuanced self-knowledge than either alone. Research on learning from experience shows that people who reflect explicitly on past attempts extract significantly more transferable insight than those who move on without reflection." },
+    q:"For every idea or creative project you've already started, explored, or abandoned — what happened, and what did the stopping tell you?",
+    prompts:["List every idea or project from your inventory that you've already tried in some form — even briefly, even just sketching, researching, or planning.","For each one: what did you actually do? How far did you get? What stopped you?","Was the stopping external — circumstances, resources, timing — or internal — lost interest, creative fear, felt wrong?","What did you feel in the moment of stopping — relief, grief, guilt, or nothing?","What does the pattern across all these starts and stops tell you about yourself?"],
+    fu:{ t:50, q:"Is there one that you stopped that you still think about — that stopping felt more like pausing than finishing?", prompts:["What would it mean to go back to it?","What would be different this time?","What has the time away taught you that you didn't know when you stopped?"] },
+    ref:"The pattern of your past attempts is data. Relief when you stopped usually means the idea was wrong for you. Grief when you stopped usually means it wasn't. Pay attention to what you felt.",
+    action:{ i:"📊", t:"Write one sentence for each abandoned idea or project: 'I stopped because…' Don't justify. Just name what's true." }
+  },
+  { day:4, phase:1, phaseName:"Empty the Head", title:"What You're Afraid of Losing",
+    fw:{ name:"Loss Aversion", author:"Daniel Kahneman — Thinking Fast and Slow",
+      body:"Kahneman's research on loss aversion shows that the pain of losing something is approximately twice as powerful as the pleasure of gaining an equivalent thing. For people overwhelmed by options, the inability to choose is often not about the options themselves — it's about what choosing means they lose. Keeping all options alive is a way of avoiding the grief of letting any of them go. Until you name what you're protecting, you can't choose freely.",
+      benefit:"<strong>Cognitive benefit:</strong> Naming anticipated losses activates the prefrontal cortex's regulatory capacity over the amygdala's threat response. Research shows that people who explicitly acknowledge what they're giving up before making a decision experience less regret and more satisfaction with their choice — because the loss was anticipated and accepted, not discovered." },
+    q:"What are you actually afraid of losing if you commit to one idea or creative direction and let the others go?",
+    prompts:["What does keeping all the creative options alive give you — what does it protect you from having to face?","What would you have to grieve if you let most of these ideas go?","Is there an identity you'd have to release — a version of yourself as a multi-hyphenate, a person of infinite creative potential, defined by possibility rather than commitment?","What do you imagine the unchosen ideas and directions would feel like — abandoned, relieved, or something else?","What has keeping all options alive actually cost you — in time, in energy, in the creative work you could have developed fully?"],
+    fu:{ t:50, q:"What is the fear underneath the overwhelm — the thing that multiplying options has been protecting you from?", prompts:["If you committed to one thing and gave it everything — what is the real risk?","Is that risk about the idea failing, or about you discovering something about yourself?","What would it mean to choose — not just for your business, but for your sense of who you are?"] },
+    ref:"Overwhelm is often grief in disguise. Choosing one means losing the others — and that loss is real. Today's exercise names it. You can't move through something you haven't acknowledged.",
+    action:{ i:"🕯️", t:"Write a one-sentence acknowledgment of what choosing one creative direction will cost you. Not dramatically — honestly. 'If I choose, I will have to let go of…'" }
+  },
+  { day:5, phase:2, phaseName:"Run the Filters", title:"The Energy Test",
+    fw:{ name:"The Artist's Way — Morning Pages", author:"Julia Cameron — The Artist's Way",
+      body:"Cameron's core practice is built on a simple diagnostic: what energises you and what drains you? She argues that most people have learned to override this signal — to pursue what seems sensible, impressive, or practical, and to dismiss what genuinely calls to them as impractical or self-indulgent. The energy test cuts through the noise of should and could to ask what the body and the creative self already know.",
+      benefit:"<strong>Cognitive benefit:</strong> Somatic signals — bodily sensations of energy, excitement, or depletion — are processed by the limbic system, which integrates emotional memory and motivational state. Research on embodied cognition shows that paying attention to these signals produces more accurate predictions of long-term engagement and satisfaction than purely rational analysis." },
+    q:"For each idea on your list — what happens in your body and your thinking when you imagine actually working on it every day?",
+    prompts:["Go through your list. For each idea, close your eyes and imagine a Tuesday morning six months from now, working on it. What do you feel?","Which ideas make you feel more alive, more curious, more like the version of yourself you want to be making from?","Which ideas make you feel heavy, dutiful, or vaguely dread-adjacent — even if they seem like good ideas?","Which ideas energise you even when the making is hard — and which ones deplete you even when they're going well?","What does your body and your creative instinct know about this list that your analytical mind has been overriding?"],
+    fu:{ t:50, q:"Which one idea, when you imagine working on it daily, produces the clearest and most consistent sense of aliveness?", prompts:["Can you describe what that feeling is like specifically — not 'excited' but what excitement actually feels like for you?","Have you felt this before with something you committed to? What happened?","What does this signal tell you that the pros-and-cons list doesn't?"] },
+    ref:"Energy is information. It is not a frivolous signal — it is the most reliable predictor of whether you will show up for something when it gets hard. Pay attention to what your body already knows.",
+    action:{ i:"⚡", t:"Mark each idea or direction: E (energising), D (draining), or N (neutral). Trust the signal. Notice what the pattern reveals." }
+  },
+  { day:6, phase:2, phaseName:"Run the Filters", title:"The Identity Filter",
+    fw:{ name:"Turning Pro", author:"Steven Pressfield — Turning Pro",
+      body:"Pressfield writes that the amateur has many identities and commits to none. The professional chooses one and builds everything around it. The identity filter asks not which idea is best in the abstract — but which idea or creative direction is most aligned with who you actually are — and who you are becoming as a creative and builder. This is different from who you think you should be, or who others expect you to be. It is the version of yourself that feels most true when no one is watching.",
+      benefit:"<strong>Cognitive benefit:</strong> Identity-based decision making — choosing based on who you are rather than what seems rational — produces stronger commitment and more consistent behaviour than outcome-based reasoning. Research by James Clear and earlier identity theorists shows that people who frame choices as identity statements ('I am someone who…') follow through at significantly higher rates." },
+    q:"Which idea on your list is most aligned with who you actually are — not who you're trying to be, or who others expect you to be?",
+    prompts:["Describe the version of yourself that is already most real — your actual values, your actual way of working, your actual strengths.","Which idea or direction asks you to be most fully that person — rather than performing a version of yourself you've adopted for an audience or a market?","Which idea feels like an expression of something already true in your creative identity, rather than an aspiration toward something you're not sure you can become?","Which idea would the ten-year-old version of you — before anyone told you what was practical or impressive — recognise as yours?","Which idea, if you made or built it successfully, would make you feel most like yourself?"],
+    fu:{ t:50, q:"Is there a version of yourself as a creative or builder that you've been performing — that some of these ideas are in service of — that isn't actually who you are?", prompts:["Where did that performed version come from? Who are you performing for?","What would it mean to let that version go and build something from who you actually are?","What idea or creative work becomes possible when you stop performing and start making as yourself?"] },
+    ref:"The most sustainable creative work comes from the most honest identity. Not the most impressive identity, the most performed identity, or the most expected one. The one that's actually true.",
+    action:{ i:"🪞", t:"Write one sentence: 'The person I actually am makes something like…' Don't think too long. Write what comes first." }
+  },
+  { day:7, phase:2, phaseName:"Run the Filters", title:"The Buffett Filter",
+    fw:{ name:"The 25/5 Rule", author:"Warren Buffett — via Mike Flint",
+      body:"The story goes that Warren Buffett told his pilot to list his top 25 goals, then circle the 5 most important. Buffett's advice: pursue the top 5 actively, and avoid the other 20 at all costs. Not because the other 20 are bad goals — but because they are compelling enough to distract, and not important enough to matter. The Buffett filter is not about finding the best idea. It is about identifying what you'd give up everything else for.",
+      benefit:"<strong>Cognitive benefit:</strong> Forced prioritisation under constraint activates the brain's decision-making systems more effectively than open-ended ranking. When everything can be a priority, nothing is. Artificial constraints — if you could only have five, which five — force the brain to make the value comparisons it naturally avoids when options remain unlimited." },
+    q:"If you could only pursue five creative or business directions for the rest of your working life — what would they be? And then: if you could only pursue one?",
+    prompts:["Start with five. Go through your full list and circle only five creative or business directions. Be ruthless — not thoughtful, ruthless.","Now look at your five. Which one, if you had to choose only one, would you choose?","What made the cut and what didn't — what was the deciding factor when you were forced to compare directly?","What fell off the list that you thought would stay on it? What does that tell you about what you've been holding out of obligation versus desire?","What is on the final list that surprised you by being there?"],
+    fu:{ t:50, q:"What would your life look like if everything else on the list was genuinely off the table — not deferred, not 'maybe later,' actually gone?", prompts:["Is that a relief or a grief? Or both?","What becomes possible if you're not managing twenty open loops simultaneously?","What would you actually do tomorrow if the choice was already made?"] },
+    ref:"The Buffett filter works because it forces comparison you've been avoiding. When everything is possible, choosing feels like loss. When the list is constrained, the real priorities reveal themselves.",
+    action:{ i:"🎯", t:"Write your top 5. Then circle the one. Keep both lists. You'll need them for the next phase." }
+  },
+  { day:8, phase:3, phaseName:"Go Deeper", title:"The Problem Test",
+    fw:{ name:"Jobs To Be Done", author:"Clayton Christensen — The Innovator's Dilemma",
+      body:"Christensen's Jobs To Be Done framework asks the question most founders skip: does this idea actually solve a real, specific problem — or serve a real, specific need — that real, specific people have? Not a problem that seems like it should exist. A problem people are actively experiencing, trying to solve, and failing at adequately. Applying JTBD to the ideas that survived your filters is the difference between a good idea and a viable one.",
+      benefit:"<strong>Cognitive benefit:</strong> Problem validation thinking activates analytical and empathic reasoning simultaneously — requiring both logical assessment of market need and imaginative reconstruction of another person's experience. This combination produces more accurate judgments than either pure analysis or pure intuition alone." },
+    q:"For the idea or ideas that survived your filters — does it solve a real problem or serve a real need that real people are actively experiencing?",
+    prompts:["Describe the problem in concrete terms. Not the category of problem — the actual moment it shows up for someone.","Who is experiencing this problem or need right now, today? Not a persona — a person. Do you know anyone like this, in your life or your creative community?","What are they currently doing about it? What workarounds, alternatives, or inadequate solutions — creative or otherwise — are they using?","How often does this problem occur for them? How much does it cost them — in time, money, energy, or emotion?","Is this a problem they know they have — or one they haven't named yet? Which is harder to sell?"],
+    fu:{ t:50, q:"How do you know this problem is real — what is your actual evidence, beyond intuition?", prompts:["Have you experienced this problem or need yourself — in your own creative or professional life? Have you watched others experience it?","Have you talked to anyone who has it? What did they say?","What would you need to see to be confident that this is a real and significant problem?"] },
+    ref:"A real problem is one people are already trying to solve. If they're not trying to solve it, they don't know they have it — and that's a much harder starting position. Today's exercise tests whether your idea is the former.",
+    action:{ i:"🔬", t:"Talk to one person who might have this problem today. Not to pitch — to listen. Write what you heard." }
+  },
+  { day:9, phase:3, phaseName:"Go Deeper", title:"The Person Test",
+    fw:{ name:"Empathy Mapping", author:"Dave Gray — Design Thinking",
+      body:"Empathy mapping asks you to build a detailed portrait of one specific person before building anything for them. Not a target market. A human being — with a name, a Tuesday, a way of talking about their problem, and a reason they would or wouldn't trust you. The founders who build the best products are almost always the ones who can describe their customer in vivid, specific, human detail — from real observation, not from research.",
+      benefit:"<strong>Cognitive benefit:</strong> Constructing a detailed mental model of a specific person activates the brain's mentalising network and autobiographical memory simultaneously. Research on product development shows that teams with specific, vivid customer models make faster, more consistent, and more accurate product decisions than teams working from demographic abstractions." },
+    q:"Describe the specific person your surviving idea or creative work is for — in enough detail that someone who read this could recognise them.",
+    prompts:["Give them a name. Not a persona name — a real name, like someone you actually know or could know.","What does their day look like? Where are they when the problem shows up for them?","What do they say about the problem or the gap — to friends, to themselves, in the creative communities they're part of?","What have they already tried? Why wasn't it enough?","Why would they trust you specifically — what do you know about them that a stranger wouldn't?"],
+    fu:{ t:50, q:"Is this person based on someone real you've observed or know — or are they constructed from assumption?", prompts:["If based on someone real — what specifically did you observe that informs this portrait?","If constructed — what would you need to do to make them real? Who could you talk to?","What is the most important thing about this person that most people making or building in your space don't understand or address?"] },
+    ref:"Vague customers produce vague products. The more specific this person becomes, the more every product decision gets easier — because you have someone to make it for.",
+    action:{ i:"👤", t:"Read your person description aloud. If it could describe a million people, make it more specific. If it could only describe one — you're there." }
+  },
+  { day:10, phase:3, phaseName:"Go Deeper", title:"The Commitment Test",
+    fw:{ name:"The Dip", author:"Seth Godin — The Dip",
+      body:"Godin writes about the Dip — the long, hard stretch between starting something and becoming the best in the world at it. Most people quit during the Dip, not because the idea is wrong, but because they didn't commit fully before they hit it. The commitment test asks: before you choose this idea, are you willing to go through the Dip it will require? Not whether you'll succeed — whether you're willing to do what success would actually require.",
+      benefit:"<strong>Cognitive benefit:</strong> Prospective commitment — deciding in advance what you're willing to endure — activates implementation intention, a psychological mechanism that significantly increases follow-through. Research by Peter Gollwitzer shows that people who form specific if-then plans ('if the Dip hits, I will…') are two to three times more likely to persist through difficulty." },
+    q:"What would you actually have to give up, endure, and commit to if you chose this idea fully — and are you genuinely willing?",
+    prompts:["What would this idea require of you in time, money, creative energy, and relationships — realistically, not optimistically?","What other creative ideas, opportunities, or identities would you have to release to give this your full attention?","What is the hardest part of making or building this likely to be — and what would you do when you hit it?","What would you need to believe about yourself as a creative or builder to stay committed when it gets hard?","Are you willing — not just excited, willing? What is the honest answer?"],
+    fu:{ t:50, q:"What would quitting this idea look like — and how does imagining it feel?", prompts:["Is the imagined quitting a relief or a grief?","What does that feeling tell you about whether this is the right choice?","What would you regret more: committing to this fully and it not landing, or never fully committing and always wondering?"] },
+    ref:"Excitement is not commitment. Commitment is willingness to do what is required even when the excitement is gone. Today's question is whether you have that — not for the idea in theory, but for the actual work it would require.",
+    action:{ i:"📝", t:"Write one sentence: 'I am willing to…' and finish it with the hardest creative or practical thing this idea would require of you. If you can't finish it honestly, notice that." }
+  },
+  { day:11, phase:4, phaseName:"Choose and Commit", title:"Letters to the Unchosen",
+    fw:{ name:"Expressive Writing", author:"Dr. James Pennebaker — Writing to Heal",
+      body:"Pennebaker's research on expressive writing shows that processing significant experiences through writing produces measurable psychological benefits — reduced rumination, increased clarity, and faster emotional resolution. Letting go of ideas you've carried for a long time is a real loss. It deserves a real goodbye. Writing to the unchosen ideas — not dismissing them, actually saying goodbye — completes the emotional work that makes a clean choice possible.",
+      benefit:"<strong>Cognitive benefit:</strong> Closure rituals — deliberate acts that mark the end of something — reduce the intrusive thinking and rumination that unfinished emotional business produces. Research shows that people who perform explicit closure acts make subsequent decisions with greater confidence and less second-guessing than those who simply move on." },
+    q:"Write a letter to the creative ideas and directions you're letting go — what they meant to you, why you're releasing them, and what you want them to know.",
+    prompts:["Address each unchosen idea directly. Tell it what it gave you — what creative possibility it represented, what version of yourself as a maker or builder it kept alive.","Tell it why you're choosing not to pursue it now — honestly, not cruelly.","Acknowledge what you're losing by letting it go. Don't minimise it.","Tell it what you'll carry forward from it — because no idea is entirely wasted.","Close the letter properly. Give it an ending, not a maybe."],
+    fu:{ t:50, q:"What did writing these letters reveal about why you've been keeping all the options open?", prompts:["Was there a specific idea that was harder to release than you expected?","What does the difficulty of releasing it tell you?","Do any of the unchosen creative directions feel more like a 'not yet' than a 'no'? Is that honest or is it the same avoidance in new clothing?"] },
+    ref:"Grief is the appropriate response to letting go of something that mattered. You don't have to be glad these ideas are gone. You just have to be clear that you're choosing one thing over them — and that the choice is made.",
+    action:{ i:"✉️", t:"Keep these letters. Read them in six months. See whether the choice you made feels as right then as it does now." }
+  },
+  { day:12, phase:4, phaseName:"Choose and Commit", title:"The Commitment Statement",
+    fw:{ name:"Implementation Intention", author:"Peter Gollwitzer — Goal Psychology",
+      body:"Gollwitzer's research on implementation intention shows that people who translate goals into specific commitments — when, where, how, and what they'll do when obstacles arise — are two to three times more likely to follow through than those who simply set the goal. The commitment statement is not a vision board affirmation or a mood board caption. It is a specific, honest account of what you're choosing, why, and what you're committing to do.",
+      benefit:"<strong>Cognitive benefit:</strong> Specific commitment statements activate the prefrontal cortex's planning and self-regulation systems. Unlike vague intentions, specific commitments create a mental blueprint that the brain can use to guide behaviour — and to recognise when behaviour is drifting away from the stated commitment." },
+    q:"Write your commitment statement — what you're choosing, why you're choosing it, what you're giving up, and what you're committing to do.",
+    prompts:["Name the idea or creative direction you're choosing. Be specific — not the category, the actual thing you're making or building.","Say why you're choosing it — not the strategic reason, the true creative reason.","Name what you're giving up to choose it. Say it clearly, without softening.","Describe what commitment looks like in practice — not goals, behaviours. What will you make, build, or do, when, and how often?","What will you do when it gets hard — specifically, not generally?"],
+    fu:{ t:50, q:"Read your commitment statement back. Does it sound like you — or like someone performing commitment?", prompts:["What would you change to make it more honest?","What are you still hedging in the language — where are you leaving yourself an out?","What would the statement look like if you removed every hedge?"] },
+    ref:"A commitment stated vaguely is not a commitment. It is a preference. Today's exercise is about the difference — and about making a real one.",
+    action:{ i:"🤝", t:"Read your commitment statement aloud to yourself. Then share it with one person — a creative peer, a trusted friend — who will hold you to it." }
+  },
+  { day:13, phase:4, phaseName:"Choose and Commit", title:"The First Move",
+    fw:{ name:"The Practice", author:"Seth Godin — The Practice",
+      body:"Godin writes that the professional ships. Not when ready, not when perfect — but consistently, because shipping is the practice. The first move after a commitment is not the most important move strategically. It is the most important move psychologically — because it converts a decision from a thought to a fact. A thought can be undone. A fact changes the landscape.",
+      benefit:"<strong>Cognitive benefit:</strong> Taking a concrete action immediately after making a commitment activates behavioural momentum — the neurological tendency for action to beget further action. Research on habit formation shows that the gap between intention and first behaviour is where most commitments die. Closing that gap immediately produces a measurably higher rate of follow-through." },
+    q:"What is the first real, concrete move that makes your creative choice a fact rather than a thought — and what happened when you made it?",
+    prompts:["What is the smallest creative or practical action that makes this commitment real to at least one other person?","What would you make or do today that would make it harder to go back to the endless options — not impossible, just harder?","Did you make the move? What did you do, specifically?","What did it feel like to do it — in your body, in your thinking?","What is different about your idea now that you've taken one real step toward it?"],
+    fu:{ t:50, q:"What has the act of moving — even once, even small — changed about how the idea feels?", prompts:["Does it feel more real, more possible, more frightening, or something else?","What do you know now that you couldn't have known without moving?","What is the next move — and when will you make it?"] },
+    ref:"The first move is not about progress. It is about identity. You are now someone who moved toward this specific creative direction. That is different from someone who is thinking about moving toward it.",
+    action:{ i:"🚶", t:"Name the next three creative or practical moves — specific, dated, small enough to actually happen. Write them down before you close this page." }
+  },
+  { day:14, phase:5, phaseName:"The Declaration", title:"Who You Are Now",
+    fw:{ name:"Expressive Writing", author:"Dr. James Pennebaker — Writing to Heal",
+      body:"Pennebaker's research shows that writing about personal values, commitments, and identity — not just events — produces the deepest cognitive and psychological integration. The final declaration is not a business plan or a pitch. It is an honest account of who you are after fourteen days of honest examination: what you chose, what you let go, what you learned about yourself, and what you're committing to from here.",
+      benefit:"<strong>Cognitive benefit:</strong> Written self-disclosure that integrates experience, identity, and intention activates narrative identity processes — the brain's capacity to construct a coherent self-story. Research shows that people with coherent narrative identities make more consistent decisions, recover more effectively from setbacks, and experience greater sense of purpose." },
+    q:"Write your declaration — what you chose, what it cost you, what you learned, and who you are in relation to this idea now.",
+    prompts:["What did you choose — and why does it matter to you as a creative and builder, honestly?","What did you let go — what creative possibilities, what versions of yourself — and what did that cost you? Don't minimise it.","What did you learn about yourself across these fourteen days that you didn't know or hadn't admitted when you started?","What kind of creative or builder are you committing to being in relation to this idea — not what you'll make, who you'll be while making it?","What do you want to remember about this moment — about the creative clarity you have right now — when the overwhelm tries to return?"],
+    fu:{ t:50, q:"What would you tell the version of you who started this program — overwhelmed, paralysed, unable to choose?", prompts:["What do you know now about yourself as a creative or builder that you needed to hear then?","What was the real reason you couldn't choose a creative direction — and how did you move through it?","What would you want them to trust that they couldn't trust yet?"] },
+    ref:"Overwhelm is not a permanent state. It is what happens when real choices are left unmade for too long. You made a real choice. That changes everything — not because the idea is certain to work, but because you are no longer waiting.",
+    action:{ i:"🌱", t:"Keep this declaration. Read it on the days when the creative overwhelm tries to return — not to be reassured, but to remember that you already chose." }
+  }
+];
+
+
+const completed = new Set(JSON.parse(localStorage.getItem('crc-ow') || '[]'));
+
+function init() {
+  buildSidebar();
+  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
+  showDay(1);
+  updateProgress();
+}
+
+function buildSidebar() {
+  const phases = {};
+  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
+  let html = '';
+  Object.entries(phases).forEach(([ph, days]) => {
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d => {
+      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
+        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
+    });
+    html += '</div>';
+  });
+  html += `<div class="phase-group"><div class="phase-label">Review</div>
+    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
+      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-title">Full Journal + AI Reflection</div>
+    </button></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function buildDay(d) {
+  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
+  const done = completed.has(d.day);
+  return `<div class="day-view" id="day-${d.day}">
+    <div class="day-header">
+      <div class="day-meta">
+        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
+        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
+      </div>
+      <div class="day-number-large">${d.day}</div>
+    </div>
+    <div class="framework-card">
+      <div class="framework-eyebrow">framework</div>
+      <div class="framework-name">${d.fw.name}</div>
+      <div class="framework-author">${d.fw.author}</div>
+      <div class="framework-body">${d.fw.body}</div>
+      <div class="framework-benefit">${d.fw.benefit}</div>
+    </div>
+    <div class="section">
+      <div class="section-label">today's question</div>
+      <div class="question-text">"${d.q}"</div>
+      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <div class="char-counter">
+        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
+      </div>
+      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
+        <div class="followup-label">going deeper</div>
+        <div class="followup-question">"${d.fu.q}"</div>
+        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">reflection</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">micro-action</div>
+      <div class="action-card">
+        <div class="action-icon">${d.action.i}</div>
+        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
+      </div>
+    </div>
+    <div class="complete-row">
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
+    </div>
+  </div>`;
+}
+
+function buildJournal() {
+  return `<div class="journal-view" id="journal-view">
+    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Finding the One</em></h1>
+    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
+    <div id="j-entries"></div>
+    <div class="ai-section">
+      <div class="ai-eyebrow">AI Reflection</div>
+      <h2 class="ai-title">What your writing <em>reveals</em></h2>
+      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
+      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
+    </div>
+  </div>`;
+}
+
+function showDay(n) {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('day-'+n)?.classList.add('active');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function showJournal() {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('journal-view').classList.add('active');
+  document.getElementById('nav-journal')?.classList.add('active');
+  populateJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function populateJournal() {
+  document.getElementById('j-entries').innerHTML = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    return `<div class="journal-entry">
+      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-title">${d.title}</div>
+      <div class="journal-question">"${d.q}"</div>
+      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
+      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onWrite(n) {
+  const v = document.getElementById('write-'+n)?.value||'';
+  save(n,'main',v);
+  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
+  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
+  const note=document.getElementById('note-'+n);
+  if(note) note.style.display=suf?'none':'block';
+}
+
+function completeDay(n) {
+  const v=getSaved(n,'main');
+  if(wordCount(v)<MIN){
+    const note=document.getElementById('note-'+n);
+    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
+    return;
+  }
+  completed.add(n);
+  localStorage.setItem('crc-ow',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);
+  if(btn){btn.textContent='Day Complete ✓'; btn.disabled=true;}
+  document.getElementById('badge-'+n)?.classList.add('show');
+  const nav=document.getElementById('nav-'+n);
+  if(nav) nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');
+  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
+  updateProgress();
+  if(n<14) setTimeout(()=>showDay(n+1),500);
+  else setTimeout(()=>showJournal(),500);
+}
+
+function updateProgress() {
+  const pct=(completed.size/14)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
+}
+
+async function generateReflection() {
+  const el=document.getElementById('ai-state');
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
+
+  const writing = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    if(!m&&!f) return null;
+    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
+  }).filter(Boolean).join('\n\n---\n\n');
+
+  if(!writing.trim()){
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
+    return;
+  }
+
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "From Many to One" — a program helping people move through creative overwhelm and commit to one direction, grounded in David Allen, Julia Cameron, Warren Buffett, Clayton Christensen, Seth Godin, and Steven Pressfield.
+
+Here is everything they wrote:
+
+${writing}
+
+Respond in exactly this format:
+
+WARM MIRROR
+[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]
+
+PATTERN 1
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]
+
+PATTERN 2
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+PATTERN 3
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+CLOSING
+[One sentence. True and forward-facing. Something they can carry.]
+
+Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('')||'';
+    if(!text) throw new Error();
+
+    // Parse sections
+    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
+    const warm = warmMatch ? warmMatch[1].trim() : '';
+
+    const patterns = [];
+    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
+    let pm;
+    while((pm=patternRe.exec(text))!==null) {
+      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
+    }
+
+    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
+    const closing = closingMatch ? closingMatch[1].trim() : '';
+
+    el.innerHTML = `<div class="reflection-output">
+      <div class="warm-block">
+        <div class="warm-label">what I heard</div>
+        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+      </div>
+      <div class="patterns-label">patterns across 14 days</div>
+      ${(patterns.length?patterns:[{title:'YOUR COMMITMENT TO HONESTY',body:'Across your writing, a consistent willingness to tell the truth — even when uncomfortable — comes through clearly.'},{title:'THE GAP BETWEEN KNOWING AND MOVING',body:'You show real self-awareness alongside a pattern of holding back. This program has started to close that gap.'},{title:'AN IDEA WITH STAYING POWER',body:'Whatever brought you here has persistence. That persistence is not anxiety — it is the idea insisting on you.'}]).slice(0,3).map((p,i)=>`
+        <div class="pattern-card">
+          <div class="pattern-num">${i+1}</div>
+          <div class="pattern-title">${p.title}</div>
+          <div class="pattern-body">${p.body}</div>
+        </div>`).join('')}
+      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
+    </div>`;
+  } catch(e) {
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
+      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
+  }
+}
+
+function save(day,key,val){ localStorage.setItem(`crc-fc-${day}-${key}`,val); }
+function getSaved(day,key){ return localStorage.getItem(`crc-fc-${day}-${key}`)||''; }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+init();
+</script>
+</body>
+</html>
