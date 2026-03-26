@@ -48,9 +48,8 @@ export default function Dashboard() {
         .single();
 
       const mp = profile?.matched_program ?? null;
-      const name = profile?.username
-        ?? (user as Record<string, unknown> & { user_metadata?: Record<string, string> })?.user_metadata?.username
-        ?? null;
+      const meta = (user as unknown as { user_metadata?: Record<string, string> }).user_metadata;
+      const name = profile?.username ?? meta?.username ?? null;
       if (name) setFirstName(name.split(" ")[0]);
       setMatchedProgram(mp);
 
