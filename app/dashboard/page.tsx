@@ -36,7 +36,7 @@ export default function Dashboard() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        window.location.href = "/auth";
+        window.location.href = "/";
         return;
       }
       setUser(user);

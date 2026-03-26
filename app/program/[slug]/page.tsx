@@ -27,7 +27,7 @@ export default function ProgramPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/auth");
+        router.push("/");
         return;
       }
 

@@ -71,6 +71,11 @@ export default function Home() {
   const [cohortWaitlist, setCohortWaitlist] = useState(false);
   const [signupError, setSignupError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [signInError, setSignInError] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
   const router = useRouter();
   const cursorRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -105,6 +110,25 @@ export default function Home() {
       cancelAnimationFrame(raf);
     };
   }, []);
+
+  const handleSignIn = async () => {
+    if (!signInEmail || !signInPassword) {
+      setSignInError("Please enter your email and password.");
+      return;
+    }
+    setSigningIn(true);
+    setSignInError("");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: signInEmail,
+      password: signInPassword,
+    });
+    if (error) {
+      setSignInError(error.message);
+      setSigningIn(false);
+      return;
+    }
+    router.push("/dashboard");
+  };
 
   const go = (n: number) => {
     setScreen(n);
@@ -260,7 +284,14 @@ export default function Home() {
         <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase" }}>
           creativeresetclub
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+          <button
+            onClick={() => setShowSignIn(true)}
+            style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", cursor: "none", padding: 0 }}
+          >
+            sign in
+          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} style={{
               width: 7, height: 7, borderRadius: "50%",
@@ -272,8 +303,27 @@ export default function Home() {
               transition: "all 0.3s"
             }} />
           ))}
+          </div>
         </div>
       </nav>
+
+      {/* SIGN IN MODAL */}
+      {showSignIn && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,3,50,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#f4f2ee", borderRadius: 24, padding: "40px 44px", maxWidth: 400, width: "100%" }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#000332", marginBottom: 6 }}>welcome back.</h2>
+            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", marginBottom: 24 }}>sign in to access your program.</p>
+            {signInError && <p style={{ fontSize: 13, color: "#ff9090", marginBottom: 14 }}>{signInError}</p>}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input type="email" value={signInEmail} onChange={e => setSignInEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none" }} />
+              <input type="password" value={signInPassword} onChange={e => setSignInPassword(e.target.value)} placeholder="password" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none" }} />
+              <button onClick={handleSignIn} disabled={signingIn} style={{ background: "#000332", color: "#f4f2ee", border: "none", padding: "16px 28px", borderRadius: 100, fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: signingIn ? 0.6 : 1 }}>
+                {signingIn ? "signing in..." : "sign in"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
