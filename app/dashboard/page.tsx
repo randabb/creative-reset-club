@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -83,6 +84,63 @@ export default function Dashboard() {
   const matched = matchedProgram && programs[matchedProgram] ? programs[matchedProgram] : null;
   const otherPrograms = Object.entries(programs).filter(([id]) => id !== matchedProgram);
 
+  const sidebarContent = (
+    <>
+      <div style={{ padding: "0 28px", marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase", color: "#f4f2ee" }}>
+          creativeresetclub
+        </div>
+        <button
+          className="drawer-close"
+          onClick={() => setMenuOpen(false)}
+          style={{ background: "none", border: "none", color: "rgba(244,242,238,0.5)", fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1 }}
+        >
+          ✕
+        </button>
+      </div>
+
+      <div style={{ padding: "0 16px" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)", padding: "0 12px", marginBottom: 10 }}>
+          other programs
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {otherPrograms.map(([id, p]) => (
+            <a
+              key={id}
+              href={`/program/${id}`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                display: "block", padding: "10px 12px",
+                borderRadius: 10, textDecoration: "none",
+                transition: "background 0.2s",
+              }}
+            >
+              <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(244,242,238,0.65)" }}>{p.title}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      <div style={{ padding: "0 28px" }}>
+        <p style={{ fontSize: 12, color: "rgba(244,242,238,0.35)", marginBottom: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</p>
+        <button
+          onClick={signOut}
+          style={{
+            background: "none", border: "1px solid rgba(244,242,238,0.15)",
+            padding: "8px 18px", borderRadius: 100,
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 11,
+            fontWeight: 700, color: "rgba(244,242,238,0.5)", cursor: "pointer",
+            width: "100%",
+          }}
+        >
+          sign out
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <>
       <style>{`
@@ -93,66 +151,84 @@ export default function Dashboard() {
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { background:#f4f2ee; font-family:'Codec Pro',sans-serif; }
+
+        .sidebar-desktop {
+          width: 260px; flex-shrink: 0;
+          background: #000332;
+          display: flex; flex-direction: column;
+          padding: 32px 0;
+          position: fixed; top: 0; left: 0; bottom: 0;
+        }
+        .sidebar-desktop .drawer-close { display: none; }
+        .hamburger-btn { display: none; }
+        .main-content { margin-left: 260px; }
+
+        .drawer-backdrop {
+          position: fixed; inset: 0; z-index: 300;
+          background: rgba(0,3,50,0.5);
+          opacity: 0; pointer-events: none;
+          transition: opacity 0.25s ease;
+        }
+        .drawer-backdrop.open {
+          opacity: 1; pointer-events: auto;
+        }
+        .drawer-panel {
+          position: fixed; top: 0; left: 0; bottom: 0;
+          width: 280px; z-index: 301;
+          background: #000332;
+          display: flex; flex-direction: column;
+          padding: 32px 0;
+          transform: translateX(-100%);
+          transition: transform 0.3s ease;
+        }
+        .drawer-panel.open {
+          transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+          .sidebar-desktop { display: none; }
+          .hamburger-btn { display: block; }
+          .main-content { margin-left: 0; }
+        }
       `}</style>
 
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
-        {/* SIDEBAR */}
-        <aside style={{
-          width: 260, flexShrink: 0,
-          background: "#000332",
-          display: "flex", flexDirection: "column",
-          padding: "32px 0",
-          position: "fixed", top: 0, left: 0, bottom: 0,
-        }}>
-          <div style={{ padding: "0 28px", marginBottom: 48 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase", color: "#f4f2ee" }}>
-              creativeresetclub
-            </div>
-          </div>
-
-          <div style={{ padding: "0 16px" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)", padding: "0 12px", marginBottom: 10 }}>
-              other programs
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {otherPrograms.map(([id, p]) => (
-                <a
-                  key={id}
-                  href={`/program/${id}`}
-                  style={{
-                    display: "block", padding: "10px 12px",
-                    borderRadius: 10, textDecoration: "none",
-                    transition: "background 0.2s",
-                  }}
-                >
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(244,242,238,0.65)" }}>{p.title}</p>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          <div style={{ padding: "0 28px" }}>
-            <p style={{ fontSize: 12, color: "rgba(244,242,238,0.35)", marginBottom: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</p>
-            <button
-              onClick={signOut}
-              style={{
-                background: "none", border: "1px solid rgba(244,242,238,0.15)",
-                padding: "8px 18px", borderRadius: 100,
-                fontFamily: "'Codec Pro',sans-serif", fontSize: 11,
-                fontWeight: 700, color: "rgba(244,242,238,0.5)", cursor: "pointer",
-                width: "100%",
-              }}
-            >
-              sign out
-            </button>
-          </div>
+        {/* DESKTOP SIDEBAR */}
+        <aside className="sidebar-desktop">
+          {sidebarContent}
         </aside>
 
+        {/* MOBILE DRAWER BACKDROP */}
+        <div
+          className={`drawer-backdrop ${menuOpen ? "open" : ""}`}
+          onClick={() => setMenuOpen(false)}
+        />
+
+        {/* MOBILE DRAWER PANEL */}
+        <aside className={`drawer-panel ${menuOpen ? "open" : ""}`}>
+          {sidebarContent}
+        </aside>
+
+        {/* MOBILE HAMBURGER */}
+        <button
+          className="hamburger-btn"
+          onClick={() => setMenuOpen(true)}
+          style={{
+            position: "fixed", top: 20, left: 20, zIndex: 200,
+            background: "#000332", color: "#f4f2ee",
+            border: "none", borderRadius: 12,
+            width: 44, height: 44,
+            fontSize: 20, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Codec Pro',sans-serif",
+          }}
+        >
+          ☰
+        </button>
+
         {/* MAIN CONTENT */}
-        <main style={{ marginLeft: 260, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 64px 100px", minHeight: "100vh" }}>
+        <main className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 64px 100px", minHeight: "100vh" }}>
 
           <h1 style={{ fontSize: "clamp(24px,3vw,34px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#000332", marginBottom: 36, whiteSpace: "nowrap" }}>
             welcome{firstName ? `, ${firstName.toLowerCase()}` : ""}.
