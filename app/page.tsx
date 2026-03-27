@@ -278,9 +278,13 @@ export default function Home() {
           transition:all .12s ease;
         }
         .stickman-img { width:220px; }
+        .stat-row { display:flex; gap:32px; }
+        .card-row { display:flex; gap:16px; }
         @media (max-width:768px) {
           .stickman-img { width:130px; }
           .hero-heading { font-size:1.9rem !important; }
+          .stat-row { flex-direction:column; gap:24px; }
+          .card-row { flex-direction:column; gap:12px; }
         }
       `}</style>
 
@@ -321,14 +325,12 @@ export default function Home() {
 
       {/* PILL BADGE */}
       {screen === 1 && (
-        <div style={{ paddingTop: 80, paddingBottom: 0, position: "relative", zIndex: 50, textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, paddingBottom: 0, position: "relative", zIndex: 50 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "#000332", color: "#f4f2ee",
             padding: "8px 16px", borderRadius: 100,
             fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-            width: "fit-content", maxWidth: "fit-content",
-            margin: "0 auto"
           }}>
             <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
             backed by behavioral science + somatic practice
@@ -357,7 +359,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 20, minHeight: "100vh", position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -411,7 +413,39 @@ export default function Home() {
               <span style={{ width: 20, height: 20, background: "#ff9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
             </button>
 
-            <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)", paddingBottom: 48 }}>takes 2 minutes · free to start</p>
+            <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>takes 2 minutes · free to start</p>
+          </div>
+
+          {/* STAT ROW */}
+          <div className="stat-row" style={{ position: "relative", zIndex: 1, marginTop: 64, maxWidth: 740 }}>
+            {[
+              { num: "42%", desc: "drop in creative thinking since AI" },
+              { num: "1 in 2", desc: "people say AI dulls their creativity" },
+              { num: "1 daily practice.", desc: "use it or lose it." },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1 }}>
+                <p style={{ fontSize: "clamp(24px, 3vw, 32px)", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{s.num}</p>
+                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", lineHeight: 1.5 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* TWO-CARD PREVIEW */}
+          <div className="card-row" style={{ position: "relative", zIndex: 1, marginTop: 48, maxWidth: 740, paddingBottom: 80 }}>
+            <div style={{ flex: 1, background: "#000332", borderRadius: 20, padding: "28px 32px", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "radial-gradient(circle, rgba(255,144,144,0.12) 0%, transparent 70%)", borderRadius: "50%" }} />
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 12, position: "relative" }}>today&apos;s prompt</p>
+              <p style={{ fontSize: 15, color: "rgba(244,242,238,0.75)", lineHeight: 1.6, fontStyle: "italic", position: "relative" }}>
+                &ldquo;What would you make if no one was watching and you couldn&apos;t fail?&rdquo;
+              </p>
+            </div>
+            <div style={{ flex: 1, background: "#000332", borderRadius: 20, padding: "28px 32px", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "radial-gradient(circle, rgba(230,246,255,0.15) 0%, transparent 70%)", borderRadius: "50%" }} />
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 12, position: "relative" }}>14-day programs</p>
+              <p style={{ fontSize: 15, color: "rgba(244,242,238,0.75)", lineHeight: 1.6, position: "relative" }}>
+                structured creative programs for when you&apos;re ready to go deeper.
+              </p>
+            </div>
           </div>
         </div>
       )}
