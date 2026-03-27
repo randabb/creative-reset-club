@@ -449,10 +449,12 @@ function setVoiceStatus(day, text) {
 
 function onRecordingDone(day) {
   var blob = new Blob(recChunks[day], { type: 'audio/webm' });
+  console.log('1. Recording stopped, blob size:', blob.size);
   setVoiceStatus(day, 'saving your voice note...');
   var reader = new FileReader();
   reader.onloadend = function() {
     var base64 = reader.result.split(',')[1];
+    console.log('2. Base64 encoded, length:', base64.length, '— sending to parent...');
     window.parent.postMessage({ type: 'uploadVoiceNote', dayNumber: day, audioBase64: base64 }, '*');
   };
   reader.readAsDataURL(blob);
@@ -564,12 +566,13 @@ init = function() {
       if (type === "uploadVoiceNote") {
         const { dayNumber, audioBase64 } = event.data;
         try {
+          console.log("3. Parent received upload message, decoding base64...");
           const byteChars = atob(audioBase64);
           const byteArray = new Uint8Array(byteChars.length);
           for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
           const blob = new Blob([byteArray], { type: "audio/webm" });
+          console.log("4. Blob created, size:", blob.size, "— calling /api/voice...");
 
-          // Progress: uploading
           iframeRef?.contentWindow?.postMessage({ type: "voiceProgress", dayNumber, status: "turning your words into text..." }, "*");
 
           const formData = new FormData();
@@ -579,7 +582,9 @@ init = function() {
           formData.append("dayNumber", String(dayNumber));
 
           const res = await fetch("/api/voice", { method: "POST", body: formData });
+          console.log("5. /api/voice response status:", res.status);
           const result = await res.json();
+          console.log("6. /api/voice result:", result);
 
           iframeRef?.contentWindow?.postMessage({
             type: "voiceNoteResult",
@@ -589,6 +594,7 @@ init = function() {
             error: result.error || null,
           }, "*");
         } catch (err) {
+          console.error("Voice upload error:", err);
           iframeRef?.contentWindow?.postMessage({
             type: "voiceNoteResult",
             dayNumber,
