@@ -38,7 +38,7 @@ export default function ProgramPage() {
         // Fix 1: Sidebar fully opaque background
         html = html.replace(
           '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);',
-          '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3);'
+          '.sidebar-overlay { display:none; position:fixed; top:0; right:0; bottom:0; left:268px; background:rgba(0,0,0,.3);'
         );
         html = html.replace(
           /\.sidebar \{([^}]*?)background:var\(--ink\)/,
