@@ -36,7 +36,16 @@ export default function ProgramPage() {
         let html = await res.text();
 
         // Inject ← Home link at the top of the iframe's existing sidebar
-        const homeLink = `<a href="/dashboard" style="display:block;padding:10px 9px;margin-bottom:16px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'" target="_top">← Home</a>`;
+        const homeLink = `<a href="/dashboard" style="display:block;padding:10px 9px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'" target="_top">← Home</a>`;
+        // Add breathing room below the hamburger on mobile
+        html = html.replace(
+          '.menu-toggle { display:none; position:fixed; top:14px; left:14px;',
+          '.menu-toggle { display:none; position:fixed; top:16px; left:16px;'
+        );
+        html = html.replace(
+          ".main { margin-left:0; padding:52px 18px 80px;",
+          ".main { margin-left:0; padding:64px 18px 80px;"
+        );
         html = html.replace(
           '<div class="sidebar-logo">creative reset club</div>',
           `<div class="sidebar-logo">creative reset club</div>${homeLink}`
