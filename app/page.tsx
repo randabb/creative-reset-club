@@ -278,7 +278,10 @@ export default function Home() {
           transition:all .12s ease;
         }
         .stickman-img { width:220px; }
-        @media (max-width:768px) { .stickman-img { width:130px; } }
+        @media (max-width:768px) {
+          .stickman-img { width:130px; }
+          .hero-heading { font-size:1.9rem !important; }
+        }
       `}</style>
 
       <div ref={cursorRef} className="cursor" />
@@ -359,7 +362,7 @@ export default function Home() {
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16, width: "100%", marginBottom: 16 }}>
-              <h1 style={{
+              <h1 className="hero-heading" style={{
                 flex: 1,
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em"
