@@ -360,8 +360,8 @@ export default function Home() {
               </div>
 
               {/* Two cards */}
-              <div className="card-row-right" style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1, background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+              <div className="card-row-right" style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+                <div style={{ flex: 1, height: "100%", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
                   <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 10 }}>daily exercises</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>
                     morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts
@@ -370,7 +370,7 @@ export default function Home() {
                     A different practice every day. All designed to get you out of your head and onto the page.
                   </p>
                 </div>
-                <div style={{ flex: 1, background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+                <div style={{ flex: 1, height: "100%", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
                   <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 10 }}>why it works</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6 }}>
                     Every exercise is designed to reduce cognitive load, bypass your inner critic, and rebuild the neural pathways that daily AI use quietly erodes.
