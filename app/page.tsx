@@ -228,10 +228,10 @@ export default function Home() {
         .headline-row { display:block; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
-          .hero-heading { font-size:1.75rem !important; }
+          .hero-heading { font-size:1.75rem !important; line-height:1.15 !important; }
           .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
           .hero-left { padding-left:0 !important; }
-          .headline-row { display:flex !important; align-items:center; gap:12px; }
+          .headline-row { display:flex !important; align-items:center; gap:4px; }
           .stickman-mobile { display:block !important; }
           .stickman-desktop { display:none !important; }
           .stat-row-right {
