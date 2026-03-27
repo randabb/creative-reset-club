@@ -68,31 +68,39 @@ export default function ProgramPage() {
           .day-nav-item.locked .day-nav-num { opacity:0.4; }
           .day-nav-item.locked .day-nav-title::after { content:' 🔒'; }
 
-          /* Part 2: Progressive reveal */
-          .writing-prompt { display:none; }
-          .writing-prompt.revealed { display:block; animation:promptFade 0.4s ease forwards; }
-          .writing-prompt:first-child { display:block; }
+          /* Part 2: Progressive reveal with upward drift */
+          .writing-prompt { display:none; opacity:0; }
+          .writing-prompt.revealed { display:block; animation:revealUp 0.4s ease forwards; }
+          .writing-prompt:first-child { display:block; opacity:1; }
           .prompt-next-btn { display:inline-block; margin-top:8px; margin-bottom:4px; background:none; border:none; color:var(--red); font-family:'Codec Pro',sans-serif; font-size:12px; font-weight:700; cursor:pointer; padding:4px 0; letter-spacing:0.04em; }
           .prompt-next-btn:hover { opacity:0.7; }
-          @keyframes promptFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes revealUp { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
 
-          /* Part 3: Writing box personality */
+          /* Part 3: Writing box with smooth expand */
           .writing-area { border:1px solid rgba(26,31,58,0.1) !important; min-height:120px !important; max-height:none !important; transition:border-color 0.2s ease, min-height 0.3s ease; }
+          .writing-area.typing { min-height:220px !important; }
           .writing-area:focus { border-color:rgba(26,31,58,0.25) !important; }
           .writing-area.sufficient { border-color:rgba(122,158,126,0.5) !important; }
           .writing-encouragement { font-size:12px; color:var(--sand-mid); margin-top:6px; font-weight:300; transition:opacity 0.3s ease; }
 
-          /* Part 5: Celebration overlay */
-          .celebration-overlay { position:fixed; inset:0; background:#f5f2ef; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.5s ease; }
+          /* Part 5: Celebration overlay with sequenced animations */
+          .celebration-overlay { position:fixed; inset:0; background:#f5f2ef; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
           .celebration-overlay.show { opacity:1; pointer-events:auto; }
-          .celebration-symbol { font-size:48px; color:var(--red); margin-bottom:20px; }
-          .celebration-heading { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,5vw,42px); font-weight:700; color:var(--ink); margin-bottom:12px; }
-          .celebration-sub { font-size:16px; color:var(--ink-soft); line-height:1.65; max-width:440px; margin-bottom:8px; font-weight:300; }
-          .celebration-note { font-size:12px; color:var(--sand-mid); margin-bottom:32px; }
-          .celebration-btns { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+          .celebration-symbol { font-size:48px; color:var(--red); margin-bottom:20px; opacity:0; transform:scale(0); }
+          .celebration-overlay.show .celebration-symbol { animation:celebScale 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+          .celebration-heading { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,5vw,42px); font-weight:700; color:var(--ink); margin-bottom:12px; opacity:0; transform:translateY(12px); }
+          .celebration-overlay.show .celebration-heading { animation:celebFadeUp 0.4s ease forwards 0.3s; }
+          .celebration-sub { font-size:16px; color:var(--ink-soft); line-height:1.65; max-width:440px; margin-bottom:8px; font-weight:300; opacity:0; transform:translateY(12px); }
+          .celebration-overlay.show .celebration-sub { animation:celebFadeUp 0.4s ease forwards 0.5s; }
+          .celebration-note { font-size:12px; color:var(--sand-mid); margin-bottom:32px; opacity:0; transform:translateY(12px); }
+          .celebration-overlay.show .celebration-note { animation:celebFadeUp 0.4s ease forwards 0.5s; }
+          .celebration-btns { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; opacity:0; }
+          .celebration-overlay.show .celebration-btns { animation:celebFadeUp 0.4s ease forwards 0.7s; }
           .celebration-btn-outline { padding:14px 28px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
           .celebration-btn-filled { padding:14px 28px; border-radius:100px; border:none; background:var(--ink); color:var(--cream); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
           .celebration-btn-filled.disabled { opacity:0.35; cursor:not-allowed; }
+          @keyframes celebScale { 0% { opacity:0; transform:scale(0); } 100% { opacity:1; transform:scale(1); } }
+          @keyframes celebFadeUp { 0% { opacity:0; transform:translateY(12px); } 100% { opacity:1; transform:translateY(0); } }
         `;
         html = html.replace('</style>\n</head>', `${injectedCSS}</style>\n</head>`);
         html = html.replace('</style></head>', `${injectedCSS}</style></head>`);
@@ -237,6 +245,8 @@ function setupWritingEncouragement() {
     ta.parentNode.insertBefore(enc, ta.nextSibling);
     ta.addEventListener('input', function() {
       var wc = ta.value.trim().split(/\\s+/).filter(function(w){return w.length>0}).length;
+      if (wc > 0) ta.classList.add('typing');
+      else ta.classList.remove('typing');
       if (wc === 0) enc.textContent = 'write freely and at length. use the prompts above as guides — not limits.';
       else if (wc <= 30) enc.textContent = 'keep going...';
       else if (wc <= 70) enc.textContent = "you're finding it. stay with it.";
