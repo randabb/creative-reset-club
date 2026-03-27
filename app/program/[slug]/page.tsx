@@ -124,9 +124,10 @@ export default function ProgramPage() {
           .voice-transcript-text { font-size:14px; color:var(--ink); line-height:1.7; font-weight:300; }
           .voice-rerecord { font-size:12px; color:var(--sand-mid); cursor:pointer; background:none; border:none; font-family:'Codec Pro',sans-serif; text-decoration:underline; text-underline-offset:3px; margin-top:10px; display:block; text-align:center; }
           .voice-privacy { font-size:11px; color:var(--sand-mid); text-align:center; margin-top:12px; font-weight:300; }
-          .voice-transcribing { font-size:13px; color:var(--sand-mid); text-align:center; margin-top:12px; }
-          .voice-transcribing::after { content:''; animation:dots 1.5s infinite; }
-          @keyframes dots { 0% { content:''; } 33% { content:'.'; } 66% { content:'..'; } 100% { content:'...'; } }
+          .voice-status { font-size:13px; color:var(--sand-mid); text-align:center; margin-top:12px; opacity:0; animation:fadeStatus 0.3s ease forwards; }
+          .voice-status.visible { opacity:1; }
+          @keyframes fadeStatus { from { opacity:0; } to { opacity:1; } }
+          .voice-retry { font-size:12px; color:var(--red); cursor:pointer; background:none; border:none; font-family:'Codec Pro',sans-serif; text-decoration:underline; text-underline-offset:3px; margin-top:8px; display:block; text-align:center; }
 
           /* Voice consent modal */
           .voice-consent-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -304,12 +305,12 @@ function setupVoiceSections() {
     section.id = 'voice-' + dayId;
     section.innerHTML = '<div class="voice-label">voice reflection</div>' +
       '<div class="voice-heading">Now say it out loud.</div>' +
-      '<div class="voice-sub">You have 2 minutes. Don\\'t read back what you wrote — just talk. What did you actually just discover?</div>' +
+      '<div class="voice-sub">You have 1 minute. Don\\'t read back what you wrote — just talk. What did you actually just discover?</div>' +
       '<div class="voice-controls" id="vc-' + dayId + '">' +
         '<button class="record-btn" id="rec-' + dayId + '" onclick="toggleRecording(' + dayId + ')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="#ff9090" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>' +
         '</button>' +
-        '<div class="voice-timer" id="timer-' + dayId + '">2:00</div>' +
+        '<div class="voice-timer" id="timer-' + dayId + '">1:00</div>' +
         '<div class="voice-bars" id="bars-' + dayId + '" style="display:none">' +
           '<div class="voice-bar" style="height:8px"></div><div class="voice-bar" style="height:12px"></div>' +
           '<div class="voice-bar" style="height:6px"></div><div class="voice-bar" style="height:14px"></div>' +
@@ -395,7 +396,7 @@ async function startRecording(day) {
     var btn = document.getElementById('rec-' + day);
     if (btn) btn.classList.add('recording');
     document.getElementById('bars-' + day).style.display = 'flex';
-    startTimer(day, 120);
+    startTimer(day, 60);
     startWaveform(day);
   } catch(e) {
     var vc = document.getElementById('vc-' + day);
@@ -441,10 +442,14 @@ function startWaveform(day) {
   }, 150);
 }
 
+function setVoiceStatus(day, text) {
+  var result = document.getElementById('vresult-' + day);
+  if (result) result.innerHTML = '<div class="voice-status visible">' + text + '</div>';
+}
+
 function onRecordingDone(day) {
   var blob = new Blob(recChunks[day], { type: 'audio/webm' });
-  var result = document.getElementById('vresult-' + day);
-  if (result) result.innerHTML = '<div class="voice-transcribing">transcribing</div>';
+  setVoiceStatus(day, 'saving your voice note...');
   var reader = new FileReader();
   reader.onloadend = function() {
     var base64 = reader.result.split(',')[1];
@@ -463,29 +468,36 @@ window.addEventListener('message', function(event) {
   if (event.data?.type === 'voiceConsentSaved') {
     voiceConsent = event.data.consent;
   }
+  if (event.data?.type === 'voiceProgress') {
+    setVoiceStatus(event.data.dayNumber, event.data.status);
+  }
   if (event.data?.type === 'voiceNoteResult') {
     var day = event.data.dayNumber;
     var result = document.getElementById('vresult-' + day);
     if (!result) return;
+    var voiceUrl = event.data.url || '';
     if (event.data.transcript) {
       result.innerHTML = '<div class="voice-transcript-card">' +
         '<div class="voice-transcript-label">what you said:</div>' +
         '<div class="voice-transcript-text">' + event.data.transcript + '</div>' +
       '</div>' +
       '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
-    } else if (event.data.error) {
-      result.innerHTML = '<div class="voice-transcribing" style="animation:none">Transcription unavailable — but your voice note is saved.</div>' +
-        '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
     } else {
-      result.innerHTML = '<div class="voice-transcribing" style="animation:none">Voice note saved.</div>' +
+      result.innerHTML = '<div class="voice-status visible">transcription unavailable — but your voice note is saved. you can still continue.</div>' +
+        (voiceUrl ? '<button class="voice-retry" onclick="retryTranscription(' + day + ',\\'' + voiceUrl + '\\')">retry transcription</button>' : '') +
         '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
     }
   }
 });
 
+function retryTranscription(day, voiceUrl) {
+  setVoiceStatus(day, 'retrying transcription...');
+  window.parent.postMessage({ type: 'retryTranscription', dayNumber: day, voiceUrl: voiceUrl }, '*');
+}
+
 function reRecord(day) {
   document.getElementById('vresult-' + day).innerHTML = '';
-  document.getElementById('timer-' + day).textContent = '2:00';
+  document.getElementById('timer-' + day).textContent = '1:00';
 }
 
 const _origInit = init;
@@ -552,11 +564,13 @@ init = function() {
       if (type === "uploadVoiceNote") {
         const { dayNumber, audioBase64 } = event.data;
         try {
-          // Convert base64 to blob
           const byteChars = atob(audioBase64);
           const byteArray = new Uint8Array(byteChars.length);
           for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
           const blob = new Blob([byteArray], { type: "audio/webm" });
+
+          // Progress: uploading
+          iframeRef?.contentWindow?.postMessage({ type: "voiceProgress", dayNumber, status: "turning your words into text..." }, "*");
 
           const formData = new FormData();
           formData.append("audio", blob, "recording.webm");
@@ -581,6 +595,39 @@ init = function() {
             url: null,
             transcript: null,
             error: "Upload failed",
+          }, "*");
+        }
+      }
+
+      if (type === "retryTranscription") {
+        const { dayNumber, voiceUrl } = event.data;
+        try {
+          iframeRef?.contentWindow?.postMessage({ type: "voiceProgress", dayNumber, status: "retrying transcription..." }, "*");
+
+          const formData = new FormData();
+          formData.append("userId", userId);
+          formData.append("programId", slug);
+          formData.append("dayNumber", String(dayNumber));
+          formData.append("transcribeOnly", "true");
+          formData.append("voiceUrl", voiceUrl);
+
+          const res = await fetch("/api/voice", { method: "POST", body: formData });
+          const result = await res.json();
+
+          iframeRef?.contentWindow?.postMessage({
+            type: "voiceNoteResult",
+            dayNumber,
+            url: result.url || voiceUrl,
+            transcript: result.transcript || null,
+            error: result.error || null,
+          }, "*");
+        } catch (err) {
+          iframeRef?.contentWindow?.postMessage({
+            type: "voiceNoteResult",
+            dayNumber,
+            url: voiceUrl,
+            transcript: null,
+            error: "Retry failed",
           }, "*");
         }
       }
