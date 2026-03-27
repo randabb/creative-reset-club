@@ -223,14 +223,40 @@ export default function Home() {
           overflow-x:hidden;
         }
         .stickman-img { width:200px; }
+        .stickman-mobile { display:none !important; }
+        .stickman-desktop { display:block; }
+        .headline-row { display:block; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
-          .hero-heading { font-size:1.9rem !important; }
-          .hero-grid { grid-template-columns:1fr !important; gap:32px !important; min-height:auto !important; padding-top:16px !important; }
-          .stat-row-right { flex-direction:column !important; gap:16px !important; }
-          .stat-row-right > div { border-left:none !important; padding-left:0 !important; border-bottom:1px solid rgba(0,3,50,0.08); padding-bottom:12px; }
-          .stat-row-right > div:last-child { border-bottom:none; padding-bottom:0; }
+          .hero-heading { font-size:1.75rem !important; }
+          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
+          .hero-left { padding-left:0 !important; }
+          .headline-row { display:flex !important; align-items:center; gap:12px; }
+          .stickman-mobile { display:block !important; }
+          .stickman-desktop { display:none !important; }
+          .stat-row-right {
+            flex-direction:row !important;
+            gap:12px !important;
+            overflow-x:auto;
+            -webkit-overflow-scrolling:touch;
+            padding-bottom:8px;
+            scroll-snap-type:x mandatory;
+          }
+          .stat-row-right > div {
+            border-left:none !important;
+            padding-left:0 !important;
+            border-bottom:none !important;
+            padding-bottom:0 !important;
+            min-width:140px;
+            flex-shrink:0 !important;
+            flex:none !important;
+            background:rgba(0,3,50,0.04);
+            border-radius:12px;
+            padding:16px !important;
+            scroll-snap-align:start;
+          }
           .card-row-right { flex-direction:column !important; gap:10px !important; }
+          .card-row-right > div { flex:none !important; height:auto !important; }
         }
       `}</style>
 
@@ -298,15 +324,25 @@ export default function Home() {
           <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
 
             {/* LEFT: text + CTA */}
-            <div style={{ paddingLeft: "4rem" }}>
-              <h1 className="hero-heading" style={{
-                fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
-                lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
-              }}>
-                your daily prompt<br />
-                for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
-                <span style={{ color: "#ff9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
-              </h1>
+            <div className="hero-left" style={{ paddingLeft: "4rem" }}>
+              {/* Headline + stickman row (mobile: side by side) */}
+              <div className="headline-row" style={{ marginBottom: 16 }}>
+                <h1 className="hero-heading" style={{
+                  fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
+                  lineHeight: 1.0, letterSpacing: "-0.02em"
+                }}>
+                  your daily prompt<br />
+                  for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
+                  <span style={{ color: "#ff9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
+                </h1>
+                {/* Stickman visible on mobile only beside headline */}
+                <img
+                  src="/stickman.png"
+                  alt="playful stickman"
+                  className="stickman-mobile"
+                  style={{ transform: "scaleX(-1)", display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }}
+                />
+              </div>
 
               <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>
                 come play. the prompts are already warm.
@@ -335,8 +371,8 @@ export default function Home() {
             {/* RIGHT: stickman + stats + cards */}
             <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
-              {/* Stickman */}
-              <div>
+              {/* Stickman (desktop only) */}
+              <div className="stickman-desktop">
                 <img
                   src="/stickman.png"
                   alt="playful stickman"
