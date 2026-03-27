@@ -101,6 +101,41 @@ export default function ProgramPage() {
           .celebration-btn-filled.disabled { opacity:0.35; cursor:not-allowed; }
           @keyframes celebScale { 0% { opacity:0; transform:scale(0); } 100% { opacity:1; transform:scale(1); } }
           @keyframes celebFadeUp { 0% { opacity:0; transform:translateY(12px); } 100% { opacity:1; transform:translateY(0); } }
+
+          /* Voice recording section */
+          .voice-section { margin-top:32px; padding-top:28px; border-top:1px solid rgba(0,3,50,0.08); }
+          .voice-section.hidden { display:none; }
+          .voice-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:8px; }
+          .voice-heading { font-family:'Codec Pro',sans-serif; font-size:20px; color:var(--ink); margin-bottom:6px; font-weight:700; }
+          .voice-sub { font-size:14px; color:var(--ink-soft); line-height:1.6; margin-bottom:24px; font-weight:300; }
+          .voice-controls { display:flex; flex-direction:column; align-items:center; gap:14px; margin-bottom:16px; }
+          .record-btn { width:64px; height:64px; border-radius:50%; background:var(--ink); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+          .record-btn:hover { transform:scale(1.05); }
+          .record-btn.recording { animation:pulse 1.5s ease infinite; }
+          @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(255,144,144,0.4); } 50% { box-shadow:0 0 0 12px rgba(255,144,144,0); } }
+          .record-btn svg { width:24px; height:24px; }
+          .voice-timer { font-size:18px; font-weight:700; color:var(--ink); font-family:'Codec Pro',sans-serif; }
+          .voice-bars { display:flex; gap:3px; align-items:center; height:28px; }
+          .voice-bar { width:3px; background:var(--red); border-radius:2px; transition:height 0.1s ease; }
+          .voice-error { font-size:13px; color:var(--red); text-align:center; margin-top:8px; }
+          .voice-skip { font-size:12px; color:var(--sand-mid); text-align:center; cursor:pointer; background:none; border:none; font-family:'Codec Pro',sans-serif; text-decoration:underline; text-underline-offset:3px; }
+          .voice-transcript-card { background:var(--ice); border-radius:12px; padding:20px 24px; margin-top:16px; }
+          .voice-transcript-label { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:8px; }
+          .voice-transcript-text { font-size:14px; color:var(--ink); line-height:1.7; font-weight:300; }
+          .voice-rerecord { font-size:12px; color:var(--sand-mid); cursor:pointer; background:none; border:none; font-family:'Codec Pro',sans-serif; text-decoration:underline; text-underline-offset:3px; margin-top:10px; display:block; text-align:center; }
+          .voice-privacy { font-size:11px; color:var(--sand-mid); text-align:center; margin-top:12px; font-weight:300; }
+          .voice-transcribing { font-size:13px; color:var(--sand-mid); text-align:center; margin-top:12px; }
+          .voice-transcribing::after { content:''; animation:dots 1.5s infinite; }
+          @keyframes dots { 0% { content:''; } 33% { content:'.'; } 66% { content:'..'; } 100% { content:'...'; } }
+
+          /* Voice consent modal */
+          .voice-consent-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; display:flex; align-items:center; justify-content:center; padding:24px; }
+          .voice-consent-card { background:var(--cream); border-radius:20px; padding:36px 40px; max-width:440px; width:100%; }
+          .voice-consent-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-weight:700; color:var(--ink); margin-bottom:12px; }
+          .voice-consent-body { font-size:14px; color:var(--ink-soft); line-height:1.7; margin-bottom:24px; font-weight:300; }
+          .voice-consent-btns { display:flex; gap:10px; flex-wrap:wrap; }
+          .voice-consent-accept { padding:12px 24px; border-radius:100px; border:none; background:var(--ink); color:var(--cream); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+          .voice-consent-skip { padding:12px 24px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
         `;
         html = html.replace('</style>\n</head>', `${injectedCSS}</style>\n</head>`);
         html = html.replace('</style></head>', `${injectedCSS}</style></head>`);
@@ -257,11 +292,210 @@ function setupWritingEncouragement() {
 }
 
 // Override init to add progressive reveal + writing encouragement
+// Part 6: Voice recording
+var voiceConsent = null; // null = unknown, true = yes, false = skip
+
+function setupVoiceSections() {
+  document.querySelectorAll('.day-view').forEach(function(dayView) {
+    var dayId = dayView.id.replace('day-','');
+    if (dayView.querySelector('.voice-section')) return;
+    var section = document.createElement('div');
+    section.className = 'voice-section';
+    section.id = 'voice-' + dayId;
+    section.innerHTML = '<div class="voice-label">voice reflection</div>' +
+      '<div class="voice-heading">Now say it out loud.</div>' +
+      '<div class="voice-sub">You have 2 minutes. Don\\'t read back what you wrote — just talk. What did you actually just discover?</div>' +
+      '<div class="voice-controls" id="vc-' + dayId + '">' +
+        '<button class="record-btn" id="rec-' + dayId + '" onclick="toggleRecording(' + dayId + ')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="#ff9090" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>' +
+        '</button>' +
+        '<div class="voice-timer" id="timer-' + dayId + '">2:00</div>' +
+        '<div class="voice-bars" id="bars-' + dayId + '" style="display:none">' +
+          '<div class="voice-bar" style="height:8px"></div><div class="voice-bar" style="height:12px"></div>' +
+          '<div class="voice-bar" style="height:6px"></div><div class="voice-bar" style="height:14px"></div>' +
+          '<div class="voice-bar" style="height:10px"></div><div class="voice-bar" style="height:8px"></div>' +
+          '<div class="voice-bar" style="height:12px"></div>' +
+        '</div>' +
+      '</div>' +
+      '<button class="voice-skip" onclick="skipVoice(' + dayId + ')">skip this exercise</button>' +
+      '<div class="voice-privacy">Your voice note is saved privately to your account. Only you can access it.</div>' +
+      '<div id="vresult-' + dayId + '"></div>';
+    var completeRow = dayView.querySelector('.complete-row');
+    if (completeRow) dayView.insertBefore(section, completeRow);
+    else dayView.appendChild(section);
+  });
+  if (voiceConsent === false) {
+    document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
+  }
+}
+
+var recorders = {};
+var recChunks = {};
+var recTimers = {};
+var recIntervals = {};
+
+function toggleRecording(day) {
+  if (voiceConsent === null) {
+    showVoiceConsent(day);
+    return;
+  }
+  if (voiceConsent === false) return;
+  if (recorders[day] && recorders[day].state === 'recording') {
+    stopRecording(day);
+  } else {
+    startRecording(day);
+  }
+}
+
+function showVoiceConsent(pendingDay) {
+  var modal = document.createElement('div');
+  modal.className = 'voice-consent-modal';
+  modal.id = 'voiceConsentModal';
+  modal.innerHTML = '<div class="voice-consent-card">' +
+    '<div class="voice-consent-title">Before you record</div>' +
+    '<div class="voice-consent-body">Your voice note will be saved privately to your account. It may be used in anonymised form to improve Creative Reset Club. You can delete your recordings at any time from your profile.</div>' +
+    '<div class="voice-consent-btns">' +
+      '<button class="voice-consent-accept" onclick="acceptVoiceConsent(' + pendingDay + ')">Got it, let\\'s go</button>' +
+      '<button class="voice-consent-skip" onclick="declineVoiceConsent()">Skip voice notes</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+}
+
+function acceptVoiceConsent(pendingDay) {
+  voiceConsent = true;
+  document.getElementById('voiceConsentModal')?.remove();
+  window.parent.postMessage({ type: 'saveVoiceConsent', consent: true }, '*');
+  startRecording(pendingDay);
+}
+
+function declineVoiceConsent() {
+  voiceConsent = false;
+  document.getElementById('voiceConsentModal')?.remove();
+  window.parent.postMessage({ type: 'saveVoiceConsent', consent: false }, '*');
+  document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
+}
+
+function skipVoice(day) {
+  document.getElementById('voice-' + day)?.classList.add('hidden');
+}
+
+async function startRecording(day) {
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    var recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    recorders[day] = recorder;
+    recChunks[day] = [];
+    recorder.ondataavailable = function(e) { if (e.data.size > 0) recChunks[day].push(e.data); };
+    recorder.onstop = function() {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      onRecordingDone(day);
+    };
+    recorder.start();
+    var btn = document.getElementById('rec-' + day);
+    if (btn) btn.classList.add('recording');
+    document.getElementById('bars-' + day).style.display = 'flex';
+    startTimer(day, 120);
+    startWaveform(day);
+  } catch(e) {
+    var vc = document.getElementById('vc-' + day);
+    if (vc) {
+      var err = document.createElement('div');
+      err.className = 'voice-error';
+      err.textContent = 'We need microphone access for this exercise. You can skip it if you prefer.';
+      vc.appendChild(err);
+    }
+  }
+}
+
+function stopRecording(day) {
+  if (recorders[day] && recorders[day].state === 'recording') {
+    recorders[day].stop();
+  }
+  clearInterval(recTimers[day]);
+  clearInterval(recIntervals[day]);
+  var btn = document.getElementById('rec-' + day);
+  if (btn) btn.classList.remove('recording');
+  document.getElementById('bars-' + day).style.display = 'none';
+}
+
+function startTimer(day, seconds) {
+  var remaining = seconds;
+  var timerEl = document.getElementById('timer-' + day);
+  recTimers[day] = setInterval(function() {
+    remaining--;
+    var m = Math.floor(remaining / 60);
+    var s = remaining % 60;
+    if (timerEl) timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (remaining <= 0) stopRecording(day);
+  }, 1000);
+}
+
+function startWaveform(day) {
+  var bars = document.getElementById('bars-' + day)?.children;
+  if (!bars) return;
+  recIntervals[day] = setInterval(function() {
+    for (var i = 0; i < bars.length; i++) {
+      bars[i].style.height = (4 + Math.random() * 20) + 'px';
+    }
+  }, 150);
+}
+
+function onRecordingDone(day) {
+  var blob = new Blob(recChunks[day], { type: 'audio/webm' });
+  var result = document.getElementById('vresult-' + day);
+  if (result) result.innerHTML = '<div class="voice-transcribing">transcribing</div>';
+  var reader = new FileReader();
+  reader.onloadend = function() {
+    var base64 = reader.result.split(',')[1];
+    window.parent.postMessage({ type: 'uploadVoiceNote', dayNumber: day, audioBase64: base64 }, '*');
+  };
+  reader.readAsDataURL(blob);
+}
+
+window.addEventListener('message', function(event) {
+  if (event.data?.type === 'voiceConsentStatus') {
+    voiceConsent = event.data.consent;
+    if (voiceConsent === false) {
+      document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
+    }
+  }
+  if (event.data?.type === 'voiceConsentSaved') {
+    voiceConsent = event.data.consent;
+  }
+  if (event.data?.type === 'voiceNoteResult') {
+    var day = event.data.dayNumber;
+    var result = document.getElementById('vresult-' + day);
+    if (!result) return;
+    if (event.data.transcript) {
+      result.innerHTML = '<div class="voice-transcript-card">' +
+        '<div class="voice-transcript-label">what you said:</div>' +
+        '<div class="voice-transcript-text">' + event.data.transcript + '</div>' +
+      '</div>' +
+      '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
+    } else if (event.data.error) {
+      result.innerHTML = '<div class="voice-transcribing" style="animation:none">Transcription unavailable — but your voice note is saved.</div>' +
+        '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
+    } else {
+      result.innerHTML = '<div class="voice-transcribing" style="animation:none">Voice note saved.</div>' +
+        '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
+    }
+  }
+});
+
+function reRecord(day) {
+  document.getElementById('vresult-' + day).innerHTML = '';
+  document.getElementById('timer-' + day).textContent = '2:00';
+}
+
 const _origInit = init;
 init = function() {
   _origInit();
   setupProgressiveReveal();
   setupWritingEncouragement();
+  setupVoiceSections();
+  // Check voice consent with parent
+  window.parent.postMessage({ type: 'checkVoiceConsent' }, '*');
 };
 `;
         html = html.replace('init();', `${lockScript}\ninit();`);
@@ -276,17 +510,80 @@ init = function() {
     checkAccess();
   }, [slug, router]);
 
-  // Listen for day completion messages from iframe
+  // Listen for messages from iframe (day completion, voice, consent)
   useEffect(() => {
+    const iframeRef = document.querySelector("iframe");
     const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type !== "dayComplete" || !userId) return;
-      const dayNumber = event.data.day;
-      await supabase.from("day_submissions").upsert({
-        user_id: userId,
-        program_id: slug,
-        day_number: dayNumber,
-        submitted_at: new Date().toISOString(),
-      }, { onConflict: "user_id,program_id,day_number" });
+      if (!userId) return;
+      const { type } = event.data || {};
+
+      if (type === "dayComplete") {
+        await supabase.from("day_submissions").upsert({
+          user_id: userId,
+          program_id: slug,
+          day_number: event.data.day,
+          submitted_at: new Date().toISOString(),
+        }, { onConflict: "user_id,program_id,day_number" });
+      }
+
+      if (type === "checkVoiceConsent") {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("voice_consent")
+          .eq("id", userId)
+          .single();
+        iframeRef?.contentWindow?.postMessage({
+          type: "voiceConsentStatus",
+          consent: profile?.voice_consent,
+        }, "*");
+      }
+
+      if (type === "saveVoiceConsent") {
+        await supabase
+          .from("profiles")
+          .update({ voice_consent: event.data.consent })
+          .eq("id", userId);
+        iframeRef?.contentWindow?.postMessage({
+          type: "voiceConsentSaved",
+          consent: event.data.consent,
+        }, "*");
+      }
+
+      if (type === "uploadVoiceNote") {
+        const { dayNumber, audioBase64 } = event.data;
+        try {
+          // Convert base64 to blob
+          const byteChars = atob(audioBase64);
+          const byteArray = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([byteArray], { type: "audio/webm" });
+
+          const formData = new FormData();
+          formData.append("audio", blob, "recording.webm");
+          formData.append("userId", userId);
+          formData.append("programId", slug);
+          formData.append("dayNumber", String(dayNumber));
+
+          const res = await fetch("/api/voice", { method: "POST", body: formData });
+          const result = await res.json();
+
+          iframeRef?.contentWindow?.postMessage({
+            type: "voiceNoteResult",
+            dayNumber,
+            url: result.url || null,
+            transcript: result.transcript || null,
+            error: result.error || null,
+          }, "*");
+        } catch (err) {
+          iframeRef?.contentWindow?.postMessage({
+            type: "voiceNoteResult",
+            dayNumber,
+            url: null,
+            transcript: null,
+            error: "Upload failed",
+          }, "*");
+        }
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
