@@ -250,13 +250,14 @@ export default function Home() {
             min-width:140px;
             flex-shrink:0 !important;
             flex:none !important;
-            background:rgba(0,3,50,0.04);
+            background:transparent;
+            border:1px solid rgba(0,3,50,0.12);
             border-radius:12px;
             padding:16px !important;
             scroll-snap-align:start;
           }
-          .card-row-right { flex-direction:column !important; gap:10px !important; padding:0 !important; overflow:hidden; }
-          .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; box-sizing:border-box; overflow:hidden; }
+          .card-row-right { flex-direction:column !important; gap:10px !important; padding:0 !important; overflow-x:hidden; }
+          .card-row-right > div { flex:none !important; height:auto !important; width:calc(100% - 32px) !important; margin-left:16px; margin-right:16px; box-sizing:border-box; overflow:hidden; display:block !important; }
         }
       `}</style>
 
