@@ -228,12 +228,12 @@ export default function Home() {
         .headline-row { display:block; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
-          .hero-heading { font-size:1.75rem !important; line-height:1.15 !important; }
+          .hero-heading { font-size:1.85rem !important; line-height:1.15 !important; }
           .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
           .hero-right { width:calc(100vw - 96px) !important; max-width:calc(100vw - 96px) !important; overflow:hidden; }
           .hero-left { padding-left:0 !important; }
           .headline-row { display:flex !important; align-items:center; gap:4px; }
-          .stickman-mobile { display:block !important; }
+          .stickman-mobile { display:block !important; align-self:center; }
           .stickman-desktop { display:none !important; }
           .stat-row-right {
             flex-direction:row !important;
@@ -256,6 +256,10 @@ export default function Home() {
             border-radius:12px;
             padding:16px !important;
             scroll-snap-align:start;
+          }
+          .stat-row-right > div p:last-child {
+            white-space:normal;
+            word-wrap:break-word;
           }
           .card-row-right { flex-direction:column !important; gap:10px !important; width:100% !important; overflow:hidden; padding:0 !important; box-sizing:border-box; }
           .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block !important; margin:0 !important; }
