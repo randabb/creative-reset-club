@@ -46,7 +46,7 @@ export default function ProgramPage() {
         );
 
         // Fix 2: Inject ← Home link pointing to /dashboard
-        const homeLink = `<a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" style="display:block;padding:10px 9px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'">← Home</a>`;
+        const homeLink = `<a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" ontouchend="window.top.location.href='/dashboard';return false;" style="display:block;padding:14px 12px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:13px;font-weight:700;color:rgba(255,255,255,0.65);cursor:pointer;touch-action:manipulation;position:relative;z-index:100;-webkit-tap-highlight-color:rgba(255,255,255,0.1);">← Home</a>`;
         html = html.replace(
           '.menu-toggle { display:none; position:fixed; top:14px; left:14px;',
           '.menu-toggle { display:none; position:fixed; top:16px; left:16px;'
