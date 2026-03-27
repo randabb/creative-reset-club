@@ -160,7 +160,7 @@ export default function Dashboard() {
           position: fixed; top: 0; left: 0; bottom: 0;
         }
         .sidebar-desktop .drawer-close { display: none; }
-        .hamburger-btn { display: none; }
+        .mobile-topbar { display: none; }
         .main-content { margin-left: 260px; }
 
         .drawer-backdrop {
@@ -187,10 +187,51 @@ export default function Dashboard() {
 
         @media (max-width: 768px) {
           .sidebar-desktop { display: none; }
-          .hamburger-btn { display: block; }
-          .main-content { margin-left: 0; }
+          .mobile-topbar {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            gap: 12px;
+            background: #000332;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+          }
+          .main-content {
+            margin-left: 0;
+            padding: 24px 24px 80px !important;
+            min-height: auto !important;
+            justify-content: flex-start !important;
+          }
         }
       `}</style>
+
+      {/* MOBILE TOPBAR */}
+      <nav className="mobile-topbar">
+        <button
+          onClick={() => setMenuOpen(true)}
+          style={{
+            background: "none", border: "none", color: "#f4f2ee",
+            fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1,
+          }}
+        >
+          ☰
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase" as const, color: "#f4f2ee" }}>
+          creativeresetclub
+        </span>
+      </nav>
+
+      {/* MOBILE DRAWER BACKDROP */}
+      <div
+        className={`drawer-backdrop ${menuOpen ? "open" : ""}`}
+        onClick={() => setMenuOpen(false)}
+      />
+
+      {/* MOBILE DRAWER PANEL */}
+      <aside className={`drawer-panel ${menuOpen ? "open" : ""}`}>
+        {sidebarContent}
+      </aside>
 
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
@@ -198,34 +239,6 @@ export default function Dashboard() {
         <aside className="sidebar-desktop">
           {sidebarContent}
         </aside>
-
-        {/* MOBILE DRAWER BACKDROP */}
-        <div
-          className={`drawer-backdrop ${menuOpen ? "open" : ""}`}
-          onClick={() => setMenuOpen(false)}
-        />
-
-        {/* MOBILE DRAWER PANEL */}
-        <aside className={`drawer-panel ${menuOpen ? "open" : ""}`}>
-          {sidebarContent}
-        </aside>
-
-        {/* MOBILE HAMBURGER */}
-        <button
-          className="hamburger-btn"
-          onClick={() => setMenuOpen(true)}
-          style={{
-            position: "fixed", top: 20, left: 20, zIndex: 200,
-            background: "#000332", color: "#f4f2ee",
-            border: "none", borderRadius: 12,
-            width: 44, height: 44,
-            fontSize: 20, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Codec Pro',sans-serif",
-          }}
-        >
-          ☰
-        </button>
 
         {/* MAIN CONTENT */}
         <main className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 64px 100px", minHeight: "100vh" }}>
