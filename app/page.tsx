@@ -349,13 +349,13 @@ export default function Home() {
           }} />
           <style>{`@keyframes drift { from { transform:translate(0,0) scale(1); } to { transform:translate(-20px,20px) scale(1.05); } }`}</style>
 
-          <div style={{ maxWidth: 640, position: "relative", zIndex: 1 }}>
+          <div style={{ maxWidth: 740, position: "relative", zIndex: 1 }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               background: "#000332", color: "#f4f2ee",
               padding: "8px 16px", borderRadius: 100,
               fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              marginBottom: 36, width: "fit-content"
+              marginBottom: 16, width: "fit-content"
             }}>
               <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
               backed by behavioral science + somatic practice
@@ -404,7 +404,7 @@ export default function Home() {
               <span style={{ width: 20, height: 20, background: "#ff9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
             </button>
 
-            <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>takes 2 minutes · free to start</p>
+            <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)", paddingBottom: 48 }}>takes 2 minutes · free to start</p>
           </div>
         </div>
       )}
