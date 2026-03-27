@@ -384,7 +384,7 @@ export default function Home() {
             </div>
 
             <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>
-              think before you create.
+              come play. the prompts are already warm.
             </p>
 
             <button
