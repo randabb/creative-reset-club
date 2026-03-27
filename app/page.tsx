@@ -277,8 +277,8 @@ export default function Home() {
           opacity:.35;
           transition:all .12s ease;
         }
-        .stickman-img { width:180px; }
-        @media (max-width:768px) { .stickman-img { width:100px; } }
+        .stickman-img { width:220px; }
+        @media (max-width:768px) { .stickman-img { width:130px; } }
       `}</style>
 
       <div ref={cursorRef} className="cursor" />
