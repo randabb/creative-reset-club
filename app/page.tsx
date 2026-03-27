@@ -356,8 +356,9 @@ export default function Home() {
             </div>
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 16, width: "100%", marginBottom: 16 }}>
               <h1 style={{
+                flex: 1,
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em"
               }}>
@@ -369,7 +370,7 @@ export default function Home() {
                 src="/stickman.png"
                 alt="playful stickman"
                 style={{
-                  width: 140,
+                  width: 180,
                   flexShrink: 0,
                   marginTop: 0,
                   transform: "scaleX(-1)",
