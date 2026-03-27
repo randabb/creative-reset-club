@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -72,6 +72,32 @@ export default function Home() {
   const [signupError, setSignupError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [statsAnimated, setStatsAnimated] = useState(false);
+  const [statValues, setStatValues] = useState([0, 0]);
+  const statRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statRowRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !statsAnimated) {
+          setStatsAnimated(true);
+          const duration = 1500;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out
+            setStatValues([Math.round(42 * eased), Math.round(1 * eased)]);
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(statRowRef.current);
+    return () => observer.disconnect();
+  }, [statsAnimated]);
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [signInError, setSignInError] = useState("");
@@ -222,7 +248,15 @@ export default function Home() {
           font-family:'Codec Pro',sans-serif;
           overflow-x:hidden;
         }
-        .stickman-img { width:200px; }
+        .stickman-img { width:200px; animation:idle 4s ease-in-out infinite; }
+        @keyframes idle {
+          0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
+          25% { transform: translateY(-4px) rotate(0.5deg) scaleX(-1); }
+          75% { transform: translateY(2px) rotate(-0.5deg) scaleX(-1); }
+        }
+        .stat-countup { transition: opacity 0.4s ease; }
+        .stat-fadein { animation: statFade 1.5s ease-out forwards; }
+        @keyframes statFade { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
         .stickman-mobile { display:none !important; }
         .stickman-desktop { display:block; }
         .headline-row { display:block; }
@@ -348,7 +382,7 @@ export default function Home() {
                   src="/stickman.png"
                   alt="playful stickman"
                   className="stickman-mobile"
-                  style={{ transform: "scaleX(-1)", display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }}
+                  style={{ display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }}
                 />
               </div>
 
@@ -385,22 +419,24 @@ export default function Home() {
                   src="/stickman.png"
                   alt="playful stickman"
                   className="stickman-img"
-                  style={{ transform: "scaleX(-1)", display: "block", objectFit: "contain", objectPosition: "bottom" }}
+                  style={{ display: "block", objectFit: "contain", objectPosition: "bottom" }}
                 />
               </div>
 
               {/* Stat row */}
-              <div className="stat-row-right" style={{ display: "flex", gap: 0 }}>
-                {[
-                  { num: "42%", desc: "drop in creative thinking since 2020" },
-                  { num: "1 in 2", desc: "people say AI dulls their creativity" },
-                  { num: "1 daily practice.", desc: "use it or lose it." },
-                ].map((s, i) => (
-                  <div key={i} style={{ flex: 1, paddingLeft: i > 0 ? 20 : 0, borderLeft: i > 0 ? "1px solid rgba(0,3,50,0.12)" : "none" }}>
-                    <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{s.num}</p>
-                    <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>{s.desc}</p>
-                  </div>
-                ))}
+              <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>drop in creative thinking since 2020</p>
+                </div>
+                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[1]} in 2` : "0"}</p>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>people say AI dulls their creativity</p>
+                </div>
+                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6, opacity: statsAnimated ? 1 : 0 }}>1 daily practice.</p>
+                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45, opacity: statsAnimated ? 1 : 0 }}>use it or lose it.</p>
+                </div>
               </div>
 
               {/* Two cards */}
