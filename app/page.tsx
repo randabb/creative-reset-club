@@ -341,7 +341,7 @@ export default function Home() {
                   src="/stickman.png"
                   alt="playful stickman"
                   className="stickman-img"
-                  style={{ transform: "scaleX(-1)" }}
+                  style={{ transform: "scaleX(-1)", display: "block", objectFit: "contain", objectPosition: "bottom" }}
                 />
               </div>
 
