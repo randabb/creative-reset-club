@@ -286,7 +286,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ padding: "0 48px", paddingTop: 100, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
+        <div style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 500, height: 500,
             background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)",
@@ -295,7 +295,7 @@ export default function Home() {
           }} />
 
           {/* TWO-COLUMN GRID */}
-          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 160px)", paddingTop: 40 }}>
+          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
 
             {/* LEFT: text + CTA */}
             <div style={{ paddingLeft: "4rem" }}>
@@ -320,7 +320,7 @@ export default function Home() {
                   padding: "18px 36px", borderRadius: 100,
                   fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer",
                   transition: "all 0.25s",
-                  width: "fit-content", minWidth: 200,
+                  width: "fit-content", maxWidth: "fit-content", minWidth: 200,
                 }}
                 onMouseEnter={e => { (e.target as HTMLElement).style.background = "#ff9090"; }}
                 onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}
