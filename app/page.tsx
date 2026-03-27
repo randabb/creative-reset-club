@@ -321,13 +321,14 @@ export default function Home() {
 
       {/* PILL BADGE */}
       {screen === 1 && (
-        <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, paddingBottom: 12, position: "relative", zIndex: 50 }}>
+        <div style={{ paddingTop: 80, paddingBottom: 0, position: "relative", zIndex: 50, textAlign: "center" }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "#000332", color: "#f4f2ee",
             padding: "8px 16px", borderRadius: 100,
             fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-            width: "fit-content", maxWidth: "fit-content"
+            width: "fit-content", maxWidth: "fit-content",
+            margin: "0 auto"
           }}>
             <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
             backed by behavioral science + somatic practice
