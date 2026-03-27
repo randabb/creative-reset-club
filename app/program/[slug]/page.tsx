@@ -17,7 +17,6 @@ export default function ProgramPage() {
 
   const [status, setStatus] = useState<"loading" | "authorized" | "not-found">("loading");
   const [htmlContent, setHtmlContent] = useState<string>("");
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -34,7 +33,15 @@ export default function ProgramPage() {
 
       try {
         const res = await fetch(validPrograms[slug].file);
-        const html = await res.text();
+        let html = await res.text();
+
+        // Inject ← Home link at the top of the iframe's existing sidebar
+        const homeLink = `<a href="/dashboard" style="display:block;padding:10px 9px;margin-bottom:16px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'" target="_top">← Home</a>`;
+        html = html.replace(
+          '<div class="sidebar-logo">creative reset club</div>',
+          `<div class="sidebar-logo">creative reset club</div>${homeLink}`
+        );
+
         setHtmlContent(html);
         setStatus("authorized");
       } catch {
@@ -78,82 +85,15 @@ export default function ProgramPage() {
   }
 
   return (
-    <div style={{ position: "relative" }}>
-      {/* Hamburger button */}
-      <button
-        onClick={() => setMenuOpen(true)}
-        style={{
-          position: "fixed", top: 0, left: 0, zIndex: 100,
-          background: "#000332", color: "#f4f2ee",
-          border: "none", borderRadius: 8,
-          padding: "14px 16px", margin: 12,
-          fontSize: 18, cursor: "pointer",
-          lineHeight: 1, fontFamily: "'Codec Pro',sans-serif",
-        }}
-      >
-        ☰
-      </button>
-
-      {/* Drawer backdrop */}
-      <div
-        onClick={() => setMenuOpen(false)}
-        style={{
-          position: "fixed", inset: 0, zIndex: 300,
-          background: "rgba(0,3,50,0.5)",
-          opacity: menuOpen ? 1 : 0,
-          pointerEvents: menuOpen ? "auto" : "none",
-          transition: "opacity 0.25s ease",
-        }}
-      />
-
-      {/* Drawer panel */}
-      <aside style={{
-        position: "fixed", top: 0, left: 0, bottom: 0,
-        width: 280, zIndex: 301,
-        background: "#000332",
-        display: "flex", flexDirection: "column",
-        padding: "32px 0",
-        transform: menuOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.3s ease",
-        fontFamily: "'Codec Pro',sans-serif",
-      }}>
-        <div style={{ padding: "0 28px", marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase", color: "#f4f2ee" }}>
-            creativeresetclub
-          </div>
-          <button
-            onClick={() => setMenuOpen(false)}
-            style={{ background: "none", border: "none", color: "rgba(244,242,238,0.5)", fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1 }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div style={{ padding: "0 16px" }}>
-          <a
-            href="/dashboard"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              display: "block", padding: "10px 12px",
-              borderRadius: 10, textDecoration: "none",
-              fontSize: 13, fontWeight: 700, color: "rgba(244,242,238,0.65)",
-            }}
-          >
-            ← Home
-          </a>
-        </div>
-      </aside>
-
-      <iframe
-        srcDoc={htmlContent}
-        style={{
-          width: "100%",
-          height: "100vh",
-          border: "none",
-          display: "block",
-        }}
-        title={validPrograms[slug]?.title || "Program"}
-      />
-    </div>
+    <iframe
+      srcDoc={htmlContent}
+      style={{
+        width: "100%",
+        height: "100vh",
+        border: "none",
+        display: "block",
+      }}
+      title={validPrograms[slug]?.title || "Program"}
+    />
   );
 }
