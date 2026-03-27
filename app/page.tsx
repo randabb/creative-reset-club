@@ -356,14 +356,36 @@ export default function Home() {
             </div>
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
-            <h1 style={{
-              fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
-              lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
-            }}>
-              your daily reset<br />
-              for creative thinking,<br />
-              <span style={{ color: "#ff9090" }}>in the age of AI.</span>
-            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+              <h1 style={{
+                fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
+                lineHeight: 1.0, letterSpacing: "-0.02em"
+              }}>
+                your daily reset<br />
+                for creative thinking,<br />
+                <span style={{ color: "#ff9090" }}>in the age of AI.</span>
+              </h1>
+              <svg
+                width="80"
+                height="110"
+                viewBox="0 0 80 110"
+                style={{ flexShrink: 0 }}
+                stroke="#000332"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                fill="none"
+              >
+                <circle cx="42" cy="12" r="10" />
+                <circle cx="39" cy="10" r="1" fill="#000332" />
+                <path d="M44 10 Q46 8 48 10" />
+                <path d="M39 15 Q43 18 47 15" />
+                <line x1="42" y1="22" x2="40" y2="56" />
+                <path d="M42 32 Q30 36 28 42" />
+                <path d="M42 32 Q55 25 58 18" />
+                <line x1="40" y1="56" x2="30" y2="82" />
+                <path d="M40 56 Q55 68 58 60" />
+              </svg>
+            </div>
 
             <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>
               think first. play often. create before you prompt.
