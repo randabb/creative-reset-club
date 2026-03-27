@@ -360,9 +360,8 @@ export default function Home() {
               fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
               lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
             }}>
-              the daily practice<br />
-              for creatives<br />
-              and builders<br />
+              your daily reset<br />
+              for creative thinking,<br />
               <span style={{ color: "#ff9090" }}>in the age of AI.</span>
             </h1>
 
