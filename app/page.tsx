@@ -334,7 +334,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 80, position: "relative", overflow: "hidden" }}>
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 40, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -356,7 +356,7 @@ export default function Home() {
             </div>
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 16 }}>
               <h1 style={{
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em"
@@ -369,9 +369,10 @@ export default function Home() {
                 src="/stickman.png"
                 alt="playful stickman"
                 style={{
-                  width: "120px",
+                  width: 140,
                   flexShrink: 0,
-                  marginTop: 8,
+                  marginTop: 0,
+                  transform: "scaleX(-1)",
                 }}
               />
             </div>
