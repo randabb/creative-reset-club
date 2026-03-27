@@ -259,6 +259,7 @@ export default function Home() {
           }
           .card-row-right { flex-direction:column !important; gap:10px !important; width:100% !important; overflow:hidden; padding:0 !important; box-sizing:border-box; }
           .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block !important; margin:0 !important; }
+          .card-row-right > div p { white-space:normal; word-wrap:break-word; overflow-wrap:break-word; max-width:100%; }
         }
       `}</style>
 
