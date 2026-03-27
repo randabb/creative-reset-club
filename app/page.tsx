@@ -350,7 +350,7 @@ export default function Home() {
               {/* Stat row */}
               <div className="stat-row-right" style={{ display: "flex", gap: 0 }}>
                 {[
-                  { num: "42%", desc: "drop in creative thinking since AI" },
+                  { num: "42%", desc: "drop in creative thinking since 2020" },
                   { num: "1 in 2", desc: "people say AI dulls their creativity" },
                   { num: "1 daily practice.", desc: "use it or lose it." },
                 ].map((s, i) => (
