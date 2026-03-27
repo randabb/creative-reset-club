@@ -357,7 +357,7 @@ export default function Home() {
               marginBottom: 36
             }}>
               <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
-              think before you create
+              backed by behavioral science + somatic practice
             </div>
             <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
@@ -367,7 +367,7 @@ export default function Home() {
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em"
               }}>
-                your daily reset<br />
+                your daily prompt<br />
                 for creative thinking,<br />
                 <span style={{ color: "#ff9090" }}>in the age of AI.</span>
               </h1>
@@ -384,7 +384,7 @@ export default function Home() {
             </div>
 
             <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>
-              think first. play often. create before you prompt.
+              think before you create.
             </p>
 
             <button
@@ -399,7 +399,7 @@ export default function Home() {
               onMouseEnter={e => { (e.target as HTMLElement).style.background = "#ff9090"; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}
             >
-              find your path
+              start your first reset
               <span style={{ width: 20, height: 20, background: "#ff9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
             </button>
 
