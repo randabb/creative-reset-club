@@ -38,15 +38,15 @@ export default function ProgramPage() {
         // Fix 1: Sidebar fully opaque background
         html = html.replace(
           '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);',
-          '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);'
+          '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3);'
         );
         html = html.replace(
           /\.sidebar \{([^}]*?)background:var\(--ink\)/,
-          '.sidebar {$1background:#000332'
+          '.sidebar {$1background:#1a1f3a'
         );
 
         // Fix 2: Inject ← Home link pointing to /dashboard
-        const homeLink = `<a href="/dashboard" style="display:block;padding:10px 9px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'" target="_top">← Home</a>`;
+        const homeLink = `<a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" style="display:block;padding:10px 9px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'">← Home</a>`;
         html = html.replace(
           '.menu-toggle { display:none; position:fixed; top:14px; left:14px;',
           '.menu-toggle { display:none; position:fixed; top:16px; left:16px;'
@@ -62,7 +62,8 @@ export default function ProgramPage() {
 
         // Fix 3: Day locking — inject CSS + override buildSidebar and showDay with locking logic
         const lockCSS = `
-          .day-nav-item.locked { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+          .day-nav-item.locked { opacity:0.5; cursor:not-allowed; pointer-events:none; }
+          .day-nav-item.locked .day-nav-num { opacity:0.4; }
           .day-nav-item.locked .day-nav-title::after { content:' 🔒'; }
         `;
         html = html.replace('</style>\n</head>', `${lockCSS}</style>\n</head>`);
