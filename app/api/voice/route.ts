@@ -136,6 +136,14 @@ export async function POST(req: Request) {
             .eq("user_id", userId)
             .eq("program_id", programId)
             .eq("day_number", parseInt(dayNumber));
+        } else if (whisperRes.status === 429) {
+          console.error("Voice API: Whisper rate limited (429)");
+          return NextResponse.json({
+            url: voiceNoteUrl,
+            transcript: null,
+            uploaded: true,
+            error: "Voice transcription is temporarily unavailable. Your recording is saved — try again in a few minutes.",
+          });
         } else {
           const errText = await whisperRes.text();
           console.error("Voice API: Whisper API error:", whisperRes.status, errText);
