@@ -226,8 +226,7 @@ export default function Home() {
         @media (max-width:768px) {
           .stickman-img { width:100px; }
           .hero-heading { font-size:1.9rem !important; }
-          .hero-columns { flex-direction:column !important; gap:32px !important; min-height:auto !important; }
-          .hero-right { width:100% !important; }
+          .hero-grid { grid-template-columns:1fr !important; gap:32px !important; min-height:auto !important; padding-top:16px !important; }
           .stat-row-right { flex-direction:column !important; gap:16px !important; }
           .stat-row-right > div { border-left:none !important; padding-left:0 !important; border-bottom:1px solid rgba(0,3,50,0.08); padding-bottom:12px; }
           .stat-row-right > div:last-child { border-bottom:none; padding-bottom:0; }
@@ -289,19 +288,17 @@ export default function Home() {
       {screen === 1 && (
         <div style={{ padding: "0 48px", paddingTop: 100, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{
-            position: "absolute", width: 600, height: 600,
-            background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
-            borderRadius: "50%", top: -100, right: -150, pointerEvents: "none",
-            animation: "drift 8s ease-in-out infinite alternate",
+            position: "absolute", width: 500, height: 500,
+            background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)",
+            borderRadius: "50%", top: -120, right: -200, pointerEvents: "none",
             zIndex: 0
           }} />
-          <style>{`@keyframes drift { from { transform:translate(0,0) scale(1); } to { transform:translate(-20px,20px) scale(1.05); } }`}</style>
 
-          {/* TWO-COLUMN HERO */}
-          <div className="hero-columns" style={{ position: "relative", zIndex: 1, minHeight: "calc(100vh - 160px)", display: "flex", alignItems: "center", gap: 56, maxWidth: 1060 }}>
+          {/* TWO-COLUMN GRID */}
+          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 160px)", paddingTop: 40 }}>
 
             {/* LEFT: text + CTA */}
-            <div style={{ flex: "1 1 45%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div>
               <h1 className="hero-heading" style={{
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
@@ -322,7 +319,8 @@ export default function Home() {
                   background: "#000332", color: "#f4f2ee",
                   padding: "18px 36px", borderRadius: 100,
                   fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer",
-                  transition: "all 0.25s"
+                  transition: "all 0.25s",
+                  width: "fit-content", minWidth: 200,
                 }}
                 onMouseEnter={e => { (e.target as HTMLElement).style.background = "#ff9090"; }}
                 onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}
@@ -335,10 +333,10 @@ export default function Home() {
             </div>
 
             {/* RIGHT: stickman + stats + cards */}
-            <div className="hero-right" style={{ flex: "1 1 55%", display: "flex", flexDirection: "column", gap: 28 }}>
+            <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
               {/* Stickman */}
-              <div style={{ display: "flex", justifyContent: "center" }}>
+              <div>
                 <img
                   src="/stickman.png"
                   alt="playful stickman"
@@ -354,9 +352,9 @@ export default function Home() {
                   { num: "1 in 2", desc: "people say AI dulls their creativity" },
                   { num: "1 daily practice.", desc: "use it or lose it." },
                 ].map((s, i) => (
-                  <div key={i} style={{ flex: 1, paddingLeft: i > 0 ? 16 : 0, borderLeft: i > 0 ? "1px solid rgba(0,3,50,0.12)" : "none" }}>
-                    <p style={{ fontSize: 18, fontWeight: 700, color: "#000332", lineHeight: 1.15, marginBottom: 4 }}>{s.num}</p>
-                    <p style={{ fontSize: 11, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>{s.desc}</p>
+                  <div key={i} style={{ flex: 1, paddingLeft: i > 0 ? 20 : 0, borderLeft: i > 0 ? "1px solid rgba(0,3,50,0.12)" : "none" }}>
+                    <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{s.num}</p>
+                    <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>{s.desc}</p>
                   </div>
                 ))}
               </div>
