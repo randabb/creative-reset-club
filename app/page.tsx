@@ -344,17 +344,18 @@ export default function Home() {
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
             borderRadius: "50%", top: -100, right: -150, pointerEvents: "none",
-            animation: "drift 8s ease-in-out infinite alternate"
+            animation: "drift 8s ease-in-out infinite alternate",
+            zIndex: 0
           }} />
           <style>{`@keyframes drift { from { transform:translate(0,0) scale(1); } to { transform:translate(-20px,20px) scale(1.05); } }`}</style>
 
-          <div style={{ maxWidth: 640 }}>
+          <div style={{ maxWidth: 640, position: "relative", zIndex: 1 }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               background: "#000332", color: "#f4f2ee",
               padding: "8px 16px", borderRadius: 100,
               fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              marginBottom: 36
+              marginBottom: 36, width: "fit-content"
             }}>
               <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
               backed by behavioral science + somatic practice
