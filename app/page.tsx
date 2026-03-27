@@ -295,10 +295,10 @@ export default function Home() {
           }} />
 
           {/* TWO-COLUMN GRID */}
-          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 160px)", paddingTop: 40 }}>
+          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 160px)", paddingTop: 40 }}>
 
             {/* LEFT: text + CTA */}
-            <div>
+            <div style={{ paddingLeft: "4rem" }}>
               <h1 className="hero-heading" style={{
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
