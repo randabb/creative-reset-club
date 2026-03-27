@@ -277,20 +277,16 @@ export default function Home() {
           opacity:.35;
           transition:all .12s ease;
         }
-        .stickman-img { width:260px; }
-        .stat-row { display:flex; gap:0; }
-        .card-row { display:flex; gap:16px; }
-        .hero-columns { flex-direction:row; }
-        .hero-stickman { display:flex; }
+        .stickman-img { width:200px; }
         @media (max-width:768px) {
-          .stickman-img { width:120px; }
+          .stickman-img { width:100px; }
           .hero-heading { font-size:1.9rem !important; }
-          .hero-columns { flex-direction:column !important; gap:24px !important; min-height:auto !important; padding-top:24px; }
-          .hero-stickman { display:none !important; }
-          .stat-row { flex-direction:column; gap:20px; }
-          .stat-row > div { border-left:none !important; padding-left:0 !important; border-bottom:1px solid rgba(0,3,50,0.08); padding-bottom:16px; }
-          .stat-row > div:last-child { border-bottom:none; padding-bottom:0; }
-          .card-row { flex-direction:column; gap:12px; }
+          .hero-columns { flex-direction:column !important; gap:32px !important; min-height:auto !important; }
+          .hero-right { width:100% !important; }
+          .stat-row-right { flex-direction:column !important; gap:16px !important; }
+          .stat-row-right > div { border-left:none !important; padding-left:0 !important; border-bottom:1px solid rgba(0,3,50,0.08); padding-bottom:12px; }
+          .stat-row-right > div:last-child { border-bottom:none; padding-bottom:0; }
+          .card-row-right { flex-direction:column !important; gap:10px !important; }
         }
       `}</style>
 
@@ -329,22 +325,6 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* PILL BADGE */}
-      {screen === 1 && (
-        <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, paddingBottom: 0, position: "relative", zIndex: 50 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#000332", color: "#f4f2ee",
-            padding: "8px 16px", borderRadius: 100,
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-          }}>
-            <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
-            backed by behavioral science + somatic practice
-          </div>
-          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
-        </div>
-      )}
-
       {/* SIGN IN MODAL */}
       {showSignIn && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,3,50,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
@@ -365,7 +345,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ padding: "0 48px", paddingTop: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ padding: "0 48px", paddingTop: 100, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -376,9 +356,10 @@ export default function Home() {
           <style>{`@keyframes drift { from { transform:translate(0,0) scale(1); } to { transform:translate(-20px,20px) scale(1.05); } }`}</style>
 
           {/* TWO-COLUMN HERO */}
-          <div className="hero-columns" style={{ position: "relative", zIndex: 1, minHeight: "calc(100vh - 120px)", display: "flex", alignItems: "center", gap: 48, maxWidth: 960 }}>
+          <div className="hero-columns" style={{ position: "relative", zIndex: 1, minHeight: "calc(100vh - 160px)", display: "flex", alignItems: "center", gap: 56, maxWidth: 1060 }}>
+
             {/* LEFT: text + CTA */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: "1 1 55%" }}>
               <h1 className="hero-heading" style={{
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
@@ -408,49 +389,51 @@ export default function Home() {
                 <span style={{ width: 20, height: 20, background: "#ff9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
 
-              <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>takes 2 minutes · free to start</p>
+              <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
             </div>
 
-            {/* RIGHT: stickman */}
-            <div className="hero-stickman" style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img
-                src="/stickman.png"
-                alt="playful stickman"
-                className="stickman-img"
-                style={{
-                  transform: "scaleX(-1)",
-                }}
-              />
-            </div>
-          </div>
+            {/* RIGHT: stickman + stats + cards */}
+            <div className="hero-right" style={{ flex: "1 1 45%", display: "flex", flexDirection: "column", gap: 28 }}>
 
-          {/* STAT ROW */}
-          <div className="stat-row" style={{ position: "relative", zIndex: 1, marginTop: 0, maxWidth: 960, paddingTop: 48, paddingBottom: 48, borderTop: "1px solid rgba(0,3,50,0.08)" }}>
-            {[
-              { num: "42%", desc: "drop in creative thinking since AI" },
-              { num: "1 in 2", desc: "people say AI dulls their creativity" },
-              { num: "1 daily practice.", desc: "use it or lose it." },
-            ].map((s, i, arr) => (
-              <div key={i} style={{ flex: 1, paddingLeft: i > 0 ? 32 : 0, borderLeft: i > 0 ? "1px solid rgba(0,3,50,0.12)" : "none" }}>
-                <p style={{ fontSize: "clamp(24px, 3vw, 32px)", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{s.num}</p>
-                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", lineHeight: 1.5 }}>{s.desc}</p>
+              {/* Stickman */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <img
+                  src="/stickman.png"
+                  alt="playful stickman"
+                  className="stickman-img"
+                  style={{ transform: "scaleX(-1)" }}
+                />
               </div>
-            ))}
-          </div>
 
-          {/* TWO-CARD PREVIEW */}
-          <div className="card-row" style={{ position: "relative", zIndex: 1, marginTop: 0, maxWidth: 960, paddingBottom: 80 }}>
-            <div style={{ flex: 1, background: "#000332", borderRadius: 20, padding: "32px 36px" }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 14 }}>today&apos;s prompt</p>
-              <p style={{ fontSize: 16, color: "rgba(244,242,238,0.75)", lineHeight: 1.65, fontStyle: "italic" }}>
-                &ldquo;What would you make if no one was watching and you couldn&apos;t fail?&rdquo;
-              </p>
-            </div>
-            <div style={{ flex: 1, background: "#000332", borderRadius: 20, padding: "32px 36px" }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 14 }}>14-day programs</p>
-              <p style={{ fontSize: 16, color: "rgba(244,242,238,0.75)", lineHeight: 1.65 }}>
-                structured creative programs for when you&apos;re ready to go deeper.
-              </p>
+              {/* Stat row */}
+              <div className="stat-row-right" style={{ display: "flex", gap: 0 }}>
+                {[
+                  { num: "42%", desc: "drop in creative thinking since AI" },
+                  { num: "1 in 2", desc: "people say AI dulls their creativity" },
+                  { num: "1 daily practice.", desc: "use it or lose it." },
+                ].map((s, i) => (
+                  <div key={i} style={{ flex: 1, paddingLeft: i > 0 ? 16 : 0, borderLeft: i > 0 ? "1px solid rgba(0,3,50,0.12)" : "none" }}>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: "#000332", lineHeight: 1.15, marginBottom: 4 }}>{s.num}</p>
+                    <p style={{ fontSize: 11, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Two cards */}
+              <div className="card-row-right" style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1, background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 10 }}>today&apos;s prompt</p>
+                  <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, fontStyle: "italic" }}>
+                    &ldquo;What would you make if no one was watching and you couldn&apos;t fail?&rdquo;
+                  </p>
+                </div>
+                <div style={{ flex: 1, background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 10 }}>14-day programs</p>
+                  <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6 }}>
+                    structured creative programs for when you&apos;re ready to go deeper.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
