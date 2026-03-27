@@ -229,7 +229,7 @@ export default function Home() {
         @media (max-width:768px) {
           .stickman-img { width:100px; }
           .hero-heading { font-size:1.85rem !important; line-height:1.15 !important; }
-          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
+          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; padding-top:40px !important; }
           .hero-right { width:calc(100vw - 96px) !important; max-width:calc(100vw - 96px) !important; overflow:hidden; }
           .hero-left { padding-left:0 !important; }
           .headline-row { display:flex !important; align-items:center; gap:4px; }
