@@ -280,7 +280,7 @@ export default function Home() {
         .stickman-img { width:220px; }
         @media (max-width:768px) {
           .stickman-img { width:130px; }
-          .hero-heading { font-size:1.7rem !important; }
+          .hero-heading { font-size:1.9rem !important; }
         }
       `}</style>
 
@@ -319,6 +319,23 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* PILL BADGE */}
+      {screen === 1 && (
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 80, paddingBottom: 12, position: "relative", zIndex: 50 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#000332", color: "#f4f2ee",
+            padding: "8px 16px", borderRadius: 100,
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+            width: "fit-content", maxWidth: "fit-content"
+          }}>
+            <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
+            backed by behavioral science + somatic practice
+          </div>
+          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
+        </div>
+      )}
+
       {/* SIGN IN MODAL */}
       {showSignIn && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,3,50,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
@@ -350,17 +367,6 @@ export default function Home() {
           <style>{`@keyframes drift { from { transform:translate(0,0) scale(1); } to { transform:translate(-20px,20px) scale(1.05); } }`}</style>
 
           <div style={{ maxWidth: 740, position: "relative", zIndex: 1 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#000332", color: "#f4f2ee",
-              padding: "8px 16px", borderRadius: 100,
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              marginBottom: 16, width: "fit-content", maxWidth: "fit-content"
-            }}>
-              <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
-              backed by behavioral science + somatic practice
-            </div>
-            <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16, width: "100%", marginBottom: 16 }}>
               <h1 className="hero-heading" style={{
@@ -370,7 +376,7 @@ export default function Home() {
               }}>
                 your daily prompt<br />
                 for creative thinking,<br />
-                <span style={{ color: "#ff9090" }}>in the age of AI.</span>
+                <span style={{ color: "#ff9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
               </h1>
               <img
                 src="/stickman.png"
