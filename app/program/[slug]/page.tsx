@@ -321,8 +321,10 @@ function setupVoiceSections() {
       '<button class="voice-skip" onclick="skipVoice(' + dayId + ')">skip this exercise</button>' +
       '<div class="voice-privacy">Your voice note is saved privately to your account. Only you can access it.</div>' +
       '<div id="vresult-' + dayId + '"></div>';
-    var completeRow = dayView.querySelector('.complete-row');
-    if (completeRow) dayView.insertBefore(section, completeRow);
+    var sections = dayView.querySelectorAll('.section');
+    // Insert after the first .section (writing box), before the second (reflection)
+    if (sections.length >= 2) dayView.insertBefore(section, sections[1]);
+    else if (sections.length === 1) sections[0].after(section);
     else dayView.appendChild(section);
   });
   if (voiceConsent === false) {
