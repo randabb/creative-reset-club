@@ -280,7 +280,7 @@ export default function Home() {
         .stickman-img { width:220px; }
         @media (max-width:768px) {
           .stickman-img { width:130px; }
-          .hero-heading { font-size:1.9rem !important; }
+          .hero-heading { font-size:1.7rem !important; }
         }
       `}</style>
 
@@ -339,7 +339,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 40, position: "relative", overflow: "hidden" }}>
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 48px", paddingTop: 20, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -355,7 +355,7 @@ export default function Home() {
               background: "#000332", color: "#f4f2ee",
               padding: "8px 16px", borderRadius: 100,
               fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              marginBottom: 16, width: "fit-content"
+              marginBottom: 16, width: "fit-content", maxWidth: "fit-content"
             }}>
               <div style={{ width: 6, height: 6, background: "#ff9090", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
               backed by behavioral science + somatic practice
