@@ -60,15 +60,56 @@ export default function ProgramPage() {
           `<div class="sidebar-logo">creative reset club</div>${homeLink}`
         );
 
-        // Fix 3: Day locking — inject CSS + override buildSidebar and showDay with locking logic
-        const lockCSS = `
+        // Fix 3: Day locking + Part 2 progressive reveal + Part 3 writing box + Part 5 celebration
+        const injectedCSS = `
           .day-nav-item.locked { opacity:0.5; cursor:not-allowed; pointer-events:none; }
           .day-nav-item.locked .day-nav-num { opacity:0.4; }
           .day-nav-item.locked .day-nav-title::after { content:' 🔒'; }
+
+          /* Part 2: Progressive reveal */
+          .writing-prompt { display:none; }
+          .writing-prompt.revealed { display:block; animation:promptFade 0.4s ease forwards; }
+          .writing-prompt:first-child { display:block; }
+          .prompt-next-btn { display:inline-block; margin-top:8px; margin-bottom:4px; background:none; border:none; color:var(--red); font-family:'Codec Pro',sans-serif; font-size:12px; font-weight:700; cursor:pointer; padding:4px 0; letter-spacing:0.04em; }
+          .prompt-next-btn:hover { opacity:0.7; }
+          @keyframes promptFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+          /* Part 3: Writing box personality */
+          .writing-area { border:1px solid rgba(26,31,58,0.1) !important; min-height:120px !important; max-height:none !important; transition:border-color 0.2s ease, min-height 0.3s ease; }
+          .writing-area:focus { border-color:rgba(26,31,58,0.25) !important; }
+          .writing-area.sufficient { border-color:rgba(122,158,126,0.5) !important; }
+          .writing-encouragement { font-size:12px; color:var(--sand-mid); margin-top:6px; font-weight:300; transition:opacity 0.3s ease; }
+
+          /* Part 5: Celebration overlay */
+          .celebration-overlay { position:fixed; inset:0; background:#f5f2ef; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.5s ease; }
+          .celebration-overlay.show { opacity:1; pointer-events:auto; }
+          .celebration-symbol { font-size:48px; color:var(--red); margin-bottom:20px; }
+          .celebration-heading { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,5vw,42px); font-weight:700; color:var(--ink); margin-bottom:12px; }
+          .celebration-sub { font-size:16px; color:var(--ink-soft); line-height:1.65; max-width:440px; margin-bottom:8px; font-weight:300; }
+          .celebration-note { font-size:12px; color:var(--sand-mid); margin-bottom:32px; }
+          .celebration-btns { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+          .celebration-btn-outline { padding:14px 28px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
+          .celebration-btn-filled { padding:14px 28px; border-radius:100px; border:none; background:var(--ink); color:var(--cream); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
+          .celebration-btn-filled.disabled { opacity:0.35; cursor:not-allowed; }
         `;
-        html = html.replace('</style>\n</head>', `${lockCSS}</style>\n</head>`);
-        // Fallback if newline differs
-        html = html.replace('</style></head>', `${lockCSS}</style></head>`);
+        html = html.replace('</style>\n</head>', `${injectedCSS}</style>\n</head>`);
+        html = html.replace('</style></head>', `${injectedCSS}</style></head>`);
+
+        // Inject celebration overlay div into body
+        html = html.replace(
+          '<button class="menu-toggle"',
+          `<div class="celebration-overlay" id="celebrationOverlay">
+            <div class="celebration-symbol">✦</div>
+            <div class="celebration-heading" id="celebrationHeading">Day done.</div>
+            <div class="celebration-sub" id="celebrationSub"></div>
+            <div class="celebration-note">your next day unlocks tomorrow.</div>
+            <div class="celebration-btns">
+              <a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" ontouchend="window.top.location.href='/dashboard';return false;" class="celebration-btn-outline" style="cursor:pointer;touch-action:manipulation;">back to dashboard</a>
+              <button class="celebration-btn-filled" id="celebrationNextBtn" onclick="closeCelebration()">next day →</button>
+            </div>
+          </div>
+          <button class="menu-toggle"`
+        );
 
         // Inject completion timestamps and locking logic before init()
         const lockScript = `
@@ -114,13 +155,99 @@ showDay = function(n) {
   _origShowDay(n);
 };
 
-// Override completeDay to save timestamp
+// Override completeDay to save timestamp + show celebration
 const _origCompleteDay = completeDay;
 completeDay = function(n) {
   _origCompleteDay(n);
   saveCompletionTimestamp(n);
-  // Refresh sidebar lock states
   buildSidebar();
+  showCelebration(n);
+};
+
+// Part 5: Celebration overlay
+function showCelebration(n) {
+  const overlay = document.getElementById('celebrationOverlay');
+  const heading = document.getElementById('celebrationHeading');
+  const sub = document.getElementById('celebrationSub');
+  const nextBtn = document.getElementById('celebrationNextBtn');
+  if (!overlay) return;
+  heading.textContent = 'Day ' + n + ' done.';
+  const messages = {
+    1: "You just cleared the mental backlog. That's the hardest part — and you did it. See you tomorrow.",
+    14: "You showed up for 14 days. That matters more than you think."
+  };
+  sub.textContent = messages[n] || "Another day of honest thinking. That compounds. See you tomorrow.";
+  if (n < 14 && isDayUnlocked(n + 1)) {
+    nextBtn.className = 'celebration-btn-filled';
+    nextBtn.onclick = function() { closeCelebration(); showDay(n + 1); };
+  } else if (n < 14) {
+    nextBtn.className = 'celebration-btn-filled disabled';
+    nextBtn.textContent = 'Day ' + (n+1) + ' unlocks tomorrow';
+    nextBtn.onclick = null;
+  } else {
+    nextBtn.textContent = 'see your full journal →';
+    nextBtn.className = 'celebration-btn-filled';
+    nextBtn.onclick = function() { closeCelebration(); showJournal(); };
+  }
+  overlay.classList.add('show');
+}
+function closeCelebration() {
+  document.getElementById('celebrationOverlay')?.classList.remove('show');
+}
+
+// Part 2: Progressive reveal for sub-prompts
+function setupProgressiveReveal() {
+  document.querySelectorAll('.writing-prompts').forEach(function(container) {
+    const prompts = container.querySelectorAll('.writing-prompt');
+    if (prompts.length <= 1) return;
+    prompts.forEach(function(p, i) {
+      if (i === 0) { p.classList.add('revealed'); return; }
+    });
+    var revealed = 1;
+    function addNextBtn() {
+      if (revealed >= prompts.length) return;
+      var btn = document.createElement('button');
+      btn.className = 'prompt-next-btn';
+      btn.textContent = 'next →';
+      btn.onclick = function() {
+        if (revealed < prompts.length) {
+          prompts[revealed].classList.add('revealed');
+          revealed++;
+          btn.remove();
+          if (revealed < prompts.length) addNextBtn();
+        }
+      };
+      prompts[revealed - 1].after(btn);
+    }
+    addNextBtn();
+  });
+}
+
+// Part 3: Writing box encouragement
+function setupWritingEncouragement() {
+  document.querySelectorAll('.writing-area').forEach(function(ta) {
+    ta.setAttribute('placeholder', 'start anywhere. there are no wrong answers here.');
+    var enc = document.createElement('div');
+    enc.className = 'writing-encouragement';
+    enc.textContent = 'write freely and at length. use the prompts above as guides — not limits.';
+    ta.parentNode.insertBefore(enc, ta.nextSibling);
+    ta.addEventListener('input', function() {
+      var wc = ta.value.trim().split(/\\s+/).filter(function(w){return w.length>0}).length;
+      if (wc === 0) enc.textContent = 'write freely and at length. use the prompts above as guides — not limits.';
+      else if (wc <= 30) enc.textContent = 'keep going...';
+      else if (wc <= 70) enc.textContent = "you're finding it. stay with it.";
+      else if (wc <= 99) enc.textContent = "almost there. don't stop now.";
+      else enc.textContent = "you're there. keep going if you want. ✦";
+    });
+  });
+}
+
+// Override init to add progressive reveal + writing encouragement
+const _origInit = init;
+init = function() {
+  _origInit();
+  setupProgressiveReveal();
+  setupWritingEncouragement();
 };
 `;
         html = html.replace('init();', `${lockScript}\ninit();`);
