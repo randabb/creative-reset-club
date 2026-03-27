@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -77,39 +77,6 @@ export default function Home() {
   const [signInError, setSignInError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
   const router = useRouter();
-  const cursorRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
-  const mx = useRef(0);
-  const my = useRef(0);
-  const rx = useRef(0);
-  const ry = useRef(0);
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mx.current = e.clientX;
-      my.current = e.clientY;
-      if (cursorRef.current) {
-        cursorRef.current.style.left = e.clientX + "px";
-        cursorRef.current.style.top = e.clientY + "px";
-      }
-    };
-    window.addEventListener("mousemove", onMove);
-    let raf: number;
-    const animate = () => {
-      rx.current += (mx.current - rx.current) * 0.12;
-      ry.current += (my.current - ry.current) * 0.12;
-      if (ringRef.current) {
-        ringRef.current.style.left = rx.current + "px";
-        ringRef.current.style.top = ry.current + "px";
-      }
-      raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
 
   const handleSignIn = async () => {
     if (!signInEmail || !signInPassword) {
@@ -197,7 +164,7 @@ export default function Home() {
     if (screen !== screenNum) return null;
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px" }}>
-        <button onClick={() => go(screenNum - 1)} style={{ background: "none", border: "none", cursor: "none", fontSize: 13, color: "rgba(0,3,50,0.45)", marginBottom: 48, display: "flex", alignItems: "center", gap: 8, padding: 0 }}>← back</button>
+        <button onClick={() => go(screenNum - 1)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(0,3,50,0.45)", marginBottom: 48, display: "flex", alignItems: "center", gap: 8, padding: 0 }}>← back</button>
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 16 }}>{stepLabel}</p>
         <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: 12, maxWidth: 560 }}>
           {title}
@@ -215,7 +182,7 @@ export default function Home() {
                   display: "flex", alignItems: "flex-start", gap: 16,
                   padding: "20px 24px", border: "1.5px solid rgba(0,3,50,0.12)",
                   borderRadius: 16, background: activeOrHover ? "#000332" : "transparent",
-                  cursor: "none", textAlign: "left", transition: "all 0.22s"
+                  cursor: "pointer", textAlign: "left", transition: "all 0.22s"
                 }}
                 onMouseEnter={() => setHoveredOption(`${screenNum}-${c.val}`)}
                 onMouseLeave={() => setHoveredOption(null)}
@@ -254,28 +221,6 @@ export default function Home() {
           color:#000332;
           font-family:'Codec Pro',sans-serif;
           overflow-x:hidden;
-          cursor:none;
-        }
-        .cursor {
-          width:10px; height:10px;
-          background:#ff9090;
-          border-radius:50%;
-          position:fixed;
-          pointer-events:none;
-          z-index:9999;
-          transform:translate(-50%,-50%);
-          transition:transform .15s ease;
-        }
-        .cursor-ring {
-          width:36px; height:36px;
-          border:1.5px solid #000332;
-          border-radius:50%;
-          position:fixed;
-          pointer-events:none;
-          z-index:9998;
-          transform:translate(-50%,-50%);
-          opacity:.35;
-          transition:all .12s ease;
         }
         .stickman-img { width:200px; }
         @media (max-width:768px) {
@@ -290,9 +235,6 @@ export default function Home() {
         }
       `}</style>
 
-      <div ref={cursorRef} className="cursor" />
-      <div ref={ringRef} className="cursor-ring" />
-
       {/* NAV */}
       <nav style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -305,7 +247,7 @@ export default function Home() {
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <button
             onClick={() => setShowSignIn(true)}
-            style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", cursor: "none", padding: 0 }}
+            style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", cursor: "pointer", padding: 0 }}
           >
             sign in
           </button>
@@ -345,7 +287,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ padding: "0 48px", paddingTop: 100, position: "relative", overflow: "hidden" }}>
+        <div style={{ padding: "0 48px", paddingTop: 100, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 600, height: 600,
             background: "radial-gradient(circle, #e6f6ff 0%, transparent 70%)",
@@ -359,7 +301,7 @@ export default function Home() {
           <div className="hero-columns" style={{ position: "relative", zIndex: 1, minHeight: "calc(100vh - 160px)", display: "flex", alignItems: "center", gap: 56, maxWidth: 1060 }}>
 
             {/* LEFT: text + CTA */}
-            <div style={{ flex: "1 1 55%" }}>
+            <div style={{ flex: "1 1 45%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <h1 className="hero-heading" style={{
                 fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700,
                 lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
@@ -379,7 +321,7 @@ export default function Home() {
                   display: "inline-flex", alignItems: "center", gap: 12,
                   background: "#000332", color: "#f4f2ee",
                   padding: "18px 36px", borderRadius: 100,
-                  fontSize: 15, fontWeight: 700, border: "none", cursor: "none",
+                  fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer",
                   transition: "all 0.25s"
                 }}
                 onMouseEnter={e => { (e.target as HTMLElement).style.background = "#ff9090"; }}
@@ -393,7 +335,7 @@ export default function Home() {
             </div>
 
             {/* RIGHT: stickman + stats + cards */}
-            <div className="hero-right" style={{ flex: "1 1 45%", display: "flex", flexDirection: "column", gap: 28 }}>
+            <div className="hero-right" style={{ flex: "1 1 55%", display: "flex", flexDirection: "column", gap: 28 }}>
 
               {/* Stickman */}
               <div style={{ display: "flex", justifyContent: "center" }}>
@@ -483,7 +425,7 @@ export default function Home() {
       {screen === 7 && matchMessage.length > 0 && (
         <div style={{ padding: "100px 48px 80px" }}>
           <div style={{ maxWidth: 620, margin: "0 auto" }}>
-            <button onClick={() => go(6)} style={{ background: "none", border: "none", cursor: "none", fontSize: 13, color: "rgba(0,3,50,0.45)", marginBottom: 32, display: "flex", alignItems: "center", gap: 8, padding: 0 }}>← back</button>
+            <button onClick={() => go(6)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(0,3,50,0.45)", marginBottom: 32, display: "flex", alignItems: "center", gap: 8, padding: 0 }}>← back</button>
 
             <div style={{ background: "#000332", borderRadius: 24, padding: 40, marginBottom: 28, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: "radial-gradient(circle, rgba(255,144,144,0.2) 0%, transparent 70%)", borderRadius: "50%" }} />
@@ -553,7 +495,7 @@ export default function Home() {
                 <button
                   onClick={submit}
                   disabled={submitting}
-                  style={{ alignSelf: "flex-start", background: "#000332", color: "#f4f2ee", border: "none", padding: "16px 28px", borderRadius: 100, fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, cursor: "none", whiteSpace: "nowrap", opacity: submitting ? 0.6 : 1, marginTop: 4 }}
+                  style={{ alignSelf: "flex-start", background: "#000332", color: "#f4f2ee", border: "none", padding: "16px 28px", borderRadius: 100, fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", opacity: submitting ? 0.6 : 1, marginTop: 4 }}
                   onMouseEnter={e => { if (!submitting) (e.target as HTMLElement).style.background = "#ff9090"; }}
                   onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}
                 >
