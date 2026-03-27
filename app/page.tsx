@@ -255,8 +255,8 @@ export default function Home() {
             padding:16px !important;
             scroll-snap-align:start;
           }
-          .card-row-right { flex-direction:column !important; gap:10px !important; }
-          .card-row-right > div { flex:none !important; height:auto !important; }
+          .card-row-right { flex-direction:column !important; gap:10px !important; padding:0 !important; overflow:hidden; }
+          .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; box-sizing:border-box; overflow:hidden; }
         }
       `}</style>
 
