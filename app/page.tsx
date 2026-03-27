@@ -304,7 +304,7 @@ export default function Home() {
                 lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 16
               }}>
                 your daily prompt<br />
-                for creative thinking,<br />
+                for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
                 <span style={{ color: "#ff9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
               </h1>
 
