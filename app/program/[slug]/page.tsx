@@ -35,9 +35,18 @@ export default function ProgramPage() {
         const res = await fetch(validPrograms[slug].file);
         let html = await res.text();
 
-        // Inject ← Home link at the top of the iframe's existing sidebar
+        // Fix 1: Sidebar fully opaque background
+        html = html.replace(
+          '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);',
+          '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);'
+        );
+        html = html.replace(
+          /\.sidebar \{([^}]*?)background:var\(--ink\)/,
+          '.sidebar {$1background:#000332'
+        );
+
+        // Fix 2: Inject ← Home link pointing to /dashboard
         const homeLink = `<a href="/dashboard" style="display:block;padding:10px 9px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:12px;font-weight:700;color:rgba(255,255,255,0.55);transition:background .2s;" onmouseover="this.style.background='rgba(242,237,228,.06)'" onmouseout="this.style.background='none'" target="_top">← Home</a>`;
-        // Add breathing room below the hamburger on mobile
         html = html.replace(
           '.menu-toggle { display:none; position:fixed; top:14px; left:14px;',
           '.menu-toggle { display:none; position:fixed; top:16px; left:16px;'
@@ -50,6 +59,70 @@ export default function ProgramPage() {
           '<div class="sidebar-logo">creative reset club</div>',
           `<div class="sidebar-logo">creative reset club</div>${homeLink}`
         );
+
+        // Fix 3: Day locking — inject CSS + override buildSidebar and showDay with locking logic
+        const lockCSS = `
+          .day-nav-item.locked { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+          .day-nav-item.locked .day-nav-title::after { content:' 🔒'; }
+        `;
+        html = html.replace('</style>\n</head>', `${lockCSS}</style>\n</head>`);
+        // Fallback if newline differs
+        html = html.replace('</style></head>', `${lockCSS}</style></head>`);
+
+        // Inject completion timestamps and locking logic before init()
+        const lockScript = `
+function getCompletionTimestamps() {
+  return JSON.parse(localStorage.getItem('crc-timestamps') || '{}');
+}
+function saveCompletionTimestamp(day) {
+  const ts = getCompletionTimestamps();
+  if (!ts[day]) {
+    ts[day] = new Date().toISOString();
+    localStorage.setItem('crc-timestamps', JSON.stringify(ts));
+  }
+}
+function isDayUnlocked(day) {
+  if (day === 1) return true;
+  const prevDay = day - 1;
+  if (!completed.has(prevDay)) return false;
+  const ts = getCompletionTimestamps();
+  if (!ts[prevDay]) return true; // completed before timestamps existed
+  const completedDate = new Date(ts[prevDay]);
+  const completedLocal = new Date(completedDate.getFullYear(), completedDate.getMonth(), completedDate.getDate());
+  const today = new Date();
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return todayLocal > completedLocal;
+}
+
+// Override buildSidebar to add lock state
+const _origBuildSidebar = buildSidebar;
+buildSidebar = function() {
+  _origBuildSidebar();
+  for (let d = 2; d <= 14; d++) {
+    const nav = document.getElementById('nav-' + d);
+    if (nav && !isDayUnlocked(d)) {
+      nav.classList.add('locked');
+    }
+  }
+};
+
+// Override showDay to prevent showing locked days
+const _origShowDay = showDay;
+showDay = function(n) {
+  if (n > 1 && !isDayUnlocked(n)) return;
+  _origShowDay(n);
+};
+
+// Override completeDay to save timestamp
+const _origCompleteDay = completeDay;
+completeDay = function(n) {
+  _origCompleteDay(n);
+  saveCompletionTimestamp(n);
+  // Refresh sidebar lock states
+  buildSidebar();
+};
+`;
+        html = html.replace('init();', `${lockScript}\ninit();`);
 
         setHtmlContent(html);
         setStatus("authorized");
