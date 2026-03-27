@@ -99,6 +99,20 @@ export default function Dashboard() {
         </button>
       </div>
 
+      <div style={{ padding: "0 16px", marginBottom: 16 }}>
+        <a
+          href="/dashboard"
+          onClick={() => setMenuOpen(false)}
+          style={{
+            display: "block", padding: "10px 12px",
+            borderRadius: 10, textDecoration: "none",
+            fontSize: 13, fontWeight: 700, color: "rgba(244,242,238,0.65)",
+          }}
+        >
+          ← Home
+        </a>
+      </div>
+
       <div style={{ padding: "0 16px" }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)", padding: "0 12px", marginBottom: 10 }}>
           other programs
