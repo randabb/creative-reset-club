@@ -229,8 +229,9 @@ export default function Home() {
         @media (max-width:768px) {
           .stickman-img { width:100px; }
           .hero-heading { font-size:1.85rem !important; line-height:1.15 !important; }
-          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; padding-top:40px !important; }
-          .hero-right { width:calc(100vw - 96px) !important; max-width:calc(100vw - 96px) !important; overflow:hidden; }
+          .hero-outer { padding:40px 35px 0 35px !important; }
+          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
+          .hero-right { width:calc(100vw - 70px) !important; max-width:calc(100vw - 70px) !important; overflow:hidden; }
           .hero-left { padding-left:0 !important; }
           .headline-row { display:flex !important; align-items:center; gap:4px; }
           .stickman-mobile { display:block !important; align-self:center; }
@@ -319,7 +320,7 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
+        <div className="hero-outer" style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{
             position: "absolute", width: 500, height: 500,
             background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)",
