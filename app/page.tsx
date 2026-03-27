@@ -256,8 +256,8 @@ export default function Home() {
             padding:16px !important;
             scroll-snap-align:start;
           }
-          .card-row-right { flex-direction:column !important; gap:10px !important; padding:0 !important; overflow-x:hidden; }
-          .card-row-right > div { flex:none !important; height:auto !important; width:calc(100% - 32px) !important; margin-left:16px; margin-right:16px; box-sizing:border-box; overflow:hidden; display:block !important; }
+          .card-row-right { flex-direction:column !important; gap:10px !important; max-width:100vw; overflow-x:hidden; padding:0 16px !important; box-sizing:border-box; }
+          .card-row-right > div { flex-shrink:0 !important; flex:none !important; height:auto !important; max-width:100% !important; box-sizing:border-box; display:block !important; margin:0 !important; }
         }
       `}</style>
 
