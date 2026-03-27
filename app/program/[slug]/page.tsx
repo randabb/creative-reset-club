@@ -77,15 +77,44 @@ export default function ProgramPage() {
   }
 
   return (
-    <iframe
-      srcDoc={htmlContent}
-      style={{
-        width: "100%",
-        height: "100vh",
-        border: "none",
-        display: "block",
-      }}
-      title={validPrograms[slug]?.title || "Program"}
-    />
+    <>
+      <style>{`
+        .program-topbar {
+          display: none;
+        }
+        .program-iframe {
+          width: 100%;
+          height: 100vh;
+          border: none;
+          display: block;
+        }
+        @media (max-width: 768px) {
+          .program-topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            background: #000332;
+            font-family: 'Codec Pro', sans-serif;
+          }
+          .program-iframe {
+            height: calc(100vh - 48px);
+          }
+        }
+      `}</style>
+      <nav className="program-topbar">
+        <a href="/dashboard" style={{ fontSize: 13, fontWeight: 700, color: "rgba(244,242,238,0.65)", textDecoration: "none" }}>
+          ← Home
+        </a>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase", color: "#f4f2ee" }}>
+          creativeresetclub
+        </span>
+      </nav>
+      <iframe
+        srcDoc={htmlContent}
+        className="program-iframe"
+        title={validPrograms[slug]?.title || "Program"}
+      />
+    </>
   );
 }
