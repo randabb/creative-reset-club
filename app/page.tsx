@@ -215,7 +215,7 @@ export default function Home() {
           font-weight: 400 700;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        html { scroll-behavior:smooth; }
+        html { scroll-behavior:smooth; overflow-x:hidden; }
         body {
           background:#f4f2ee;
           color:#000332;
@@ -229,7 +229,8 @@ export default function Home() {
         @media (max-width:768px) {
           .stickman-img { width:100px; }
           .hero-heading { font-size:1.75rem !important; line-height:1.15 !important; }
-          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; }
+          .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; max-width:100vw; overflow-x:hidden; }
+          .hero-right { width:100% !important; max-width:100vw; }
           .hero-left { padding-left:0 !important; }
           .headline-row { display:flex !important; align-items:center; gap:4px; }
           .stickman-mobile { display:block !important; }
@@ -256,8 +257,8 @@ export default function Home() {
             padding:16px !important;
             scroll-snap-align:start;
           }
-          .card-row-right { flex-direction:column !important; gap:10px !important; max-width:100vw; overflow-x:hidden; padding:0 16px !important; box-sizing:border-box; }
-          .card-row-right > div { flex-shrink:0 !important; flex:none !important; height:auto !important; max-width:100% !important; box-sizing:border-box; display:block !important; margin:0 !important; }
+          .card-row-right { flex-direction:column !important; gap:10px !important; width:100% !important; overflow:hidden; padding:0 !important; box-sizing:border-box; }
+          .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block !important; margin:0 !important; }
         }
       `}</style>
 
