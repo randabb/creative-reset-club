@@ -17,6 +17,7 @@ export default function ProgramPage() {
 
   const [status, setStatus] = useState<"loading" | "authorized" | "not-found">("loading");
   const [htmlContent, setHtmlContent] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -30,6 +31,7 @@ export default function ProgramPage() {
         router.push("/");
         return;
       }
+      setUserId(user.id);
 
       try {
         const res = await fetch(validPrograms[slug].file);
@@ -155,13 +157,15 @@ showDay = function(n) {
   _origShowDay(n);
 };
 
-// Override completeDay to save timestamp + show celebration
+// Override completeDay to save timestamp + show celebration + notify parent
 const _origCompleteDay = completeDay;
 completeDay = function(n) {
   _origCompleteDay(n);
   saveCompletionTimestamp(n);
   buildSidebar();
   showCelebration(n);
+  // Notify parent to save to Supabase
+  window.parent.postMessage({ type: 'dayComplete', day: n }, '*');
 };
 
 // Part 5: Celebration overlay
@@ -261,6 +265,22 @@ init = function() {
 
     checkAccess();
   }, [slug, router]);
+
+  // Listen for day completion messages from iframe
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type !== "dayComplete" || !userId) return;
+      const dayNumber = event.data.day;
+      await supabase.from("day_submissions").upsert({
+        user_id: userId,
+        program_id: slug,
+        day_number: dayNumber,
+        submitted_at: new Date().toISOString(),
+      }, { onConflict: "user_id,program_id,day_number" });
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [userId, slug]);
 
   if (status === "loading") {
     return (
