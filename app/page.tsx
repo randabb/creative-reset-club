@@ -453,13 +453,23 @@ export default function Home() {
           <div className="results-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, maxWidth: 960, width: "100%", margin: "0 auto", alignItems: "center" }}>
             {/* LEFT: Track result */}
             <div style={{ paddingRight: 48 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 16 }}>{result.name}</p>
-              <h2 style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 16 }}>
-                {result.heading}
-              </h2>
-              <p style={{ fontSize: 16, color: "rgba(26,31,58,0.6)", lineHeight: 1.7 }}>
-                {result.body}
-              </p>
+              <div style={{ background: "#1a1f3a", borderRadius: 16, padding: 40 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 16 }}>{result.name}</p>
+                <h2 style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#f4f2ee", marginBottom: 16 }}>
+                  {result.heading}
+                </h2>
+                <p style={{ fontSize: 15, color: "rgba(244,242,238,0.7)", lineHeight: 1.7, marginBottom: 24 }}>
+                  {result.body}
+                </p>
+                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 24 }} />
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>your profile</p>
+                <p style={{ fontSize: 12, color: "rgba(244,242,238,0.5)", lineHeight: 1.8 }}>
+                  block lives in: {{ head: "your head", body: "your body", habits: "your habits", confidence: "your confidence" }[q3] || "unknown"}<br />
+                  creative style: {{ deep_focus: "deep focus", connections: "making connections", expression: "self-expression", genuinely_mine: "making it yours" }[q5] || "unknown"}<br />
+                  intention: {{ clear_thinking: "thinking more clearly", finishing: "finishing something", energized: "feeling energized again", trusting: "trusting your own ideas" }[q7] || "unknown"}
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(244,242,238,0.3)", marginTop: 20 }}>14 days. one practice a day. free to start.</p>
+              </div>
             </div>
 
             {/* DIVIDER */}
