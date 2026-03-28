@@ -3,36 +3,66 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const trackResults: Record<string, { name: string; heading: string; body: string }> = {
+const trackResults: Record<string, { name: string; body: string; recognize: string[]; looksLike: string }> = {
   empty_the_head: {
     name: "Empty the Head",
-    heading: "Your head is full.",
-    body: "Too many things competing at once. The problem isn't that you don't have ideas. It's that you can't hear them over everything else. This track starts by clearing space.",
+    body: "Your head is full. Not because you're disorganized or unfocused. Because you care about a lot of things and none of them have had a chance to land. You've been holding too much at once, and the mental weight of it is making it hard to think clearly about any of it.",
+    recognize: [
+      "you start things but can't decide which one actually matters",
+      "your best thinking happens in the shower or on a walk, never at your desk",
+      "you feel productive but not particularly clear",
+    ],
+    looksLike: "You'll start by getting everything out. All of it, without filtering. Then you'll start to see what actually matters and what's just been taking up space. By the end you'll have a clearer sense of where your real attention wants to go.",
   },
   make_it_yours: {
     name: "Make It Yours",
-    heading: "You've been making for everyone else.",
-    body: "You're still producing. But somewhere along the way it stopped feeling like yours. This track is about making something with no audience in mind.",
+    body: "You've been making things for everyone else. You're still producing. You show up, you deliver, you move fast. But somewhere along the way the work stopped feeling like it came from you. You know the difference, there's the thing you made because it was expected, and the thing you made that felt real. The gap between those two has been getting wider.",
+    recognize: [
+      "you edit yourself before you've even started",
+      "you know what would perform well before you know what you actually think",
+      "you've stopped making things just to see what happens",
+    ],
+    looksLike: "You'll start by getting honest about where the noise comes from. Then you'll spend some time just making, no brief, no audience, no filter. By the end you'll have made something that felt like yours. That's the whole point.",
   },
   reignite: {
     name: "Reignite",
-    heading: "The thread went quiet.",
-    body: "The connection to your own thinking hasn't disappeared. It's just been quiet. This track is about finding your way back, one thought at a time.",
+    body: "You've lost the thread back to your own thinking. It didn't happen suddenly. It was gradual, a slow drift toward reacting, consuming, responding. At some point you stopped generating and started curating. The ideas are still there. You just haven't had the conditions to hear them.",
+    recognize: [
+      "you can't remember the last time you had an idea that felt entirely yours",
+      "you feel more comfortable responding to things than starting them",
+      "you've been waiting to feel inspired before you begin",
+    ],
+    looksLike: "You'll start small, noticing what you actually think before you reach for anything external. Then you'll build back the habit of generating. By the end the connection to your own thinking will feel less fragile.",
   },
   refill: {
     name: "Refill",
-    heading: "The well ran dry.",
-    body: "You've been giving out more than you've been taking in. Before anything else, you need to restore. This track starts there.",
+    body: "The well ran dry. Not because you stopped caring, because you kept going without replenishing. You've been producing, delivering, showing up. But the creative energy that used to feel natural has gotten thin. What used to come easily now takes effort. What used to excite you now just feels like more to do.",
+    recognize: [
+      "you feel like you're running on fumes creatively",
+      "you can execute but you can't remember the last time you felt genuinely inspired",
+      "rest doesn't seem to help as much as it used to",
+    ],
+    looksLike: "You'll start by slowing down on purpose. Not to stop, to restore. You'll spend time noticing, receiving, and giving yourself permission to take in before you put out. By the end the well will have something in it again.",
   },
   move_it_forward: {
     name: "Move It Forward",
-    heading: "You're stuck in the loop.",
-    body: "The thinking is there. The movement isn't. This track is designed to break the cycle and get something out of your head and into the world.",
+    body: "You're stuck in the loop. The thinking is there, sometimes it's very much there. But it keeps circling without landing anywhere. You refine instead of finishing. You revisit instead of releasing. Somewhere between the idea and the output, something stalls.",
+    recognize: [
+      "you have files full of things that are almost done",
+      "you know what you want to make but keep finding reasons to wait",
+      "you're more comfortable thinking about the work than doing it",
+    ],
+    looksLike: "You'll start by understanding what's actually keeping things stuck. Then you'll build the habit of small, committed moves. By the end you'll have finished something and know how to do it again.",
   },
   one_thing: {
     name: "One Thing at a Time",
-    heading: "You know what you want to make.",
-    body: "Something keeps stopping you. And it's not a lack of ideas or ability. This track creates the conditions to finally move toward the thing you've been avoiding.",
+    body: "You know what you want to make. That's not the problem. The problem is that every time you get close to it, something stops you. It might look like perfectionism or procrastination from the outside. From the inside it feels more like fear, of what it means to try, of what it means if it doesn't work.",
+    recognize: [
+      "the things that matter most to you are the ones you keep putting off",
+      "you do the easy work first and save the real work for when you feel ready",
+      "you feel ready less and less often",
+    ],
+    looksLike: "You'll start by getting honest about what's actually stopping you. Not the surface reason, the real one. Then you'll take one small step toward the thing you've been avoiding. Then another. By the end it won't feel as heavy.",
   },
 };
 
@@ -473,16 +503,10 @@ export default function Home() {
             <div style={{ paddingRight: 48 }}>
               <div style={{ background: "#0f1428", borderRadius: 16, padding: 40, border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, background: "radial-gradient(circle, rgba(232,132,106,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 14, position: "relative" }}>{result.name}</p>
-                <h2 style={{ fontSize: "clamp(26px,3.5vw,38px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#f4f2ee", marginBottom: 14, position: "relative" }}>
-                  {result.heading}
-                </h2>
-                <p style={{ fontSize: 15, color: "rgba(244,242,238,0.6)", lineHeight: 1.7, marginBottom: 24, position: "relative" }}>
-                  {result.body}
-                </p>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 24 }} />
-                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 14 }}>your profile</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 20, position: "relative" }}>your track: {result.name}</p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, position: "relative" }}>
                   <p style={{ fontSize: 12, lineHeight: 1.5 }}>
                     <span style={{ color: "rgba(244,242,238,0.4)" }}>where you&apos;re blocked: </span>
                     <span style={{ color: "#f4f2ee" }}>{q3Labels[q3] || "unknown"}</span>
@@ -496,7 +520,29 @@ export default function Home() {
                     <span style={{ color: "#f4f2ee" }}>{q7Labels[q7] || "unknown"}</span>
                   </p>
                 </div>
-                <p style={{ fontSize: 11, color: "rgba(244,242,238,0.3)", marginTop: 20 }}>14 days. one practice a day. free to start.</p>
+
+                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 20 }} />
+
+                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.75, marginBottom: 20, position: "relative" }}>
+                  {result.body}
+                </p>
+
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10, position: "relative" }}>you might recognize this if:</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px 0", position: "relative" }}>
+                  {result.recognize.map((r, i) => (
+                    <li key={i} style={{ fontSize: 13, color: "rgba(244,242,238,0.55)", lineHeight: 1.6, paddingLeft: 14, position: "relative", marginBottom: 4 }}>
+                      <span style={{ position: "absolute", left: 0, color: "rgba(244,242,238,0.25)" }}>&bull;</span>
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10, position: "relative" }}>what your track looks like:</p>
+                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.55)", lineHeight: 1.7, marginBottom: 20, position: "relative" }}>
+                  {result.looksLike}
+                </p>
+
+                <p style={{ fontSize: 11, color: "rgba(244,242,238,0.3)", position: "relative" }}>14 days. one practice a day. free to start.</p>
               </div>
             </div>
 
