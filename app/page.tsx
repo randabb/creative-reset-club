@@ -265,12 +265,12 @@ export default function Home() {
         .quiz-screen { animation: fadeUp 0.3s ease forwards; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         .quiz-screen, .quiz-screen * { font-family:'Codec Pro',sans-serif; }
-        .quiz-card { display:flex; align-items:flex-start; gap:14px; width:100%; padding:20px 24px; border:1px solid rgba(26,31,58,0.1); border-radius:16px; background:white; cursor:pointer; text-align:left; font-family:'Codec Pro',sans-serif; font-size:15px; font-weight:500; color:#1a1f3a; line-height:1.5; transition:all 0.2s ease; }
-        .quiz-card:hover { border-color:rgba(232,132,106,0.3); }
+        .quiz-card { display:flex; align-items:flex-start; gap:14px; width:100%; padding:20px 24px; border:1px solid rgba(26,31,58,0.1); border-radius:16px; background:white; cursor:pointer; text-align:left; font-family:'Codec Pro',sans-serif; font-size:15px; font-weight:500; color:#1a1f3a; line-height:1.5; transition:all 0.2s ease; box-shadow:0 2px 8px rgba(26,31,58,0.06); }
+        .quiz-card:hover { background:#1a1f3a; border-color:#1a1f3a; color:#f4f2ee; }
         .quiz-card.selected { background:#1a1f3a; border-color:#1a1f3a; color:#f4f2ee; }
-        .quiz-card .card-num { font-size:11px; font-weight:700; color:#E8846A; opacity:0.4; min-width:20px; padding-top:3px; transition:opacity 0.2s ease; }
-        .quiz-card.selected .card-num { opacity:1; }
-        .quiz-card:hover .card-num { opacity:0.7; }
+        .quiz-card .card-num { font-size:11px; font-weight:700; color:#E8846A; min-width:20px; padding-top:3px; transition:all 0.2s ease; }
+        .quiz-card:hover .card-num { color:#E8846A; }
+        .quiz-card.selected .card-num { color:#E8846A; }
         .results-grid { grid-template-columns: 1fr auto 1fr; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
@@ -311,11 +311,6 @@ export default function Home() {
           >
             sign in
           </button>
-          {currentStep > 0 && currentStep <= totalSteps && (
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#E8846A" }}>
-              {String(currentStep).padStart(2, "0")} / {String(totalSteps).padStart(2, "0")}
-            </span>
-          )}
         </div>
       </nav>
 
@@ -396,6 +391,7 @@ export default function Home() {
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
           <p style={{ fontSize: 14, color: "rgba(26,31,58,0.45)", lineHeight: 1.5, marginBottom: 6 }}>a few questions to understand where you are right now.</p>
           <p style={{ fontSize: 12, color: "rgba(26,31,58,0.3)", marginBottom: 32 }}>there are no right answers. just pick what feels most true.</p>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>01 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             When you sit down to think or create lately, what&apos;s the closest feeling?
           </h2>
@@ -410,6 +406,7 @@ export default function Home() {
       {/* SCREEN 4: Q2 (branched) */}
       {screen === 4 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>02 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             {q2Question}
           </h2>
@@ -424,6 +421,7 @@ export default function Home() {
       {/* SCREEN 7: Q3 */}
       {screen === 7 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>03 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             Where do you feel the block most?
           </h2>
@@ -439,6 +437,7 @@ export default function Home() {
       {/* SCREEN 8: Q4 */}
       {screen === 8 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>04 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             When it comes to AI tools, which feels most true right now?
           </h2>
@@ -454,6 +453,7 @@ export default function Home() {
       {/* SCREEN 9: Q5 */}
       {screen === 9 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>05 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             On a good creative day, what does it feel like?
           </h2>
@@ -469,6 +469,7 @@ export default function Home() {
       {/* SCREEN 10: Q6 */}
       {screen === 10 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>06 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             How much time do you have each day?
           </h2>
@@ -483,6 +484,7 @@ export default function Home() {
       {/* SCREEN 11: Q7 */}
       {screen === 11 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>07 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             Three weeks from now, what would feel most meaningful?
           </h2>
