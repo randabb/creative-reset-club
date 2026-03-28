@@ -3,37 +3,41 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const trackResults: Record<string, { name: string; heading: string; body: string }> = {
+const trackResults: Record<string, { name: string; body: string }> = {
   empty_the_head: {
     name: "Empty the Head",
-    heading: "Your head is full.",
     body: "Too many things competing at once. The problem isn't that you don't have ideas. It's that you can't hear them over everything else. This track starts by clearing space.",
   },
   make_it_yours: {
     name: "Make It Yours",
-    heading: "You've been making things for everyone else.",
     body: "You're still producing. But somewhere along the way it stopped feeling like yours. This track is about making something with no audience in mind.",
   },
   reignite: {
     name: "Reignite",
-    heading: "You've lost the thread back to your own thinking.",
-    body: "It's not gone. It's just been quiet for a while. This track is about finding your way back, one thought at a time.",
+    body: "The connection to your own thinking hasn't disappeared. It's just been quiet. This track is about finding your way back, one thought at a time.",
   },
   refill: {
     name: "Refill",
-    heading: "The well ran dry.",
     body: "You've been giving out more than you've been taking in. Before anything else, you need to restore. This track starts there.",
   },
   move_it_forward: {
     name: "Move It Forward",
-    heading: "You're stuck in the loop.",
     body: "The thinking is there. The movement isn't. This track is designed to break the cycle and get something out of your head and into the world.",
   },
   one_thing: {
     name: "One Thing at a Time",
-    heading: "You know what you want to make.",
     body: "Something keeps stopping you. And it's not a lack of ideas or ability. This track creates the conditions to finally move toward the thing you've been avoiding.",
   },
+};
+
+const q3Labels: Record<string, string> = {
+  head: "your thinking", body: "your energy", habits: "your patterns", confidence: "your self-trust",
+};
+const q5Labels: Record<string, string> = {
+  deep_focus: "deep focus", connections: "lateral thinking", expression: "through expression", genuinely_mine: "through making",
+};
+const q7Labels: Record<string, string> = {
+  clear_thinking: "mental clarity", finishing: "forward movement", energized: "creative energy", trusting: "self trust",
 };
 
 export default function Home() {
@@ -459,20 +463,26 @@ export default function Home() {
             {/* LEFT: Track result */}
             <div style={{ paddingRight: 48 }}>
               <div style={{ background: "#1a1f3a", borderRadius: 16, padding: 40 }}>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 16 }}>{result.name}</p>
-                <h2 style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#f4f2ee", marginBottom: 16 }}>
-                  {result.heading}
-                </h2>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 20 }}>{result.name}</p>
                 <p style={{ fontSize: 15, color: "rgba(244,242,238,0.7)", lineHeight: 1.7, marginBottom: 24 }}>
                   {result.body}
                 </p>
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 24 }} />
-                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>your profile</p>
-                <p style={{ fontSize: 12, color: "rgba(244,242,238,0.5)", lineHeight: 1.8 }}>
-                  block lives in: {{ head: "your head", body: "your body", habits: "your habits", confidence: "your confidence" }[q3] || "unknown"}<br />
-                  creative style: {{ deep_focus: "deep focus", connections: "making connections", expression: "self-expression", genuinely_mine: "making it yours" }[q5] || "unknown"}<br />
-                  intention: {{ clear_thinking: "thinking more clearly", finishing: "finishing something", energized: "feeling energized again", trusting: "trusting your own ideas" }[q7] || "unknown"}
-                </p>
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 14 }}>your profile</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <p style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ color: "rgba(244,242,238,0.4)" }}>where you&apos;re blocked: </span>
+                    <span style={{ color: "#f4f2ee" }}>{q3Labels[q3] || "unknown"}</span>
+                  </p>
+                  <p style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ color: "rgba(244,242,238,0.4)" }}>how you work best: </span>
+                    <span style={{ color: "#f4f2ee" }}>{q5Labels[q5] || "unknown"}</span>
+                  </p>
+                  <p style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ color: "rgba(244,242,238,0.4)" }}>what you&apos;re here for: </span>
+                    <span style={{ color: "#f4f2ee" }}>{q7Labels[q7] || "unknown"}</span>
+                  </p>
+                </div>
                 <p style={{ fontSize: 11, color: "rgba(244,242,238,0.3)", marginTop: 20 }}>14 days. one practice a day. free to start.</p>
               </div>
             </div>
