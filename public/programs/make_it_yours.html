@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make It Yours — Creative Reset Club</title>
+<style>
+@font-face {
+  font-family: 'Codec Pro';
+  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
+</style>
+<style>
+  :root {
+    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
+    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
+    --ice: #e6f6ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
+  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
+  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
+  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
+  .phase-group { margin-bottom:20px; }
+  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); }
+  .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
+  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
+  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
+  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
+  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
+  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
+  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
+  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
+  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
+  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; }
+  .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
+  .journal-view.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
+  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
+  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
+  .day-title em { font-style:normal; color:var(--red); }
+  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
+  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
+  .day-completed-badge.show { display:flex; }
+  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
+  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
+  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
+  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
+  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
+  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
+  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
+  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
+  .section { margin-bottom:32px; }
+  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
+  .writing-prompts { margin-bottom:14px; }
+  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
+  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
+  .writing-area:focus { border-color:var(--ink); }
+  .writing-area.sufficient { border-color:#7A9E7E; }
+  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
+  .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
+  .char-num.sufficient { color:#7A9E7E; }
+  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
+  .followup-section.visible { display:block; }
+  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
+  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .followup-textarea:focus { border-color:var(--ink); }
+  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
+  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
+  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
+  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
+  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
+  .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-next:hover { border-color:var(--ink); }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
+  .complete-note.error { color:var(--red); }
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
+  .journal-entry:last-of-type { border-bottom:none; }
+  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
+  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
+  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
+  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
+  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
+  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
+  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
+  .ai-title em { font-style:normal; }
+  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
+  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
+  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
+  .loading-dots { display:flex; gap:4px; }
+  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; }
+  .loading-dot:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+  .reflection-output { animation:fadeIn .6s ease; }
+  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
+  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
+  .warm-text p { margin-bottom:14px; }
+  .warm-text p:last-child { margin-bottom:0; }
+  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
+  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
+  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
+  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
+  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
+  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; }
+    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
+    .day-number-large { display:none; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">creative reset club</div>
+    <div class="sidebar-program">Make It<br>Yours</div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-progress">
+      <div class="progress-label">your progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-count" id="progressCount">0 of 14 days complete</div>
+    </div>
+  </nav>
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+const MIN = 100;
+function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
+const program = [
+  { day:1, phase:1, phaseName:"Notice", title:"Who Are You Making For",
+    fw:{ name:"The Audience Trap", author:"Rick Rubin — The Creative Act",
+      body:"Rubin argues that the most common creative distortion is making for an imagined audience instead of making from yourself. When your work is shaped by who you think is watching, it becomes a performance rather than an expression. The first step in making it yours is noticing who you've been unconsciously making for — and whether that's actually who you want to serve.",
+      benefit:"<strong>Cognitive benefit:</strong> Identifying extrinsic motivational influences activates metacognitive awareness — the ability to observe your own thought processes. Research shows that people who can distinguish between intrinsic and extrinsic drivers make creative choices that are more original and more personally satisfying." },
+    q:"Who have you been making your creative work for — and is that the same person you actually want to be making for?",
+    prompts:["When you sit down to create, whose voice is in your head? Whose approval are you seeking?","Are you making for a specific audience, a market, a mentor, a parent, a peer group, or an imagined critic?","When did you start making for them instead of for yourself? Can you identify the moment or the shift?","What would you make differently if absolutely no one would ever see it?","What parts of your current work feel like genuine expression, and what parts feel like performance?"],
+    fu:{ t:50, q:"What would it feel like to make something with zero audience in mind — purely for yourself?", prompts:["Is that exciting or terrifying? What does the feeling tell you?","When was the last time you made something purely for yourself?","What stopped you from continuing to make that way?"] },
+    ref:"Most creative people don't realize they've shifted from expression to performance. It happens gradually — a comment here, an algorithm there, a mentor's suggestion. Today you named it. That's the beginning of taking it back.",
+    action:{ i:"👁️", t:"Write the name of the person or audience you've been unconsciously making for. Then write one sentence about what you'd make if they didn't exist." }
+  },
+  { day:2, phase:1, phaseName:"Notice", title:"The Audience Audit",
+    fw:{ name:"1000 True Fans", author:"Kevin Kelly — 1000 True Fans",
+      body:"Kelly's insight is that you don't need millions of followers — you need a small number of people who genuinely resonate with your actual work. But most creators never find their true fans because they're making work designed to appeal broadly rather than resonate deeply. The audience audit maps who actually responds to your work versus who you've been trying to reach.",
+      benefit:"<strong>Cognitive benefit:</strong> Distinguishing between broad appeal and deep resonance activates the brain's social cognition networks in a more focused way. Research shows that creators who optimize for depth of connection over breadth of reach produce more distinctive and more sustainable creative work." },
+    q:"Map your actual audience — who responds to your work, who engages deeply, and who you've been chasing but never connecting with.",
+    prompts:["Who has genuinely responded to your work — not liked it politely, but actually been moved or changed by it?","What did those people respond to specifically? What about your work resonated with them?","Who have you been trying to reach that you've never been able to connect with? What does that tell you?","Is there a gap between who responds to your authentic work and who you've been trying to attract?","If you could only make work for the people who already love what you do — what would change?"],
+    fu:{ t:50, q:"What if the people who already respond to your real work are your actual audience — and everyone else is a distraction?", prompts:["How would that change what you make next?","What would you stop doing if you accepted this?","What becomes possible when you stop trying to reach people who don't resonate with you?"] },
+    ref:"The people who respond to your real work are telling you something. They're not responding to your performance — they're responding to you. Pay attention to who those people are.",
+    action:{ i:"📋", t:"List three people who have genuinely responded to your most authentic work. What did they say? What specifically moved them? That's your compass." }
+  },
+  { day:3, phase:1, phaseName:"Notice", title:"What You Actually Want",
+    fw:{ name:"The War of Art", author:"Steven Pressfield — The War of Art",
+      body:"Pressfield writes about Resistance — the force that keeps you from doing your real work. One of Resistance's most effective tools is convincing you that what you should want is what you actually want. It replaces genuine creative desire with acceptable substitutes — things that look like ambition but are actually avoidance of the scarier, more personal work you're meant to do.",
+      benefit:"<strong>Cognitive benefit:</strong> Distinguishing genuine desire from adopted desire requires accessing deep motivational circuits that are often overridden by social conditioning. Research on self-determination theory shows that people who can identify their authentic wants experience greater creative flow and persistence." },
+    q:"What do you actually want to make — not what seems smart, marketable, or impressive, but what you genuinely want to create?",
+    prompts:["If money, status, and other people's opinions were completely irrelevant — what would you make?","What creative work have you been dismissing as 'too weird,' 'too personal,' or 'not commercial enough'?","What do you daydream about making when you're not being strategic?","What would the version of you who has nothing to prove choose to create?","What creative impulse have you been suppressing because it doesn't fit your brand, your market, or your professional identity?"],
+    fu:{ t:50, q:"What is the creative work you're most afraid to admit you want to make?", prompts:["Why is it scary? What does it reveal about you?","Who would be surprised to learn this is what you really want?","What has the cost been of not making this thing?"] },
+    ref:"The work you actually want to make is usually the work you're most afraid to admit wanting. Not because it's impractical — because it's personal. And personal work is where creative breakthroughs live.",
+    action:{ i:"💡", t:"Write one sentence describing the creative work you actually want to make — the one you've been afraid to say out loud. Don't qualify it. Just name it." }
+  },
+  { day:4, phase:1, phaseName:"Notice", title:"The Permission Slip",
+    fw:{ name:"Big Magic", author:"Elizabeth Gilbert — Big Magic",
+      body:"Gilbert writes that creative permission doesn't come from the outside — from credentials, degrees, markets, or gatekeepers. It comes from within. Most creators are waiting for someone to tell them they're allowed to make the thing they want to make. That permission is never coming from outside. You have to write it yourself.",
+      benefit:"<strong>Cognitive benefit:</strong> Self-authorization activates intrinsic motivation circuits and reduces the inhibitory effects of external evaluation anxiety. Research shows that people who explicitly grant themselves permission to pursue personal creative goals produce more original work and experience less creative block." },
+    q:"Write yourself a permission slip — explicit permission to make the work you actually want to make, in the way you actually want to make it.",
+    prompts:["What specific permission do you need? Permission to be weird? To be serious? To be playful? To ignore the market?","Who have you been waiting for permission from — and why can't you give it to yourself?","What rules about creative work have you been following that you didn't choose and don't agree with?","What would your permission slip say if it was completely honest and completely generous?","Write the permission slip. Make it real. 'I give myself permission to...'"],
+    fu:{ t:50, q:"What shifts in your body and your thinking when you actually read your permission slip back to yourself?", prompts:["Does it feel true, or does it feel like pretending?","What would need to change for it to feel completely true?","What would you do tomorrow if this permission was fully activated?"] },
+    ref:"You don't need anyone's permission to make your work. You never did. But writing the permission slip makes it concrete — it turns a vague feeling into a stated intention. That matters.",
+    action:{ i:"📝", t:"Write your permission slip on paper. Sign it. Put it where you'll see it when you sit down to create. Read it before you start working." }
+  },
+  { day:5, phase:2, phaseName:"Reclaim", title:"Your Real Voice",
+    fw:{ name:"Bird by Bird", author:"Anne Lamott — Bird by Bird",
+      body:"Lamott writes about finding your own voice by first noticing all the voices that aren't yours — the critic, the perfectionist, the people-pleaser, the strategist. Your real voice is what's left when those are quiet. It's not something you develop. It's something you uncover by removing everything that's been layered on top of it.",
+      benefit:"<strong>Cognitive benefit:</strong> Voice authenticity in creative work correlates with activation of the brain's default mode network — the same network active during genuine self-expression and autobiographical memory. When creators work in their authentic voice, neural efficiency increases and creative output becomes more distinctive." },
+    q:"Describe your real creative voice — not the polished version, not the professional version, but the voice that comes out when you stop performing.",
+    prompts:["How do you actually think about your work when no one is listening? What language do you use?","What is the tone of your most honest creative impulses — playful, dark, tender, fierce, quiet, loud?","What voices have you been channeling that aren't yours — influences you've adopted without choosing them?","What would your work sound like if you wrote, designed, or created the way you actually talk to your closest friend?","When has your real voice accidentally come through in your work — and what was the response?"],
+    fu:{ t:50, q:"If your real voice was a person, how would you describe them — and how are they different from the person you perform in your work?", prompts:["What does the real voice care about that the performed voice ignores?","What does the real voice say that the performed voice edits out?","What would happen if you let the real voice lead for a week?"] },
+    ref:"Your real voice is already there. It comes out in your best work, your off-the-cuff remarks, your unguarded moments. The practice isn't finding it — it's stopping the habit of hiding it.",
+    action:{ i:"🎤", t:"Write 200 words about your work in your actual voice — the way you'd explain it to your best friend at midnight. No editing, no performing. Just talk." }
+  },
+  { day:6, phase:2, phaseName:"Reclaim", title:"Make Something Ugly",
+    fw:{ name:"Shitty First Drafts", author:"Anne Lamott — Bird by Bird",
+      body:"Lamott's famous advice about shitty first drafts isn't really about drafts. It's about defeating the perfectionism that keeps your real work locked up. When you make something deliberately ugly — when you remove the possibility of it being good — you also remove the fear that's been controlling your creative process. What emerges is often more interesting than anything you've carefully crafted.",
+      benefit:"<strong>Cognitive benefit:</strong> Deliberately lowering quality expectations deactivates the brain's evaluative circuits and activates generative ones. Research on creative cognition shows that people who are told their work won't be judged produce significantly more original ideas than those under evaluation pressure." },
+    q:"Make something ugly today — deliberately bad, intentionally imperfect, aggressively not-for-anyone. Then write about what happened.",
+    prompts:["What did you make? Describe it. The uglier the better.","What happened when you removed the possibility of it being good? What opened up?","Did anything surprising emerge — an idea, a feeling, a direction — that wouldn't have appeared if you were trying to be good?","What was the hardest part: starting, continuing, or not fixing it?","What does this exercise reveal about how much of your creative process is controlled by the fear of making something bad?"],
+    fu:{ t:50, q:"What would change about your creative practice if 'ugly' was an acceptable stage of every project?", prompts:["How much time do you spend trying to make things good before they need to be?","What ideas have you abandoned because the first version wasn't good enough?","What would your creative output look like if you made ugly things every day for a month?"] },
+    ref:"Ugliness is a creative tool, not a failure state. The willingness to make bad work is what separates creators who produce from creators who wait. You can't edit a blank page.",
+    action:{ i:"🎨", t:"Keep the ugly thing you made. Don't fix it. Put it somewhere visible as proof that you can create without perfection. That proof matters more than you think." }
+  },
+  { day:7, phase:2, phaseName:"Reclaim", title:"No Brief Today",
+    fw:{ name:"Free Play", author:"Stephen Nachmanovitch — Free Play",
+      body:"Nachmanovitch writes about improvisation as the purest form of creative expression — making without a plan, without a brief, without a destination. Most creative professionals have lost the ability to play because every creative act has become tied to an outcome. Today, there is no outcome. There is no client, no audience, no strategy. There is only making.",
+      benefit:"<strong>Cognitive benefit:</strong> Unstructured creative play activates divergent thinking networks and the brain's reward systems simultaneously. Research shows that creative play without goals produces novel neural connections that structured work cannot — because the brain is free to explore without the constraint of arriving somewhere specific." },
+    q:"Create something today with no brief, no audience, no goal, and no plan. Then write about what the experience was like.",
+    prompts:["What did you make when no one told you what to make — including yourself?","What was the experience of creating without a destination? Freeing, uncomfortable, or both?","When did you last make something with zero purpose? How long ago?","What showed up in the work that surprised you — themes, impulses, or directions you didn't expect?","What does this exercise reveal about how much of your creative life is driven by external structure versus internal impulse?"],
+    fu:{ t:50, q:"What would it mean to build regular unstructured creative time into your life — time with no brief, no purpose, just making?", prompts:["What are you afraid would happen if you gave yourself this regularly?","What might you discover about yourself that structured work can't reveal?","How much of your creative identity is tied to being productive versus being expressive?"] },
+    ref:"Briefs are useful. But if every creative act requires a brief, you've outsourced your creative direction to external structures. Sometimes you need to make with no reason at all — to remember that you can.",
+    action:{ i:"🎲", t:"Schedule 30 minutes of no-brief creative time this week. No project, no goal, no sharing. Just make. Put it in your calendar like it matters — because it does." }
+  },
+  { day:8, phase:2, phaseName:"Reclaim", title:"The Selfish Draft",
+    fw:{ name:"Steal Like an Artist", author:"Austin Kleon — Steal Like an Artist",
+      body:"Kleon writes that all creative work begins with influence — but the best creative work transforms influence into something personal. The selfish draft is about making one version of your current work that is entirely for you — not a compromise, not a crowd-pleaser, not a strategic choice. The version that would exist if you were the only person who would ever see it.",
+      benefit:"<strong>Cognitive benefit:</strong> Creating without audience consideration activates the brain's authentic self-expression networks, producing work that is more neurologically integrated — meaning more of your brain participates in making it. This produces work that is both more distinctive and more personally meaningful." },
+    q:"Take something you're currently working on and make a selfish draft — the version that exists purely for you, with zero consideration for anyone else.",
+    prompts:["What project or piece of work did you choose? Why this one?","What did you change when you made it purely for yourself? What did you add, remove, or transform?","What was the hardest part of removing the audience from your creative decisions?","What does the selfish draft reveal about the gap between what you're making and what you want to make?","If the selfish draft is better than the 'real' version — what does that tell you?"],
+    fu:{ t:50, q:"What would happen if you showed the selfish draft to the world instead of the polished, audience-approved version?", prompts:["What are you afraid people would think?","What if they liked the selfish version more?","What would it take to close the gap between your selfish draft and your published work?"] },
+    ref:"The gap between your selfish draft and your published work is the gap between who you are and who you're performing. The smaller that gap, the more powerful and sustainable your creative practice becomes.",
+    action:{ i:"✍️", t:"Compare your selfish draft to your 'real' version. Circle three differences. For each one, ask: which version is actually better? Be honest." }
+  },
+  { day:9, phase:3, phaseName:"Create", title:"Your Signature Move",
+    fw:{ name:"The Unfair Advantage", author:"Ash Ali & Hasan Kubba",
+      body:"Your signature move is the thing you do that no one else does quite the same way — the creative habit, perspective, or approach that is uniquely yours. It's not a brand strategy. It's a pattern that emerges from your authentic creative expression. Most creators have one but haven't named it, because they're too busy trying to be versatile instead of distinctive.",
+      benefit:"<strong>Cognitive benefit:</strong> Identifying personal creative signatures activates self-concept clarity — a psychological state associated with greater confidence, faster decision-making, and more consistent creative output. When you know what makes your work distinctly yours, every creative decision becomes simpler." },
+    q:"What is your signature move — the thing you do creatively that is distinctly, recognizably yours?",
+    prompts:["What do people consistently notice or comment on in your work — even when you're not trying?","What creative habit or perspective do you have that you've never seen anyone else do quite the same way?","What themes, aesthetics, or approaches keep appearing in your work regardless of the project or brief?","What would someone who knows your work well point to as the thing that makes it unmistakably yours?","If you had to describe your creative fingerprint in one sentence, what would it be?"],
+    fu:{ t:50, q:"Have you been hiding or downplaying your signature move — and if so, why?", prompts:["Is it because it feels too simple, too obvious, or too personal?","What would happen if you leaned into it fully instead of balancing it with versatility?","What would your work look like if your signature move was the foundation of everything you made?"] },
+    ref:"Your signature move isn't something you create — it's something you notice. It's already in your work. The practice is to stop diluting it and start building on it.",
+    action:{ i:"🖊️", t:"Name your signature move in one phrase. Then look at your last three projects — can you find it in each one? If so, lean in. If not, bring it back." }
+  },
+  { day:10, phase:3, phaseName:"Create", title:"The Honest Version",
+    fw:{ name:"Daring Greatly", author:"Brene Brown — Daring Greatly",
+      body:"Brown's research on vulnerability shows that the work that connects most deeply with others is the work that comes from honesty — not performing confidence or expertise, but sharing what's actually true. The honest version of your work is the version where you stop protecting yourself and start saying what you actually mean.",
+      benefit:"<strong>Cognitive benefit:</strong> Authentic self-disclosure in creative work activates the brain's social bonding circuits in the audience and narrative integration circuits in the creator. Research shows that vulnerable, honest creative work produces stronger audience connection than polished, protected work — because humans are wired to respond to authenticity." },
+    q:"Make the honest version of something you're working on — the version where you say what you actually mean, without protecting yourself.",
+    prompts:["What are you currently holding back in your work — what truth are you softening, hiding, or avoiding?","What would the honest version include that the current version doesn't?","What are you afraid of revealing through your work? What feels too personal or too real?","Make the honest version. Write it, sketch it, prototype it. What changed?","What does the honest version cost you that the safe version doesn't?"],
+    fu:{ t:50, q:"What is the relationship between honesty in your work and fear of rejection?", prompts:["If the honest version was rejected, would it hurt more than the safe version being rejected? Why?","What would it mean if the honest version was received well?","Is the safe version protecting you from rejection, or from being truly seen?"] },
+    ref:"Safe work protects you. Honest work connects you. Both have a cost. But the cost of never making the honest version is that your audience only ever meets a performance — and you never find out who would have responded to the real thing.",
+    action:{ i:"💎", t:"Take one piece of your current work and rewrite the part you've been softening. Make it true. You don't have to publish it — but make it exist." }
+  },
+  { day:11, phase:3, phaseName:"Create", title:"Show One Person",
+    fw:{ name:"Show Your Work", author:"Austin Kleon — Show Your Work",
+      body:"Kleon argues that sharing creative work is itself a creative act — but most people share too broadly and too performatively. Showing one person — someone specific, someone you trust, someone whose response you genuinely want — is a fundamentally different act from posting for an audience. It's intimate, it's scary, and it's where the most useful creative feedback lives.",
+      benefit:"<strong>Cognitive benefit:</strong> Sharing work with a specific trusted individual activates social reward circuits in a focused way, producing more detailed and more useful feedback processing than broad audience sharing. Research shows that targeted sharing also reduces the anxiety associated with creative vulnerability." },
+    q:"Show your honest work — the real version, not the safe version — to one specific person. Then write about what happened.",
+    prompts:["Who did you choose, and why? What made them the right person for this?","What did you show them — the safe version or the honest one?","What was their response? What specifically did they say or do?","What surprised you about their reaction — what was different from what you expected?","What did this experience teach you about the gap between your fear of sharing and the actual experience of being seen?"],
+    fu:{ t:50, q:"What would change about your creative practice if you had one person you consistently showed your real work to before showing it to the world?", prompts:["Who would that person be? What qualities make them right for this role?","What would regular honest feedback from one trusted person do for your creative confidence?","How is showing one person different from posting for many — and which one actually serves your growth?"] },
+    ref:"One honest response from someone who sees your real work is worth more than a thousand likes on the polished version. Today you experienced the difference. Remember it.",
+    action:{ i:"🤝", t:"If you haven't shown someone yet, do it today. Choose one person. Send them your honest work with a simple message: 'I made this. I'd love to know what you think.'" }
+  },
+  { day:12, phase:4, phaseName:"Own", title:"The Declaration",
+    fw:{ name:"Turning Pro", author:"Steven Pressfield — Turning Pro",
+      body:"Pressfield writes that the difference between an amateur and a professional is not skill — it's declaration. The professional has declared, to themselves and to the world, what they do and who they are. The declaration is not a brand statement. It's a line in the sand: this is what I make, this is how I make it, and this is who I make it for.",
+      benefit:"<strong>Cognitive benefit:</strong> Public identity commitment activates what psychologists call the consistency principle — the brain's tendency to align future behaviour with stated identity. Research shows that people who make public declarations about their creative identity are significantly more likely to follow through than those who keep their intentions private." },
+    q:"Write your creative declaration — who you are, what you make, how you make it, and who it's for. Not a brand statement. A truth statement.",
+    prompts:["Who are you as a creator — not your resume, your actual creative identity?","What do you make — specifically, honestly, in your own words?","How do you make it — what is your process, your approach, your way of working that is distinctly yours?","Who is it for — not a market segment, the actual humans whose lives your work touches?","What is the promise of your work — what does it do for the people who encounter it?"],
+    fu:{ t:50, q:"Read your declaration back. Does it sound like you — or like someone else's version of you?", prompts:["What would you change to make it more honest?","What are you still performing in this declaration?","What would the most stripped-down, unperformative version say?"] },
+    ref:"A declaration is not a constraint — it's a foundation. When you know who you are and what you make, every creative decision gets clearer. Not easier — clearer.",
+    action:{ i:"📣", t:"Read your declaration aloud. Then put it somewhere you'll see it daily — above your desk, on your phone, in your notebook. Let it become the filter for every creative choice." }
+  },
+  { day:13, phase:4, phaseName:"Own", title:"Make It Again",
+    fw:{ name:"The Practice", author:"Seth Godin — The Practice",
+      body:"Godin writes that the practice is not about inspiration — it's about showing up and making the work, consistently, regardless of how you feel. Making it again — revisiting something you've already made, but this time with full ownership of your voice, your vision, and your declaration — is where the theory becomes real. It's one thing to know who you are. It's another to make from that knowledge.",
+      benefit:"<strong>Cognitive benefit:</strong> Revisiting previous work with new self-knowledge activates both episodic memory and creative generation circuits simultaneously. This combination produces work that is both more integrated with your creative history and more forward-looking than work created from scratch." },
+    q:"Take something you've already made — something where you compromised, performed, or held back — and make it again as fully yourself.",
+    prompts:["What piece of work did you choose to remake? Why this one?","What did you change? What did you add that was missing? What did you remove that wasn't yours?","What is different about making this piece now, with everything you've learned in this program?","Is the new version better? More honest? More you? How can you tell?","What does this exercise reveal about how much you've been compromising without realizing it?"],
+    fu:{ t:50, q:"What would it look like to make everything this way — with this level of honesty and ownership — going forward?", prompts:["Is that sustainable, or does some compromise serve you?","Where is the line between owning your work and ignoring your audience entirely?","What would your creative practice look like if this version of making was the default?"] },
+    ref:"Making it again is not about fixing the old version. It's about proving to yourself that you can make from a different place — from ownership rather than performance. That proof changes everything that comes after.",
+    action:{ i:"🔄", t:"Put the two versions side by side — the original and the remade version. Show someone both and ask which one feels more alive. Their answer will tell you something important." }
+  },
+  { day:14, phase:4, phaseName:"Own", title:"What's Yours Now",
+    fw:{ name:"The Creative Act", author:"Rick Rubin — The Creative Act",
+      body:"Rubin writes that the creative act is fundamentally an act of self-expression — of putting something into the world that could only come from you. After fourteen days of noticing, reclaiming, creating, and owning, the question is no longer 'how do I make it mine?' The question is: 'now that I know what's mine, what do I do with it?'",
+      benefit:"<strong>Cognitive benefit:</strong> Integrative self-reflection — looking back across a period of personal creative development — activates narrative identity processes that consolidate new self-knowledge into stable, actionable self-understanding. This is how temporary insights become permanent changes in creative practice." },
+    q:"After fourteen days of making it yours — what is actually yours now? What have you reclaimed, discovered, and committed to?",
+    prompts:["What do you know about your creative voice now that you didn't know or hadn't admitted on Day 1?","What have you reclaimed — what creative impulses, voices, or directions did you take back from external expectations?","What did you discover by making ugly, making without a brief, making selfishly, and making honestly?","What is the most important thing you learned about the gap between who you perform and who you actually are?","What do you want to carry forward — and what are you leaving behind?"],
+    fu:{ t:50, q:"What would you tell the version of you who started this program — the one making for everyone else?", prompts:["What do you know now that you needed to hear then?","What was the real cost of making work that wasn't yours?","What is the one thing you want to remember when the pressure to perform returns?"] },
+    ref:"Making it yours is not a one-time act. It's a practice — a daily choice to create from honesty rather than performance. The pressure to perform will return. Now you know what your real voice sounds like. That changes everything.",
+    action:{ i:"🌱", t:"Write one sentence that captures what 'making it yours' means to you now. Keep it close. Read it before every creative session. Let it be your compass." }
+  }
+];
+
+
+const completed = new Set(JSON.parse(localStorage.getItem('crc-miy') || '[]'));
+
+function init() {
+  buildSidebar();
+  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
+  showDay(1);
+  updateProgress();
+}
+
+function buildSidebar() {
+  const phases = {};
+  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
+  let html = '';
+  Object.entries(phases).forEach(([ph, days]) => {
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d => {
+      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
+        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
+    });
+    html += '</div>';
+  });
+  html += `<div class="phase-group"><div class="phase-label">Review</div>
+    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
+      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-title">Full Journal + AI Reflection</div>
+    </button></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function buildDay(d) {
+  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
+  const done = completed.has(d.day);
+  return `<div class="day-view" id="day-${d.day}">
+    <div class="day-header">
+      <div class="day-meta">
+        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
+        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
+      </div>
+      <div class="day-number-large">${d.day}</div>
+    </div>
+    <div class="framework-card">
+      <div class="framework-eyebrow">framework</div>
+      <div class="framework-name">${d.fw.name}</div>
+      <div class="framework-author">${d.fw.author}</div>
+      <div class="framework-body">${d.fw.body}</div>
+      <div class="framework-benefit">${d.fw.benefit}</div>
+    </div>
+    <div class="section">
+      <div class="section-label">today's question</div>
+      <div class="question-text">"${d.q}"</div>
+      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <div class="char-counter">
+        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
+      </div>
+      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
+        <div class="followup-label">going deeper</div>
+        <div class="followup-question">"${d.fu.q}"</div>
+        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">reflection</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">micro-action</div>
+      <div class="action-card">
+        <div class="action-icon">${d.action.i}</div>
+        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
+      </div>
+    </div>
+    <div class="complete-row">
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
+    </div>
+  </div>`;
+}
+
+function buildJournal() {
+  return `<div class="journal-view" id="journal-view">
+    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Making It Yours</em></h1>
+    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
+    <div id="j-entries"></div>
+    <div class="ai-section">
+      <div class="ai-eyebrow">AI Reflection</div>
+      <h2 class="ai-title">What your writing <em>reveals</em></h2>
+      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
+      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
+    </div>
+  </div>`;
+}
+
+function showDay(n) {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('day-'+n)?.classList.add('active');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function showJournal() {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('journal-view').classList.add('active');
+  document.getElementById('nav-journal')?.classList.add('active');
+  populateJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function populateJournal() {
+  document.getElementById('j-entries').innerHTML = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    return `<div class="journal-entry">
+      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-title">${d.title}</div>
+      <div class="journal-question">"${d.q}"</div>
+      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
+      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onWrite(n) {
+  const v = document.getElementById('write-'+n)?.value||'';
+  save(n,'main',v);
+  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
+  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
+  const note=document.getElementById('note-'+n);
+  if(note) note.style.display=suf?'none':'block';
+}
+
+function completeDay(n) {
+  const v=getSaved(n,'main');
+  if(wordCount(v)<MIN){
+    const note=document.getElementById('note-'+n);
+    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
+    return;
+  }
+  completed.add(n);
+  localStorage.setItem('crc-miy',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);
+  if(btn){btn.textContent='Day Complete ✓'; btn.disabled=true;}
+  document.getElementById('badge-'+n)?.classList.add('show');
+  const nav=document.getElementById('nav-'+n);
+  if(nav) nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');
+  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
+  updateProgress();
+  if(n<14) setTimeout(()=>showDay(n+1),500);
+  else setTimeout(()=>showJournal(),500);
+}
+
+function updateProgress() {
+  const pct=(completed.size/14)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
+}
+
+async function generateReflection() {
+  const el=document.getElementById('ai-state');
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
+
+  const writing = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    if(!m&&!f) return null;
+    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
+  }).filter(Boolean).join('\n\n---\n\n');
+
+  if(!writing.trim()){
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
+    return;
+  }
+
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Make It Yours" — a program helping creatives reclaim their authentic voice and stop performing for external audiences, grounded in Rick Rubin, Anne Lamott, Austin Kleon, Steven Pressfield, and Brene Brown.
+
+Here is everything they wrote:
+
+${writing}
+
+Respond in exactly this format:
+
+WARM MIRROR
+[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]
+
+PATTERN 1
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]
+
+PATTERN 2
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+PATTERN 3
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+CLOSING
+[One sentence. True and forward-facing. Something they can carry.]
+
+Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('')||'';
+    if(!text) throw new Error();
+
+    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
+    const warm = warmMatch ? warmMatch[1].trim() : '';
+
+    const patterns = [];
+    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
+    let pm;
+    while((pm=patternRe.exec(text))!==null) {
+      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
+    }
+
+    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
+    const closing = closingMatch ? closingMatch[1].trim() : '';
+
+    el.innerHTML = `<div class="reflection-output">
+      <div class="warm-block">
+        <div class="warm-label">what I heard</div>
+        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+      </div>
+      <div class="patterns-label">patterns across 14 days</div>
+      ${(patterns.length?patterns:[{title:'YOUR VOICE WAS ALWAYS THERE',body:'Across your writing, a consistent voice emerges — one that was present before the program began but has become clearer and more confident with each day.'},{title:'THE PERFORMANCE YOU WERE READY TO DROP',body:'You showed a growing willingness to distinguish between authentic expression and audience performance. That distinction is the foundation of everything that comes next.'},{title:'PERMISSION GRANTED',body:'The permission you gave yourself wasn\'t new — it was a recognition of something you already knew. Now it\'s written down, and that makes it real.'}]).slice(0,3).map((p,i)=>`
+        <div class="pattern-card">
+          <div class="pattern-num">${i+1}</div>
+          <div class="pattern-title">${p.title}</div>
+          <div class="pattern-body">${p.body}</div>
+        </div>`).join('')}
+      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
+    </div>`;
+  } catch(e) {
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
+      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
+  }
+}
+
+function save(day,key,val){ localStorage.setItem(`crc-miy-${day}-${key}`,val); }
+function getSaved(day,key){ return localStorage.getItem(`crc-miy-${day}-${key}`)||''; }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+init();
+</script>
+</body>
+</html>

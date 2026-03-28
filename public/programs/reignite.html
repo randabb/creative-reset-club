@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reignite — Creative Reset Club</title>
+<style>
+@font-face {
+  font-family: 'Codec Pro';
+  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
+</style>
+<style>
+  :root {
+    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
+    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
+    --ice: #e6f6ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
+  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
+  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
+  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
+  .phase-group { margin-bottom:20px; }
+  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); }
+  .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
+  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
+  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
+  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
+  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
+  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
+  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
+  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
+  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
+  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; }
+  .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
+  .journal-view.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
+  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
+  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
+  .day-title em { font-style:normal; color:var(--red); }
+  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
+  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
+  .day-completed-badge.show { display:flex; }
+  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
+  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
+  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
+  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
+  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
+  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
+  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
+  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
+  .section { margin-bottom:32px; }
+  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
+  .writing-prompts { margin-bottom:14px; }
+  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
+  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
+  .writing-area:focus { border-color:var(--ink); }
+  .writing-area.sufficient { border-color:#7A9E7E; }
+  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
+  .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
+  .char-num.sufficient { color:#7A9E7E; }
+  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
+  .followup-section.visible { display:block; }
+  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
+  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .followup-textarea:focus { border-color:var(--ink); }
+  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
+  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
+  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
+  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
+  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
+  .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-next:hover { border-color:var(--ink); }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
+  .complete-note.error { color:var(--red); }
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
+  .journal-entry:last-of-type { border-bottom:none; }
+  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
+  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
+  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
+  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
+  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
+  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
+  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
+  .ai-title em { font-style:normal; }
+  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
+  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
+  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
+  .loading-dots { display:flex; gap:4px; }
+  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; }
+  .loading-dot:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+  .reflection-output { animation:fadeIn .6s ease; }
+  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
+  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
+  .warm-text p { margin-bottom:14px; }
+  .warm-text p:last-child { margin-bottom:0; }
+  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
+  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
+  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
+  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
+  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
+  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; }
+    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
+    .day-number-large { display:none; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">creative reset club</div>
+    <div class="sidebar-program">Reignite</div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-progress">
+      <div class="progress-label">your progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-count" id="progressCount">0 of 14 days complete</div>
+    </div>
+  </nav>
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+const MIN = 100;
+function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
+const program = [
+  { day:1, phase:1, phaseName:"Remember", title:"When It Was Easy",
+    fw:{ name:"Flow States", author:"Mihaly Csikszentmihalyi — Flow",
+      body:"Csikszentmihalyi spent decades studying the state of flow — complete absorption in an activity where time disappears and the work feels effortless. Most people who have lost their creative spark can remember a time when it wasn't lost. That memory isn't nostalgia — it's data. It tells you what conditions produced your best creative state.",
+      benefit:"<strong>Cognitive benefit:</strong> Recalling peak creative experiences reactivates the neural pathways associated with those states. Research on memory and motivation shows that detailed recall of past flow states can partially recreate the neurochemical conditions that enabled them — making future flow more accessible." },
+    q:"Describe a time when creating felt easy — when you were fully alive in the work and didn't have to force it. What was that like?",
+    prompts:["When was this? How old were you? What were you making?","What did the experience feel like from the inside — in your body, in your attention, in your sense of time?","What were the conditions? Where were you? Who was around? What was absent that is present now?","How long did that state last? Days, weeks, months? What sustained it?","What was different about you then — not just your circumstances, but your relationship to creating?"],
+    fu:{ t:50, q:"What ended that easy period — and was the ending sudden or gradual?", prompts:["Can you identify the specific moment or shift when creating started to feel harder?","Was the change external (life circumstances, pressure, expectations) or internal (doubt, comparison, fear)?","What did you lose that you haven't been able to get back?"] },
+    ref:"The memory of when it was easy isn't sentimental — it's a blueprint. It tells you what your creative self needs to function well. Today you mapped those conditions. Tomorrow we'll look at what changed.",
+    action:{ i:"🔥", t:"Write three specific conditions that were present when creating felt easy. These are your creative requirements — not luxuries, requirements. Name them clearly." }
+  },
+  { day:2, phase:1, phaseName:"Remember", title:"What Changed",
+    fw:{ name:"The Artist's Way", author:"Julia Cameron — The Artist's Way",
+      body:"Cameron writes that creative blocks are almost never about creativity — they're about something else that's been layered on top. Expectations, criticism, professionalization, comparison, burnout, loss. The spark doesn't disappear because you lose talent. It disappears because something gets in the way. Naming what changed is the first step toward removing it.",
+      benefit:"<strong>Cognitive benefit:</strong> Identifying the specific cause of creative decline activates the brain's causal reasoning systems, which are distinct from the rumination circuits that keep people stuck in vague dissatisfaction. Specific diagnosis enables specific treatment — both psychologically and practically." },
+    q:"What changed between when creating felt easy and now? What got in the way? Be as specific as you can.",
+    prompts:["What external changes happened — in your work, your relationships, your responsibilities, your environment?","What internal changes happened — in your confidence, your standards, your relationship to judgment and criticism?","Did professionalization play a role? Did turning your creative work into a job change how it felt?","Did comparison play a role? When did you start measuring your work against others?","Is there a single event, criticism, failure, or shift that you can point to as the turning point?"],
+    fu:{ t:50, q:"Which of these changes was the most damaging — and is it something that can be changed, or something you need to accept and work around?", prompts:["Have you been treating the symptom (lack of motivation, blocked feeling) instead of the cause?","What would need to change for the conditions of easy creation to return — even partially?","What have you been blaming that isn't actually the problem?"] },
+    ref:"What changed is usually more specific than 'I lost my creativity.' Creativity doesn't disappear. It gets buried under conditions that make it hard to access. Today you named those conditions.",
+    action:{ i:"🔍", t:"Write one sentence: 'The thing that changed most was...' Then write one sentence: 'What I've been telling myself instead is...' Notice the gap between the two." }
+  },
+  { day:3, phase:1, phaseName:"Remember", title:"The Lost Thread",
+    fw:{ name:"The Crossroads of Should and Must", author:"Elle Luna — The Crossroads of Should and Must",
+      body:"Luna distinguishes between Should — what others expect of you — and Must — what you are called to do. When creative spark dies, it's often because Must has been replaced by Should for so long that you've forgotten what Must felt like. The lost thread is the creative impulse you were following before should took over.",
+      benefit:"<strong>Cognitive benefit:</strong> Reconnecting with intrinsic creative motivation reactivates the brain's seeking system — the dopaminergic circuit responsible for curiosity, exploration, and the drive to create. This system doesn't atrophy permanently — it goes dormant when overridden by extrinsic demands, and reactivates when intrinsic desire is re-engaged." },
+    q:"What creative thread were you following before you lost the spark — the thing you were genuinely curious about, drawn to, or compelled by?",
+    prompts:["Before the expectations, the profession, the pressure — what were you making simply because you wanted to?","What subject, medium, or approach fascinated you before anyone told you what was marketable or practical?","Is there a creative impulse you abandoned that still quietly calls to you?","What were you exploring before you started performing? What was the question you were trying to answer through your work?","If you could go back to the moment before the spark dimmed and pick up where you left off — what would you be making?"],
+    fu:{ t:50, q:"Is the lost thread still alive in you — or has it transformed into something new?", prompts:["When you imagine returning to it, what do you feel — excitement, grief, resistance, or relief?","Has the thread changed shape during the time you weren't following it?","What would it mean to follow it again — even just as an experiment?"] },
+    ref:"The lost thread isn't gone — it's waiting. Creative impulses don't expire. They go underground when the conditions aren't right, and they resurface when you make space for them. Today you named yours.",
+    action:{ i:"🧵", t:"Write down the lost thread in one phrase. Put it somewhere you'll see it this week. You don't have to act on it yet — just let it be visible again." }
+  },
+  { day:4, phase:1, phaseName:"Remember", title:"What You Miss",
+    fw:{ name:"Grief and Creative Loss", author:"Elizabeth Kubler-Ross — On Death and Dying",
+      body:"Kubler-Ross's grief framework applies to creative loss as much as any other kind. When you lose your creative spark, you lose a part of your identity — the part that was alive in the making. That loss deserves acknowledgment, not dismissal. What you miss about your creative life is a map of what needs to be restored.",
+      benefit:"<strong>Cognitive benefit:</strong> Acknowledging creative grief reduces the suppressive effect of unprocessed emotion on creative cognition. Research shows that people who name and process their losses experience a measurable increase in creative capacity within weeks — because the cognitive resources previously consumed by suppression become available for creation." },
+    q:"What do you miss most about your creative life when it was alive — not the outcomes, but the experience of creating?",
+    prompts:["What did creating give you that nothing else does? What experience or state is missing from your life now?","What do you miss about the process — the feeling of being in the work, of discovering something through making?","What do you miss about yourself when you were creating — the version of you that existed in that state?","What do you miss about the relationship between you and your materials, your medium, your tools?","If you could have one thing back from your creative life at its best — not a project, a feeling — what would it be?"],
+    fu:{ t:50, q:"What has replaced the thing you miss — and is the replacement actually satisfying?", prompts:["Have you been substituting something (scrolling, consuming, planning) for the actual act of creating?","What would it feel like to have the thing you miss back — even for an hour?","What is stopping you from reclaiming it?"] },
+    ref:"What you miss is what matters. Not what you should miss, or what sounds impressive to miss — what you actually, viscerally miss. That's your compass for reignition.",
+    action:{ i:"💔", t:"Write a letter to the creative practice you miss. Tell it what it gave you. Tell it you're coming back. Make it specific and honest." }
+  },
+  { day:5, phase:2, phaseName:"Reconnect", title:"One Small Thing",
+    fw:{ name:"Tiny Habits", author:"BJ Fogg — Tiny Habits",
+      body:"Fogg's research shows that behaviour change fails when we try to do too much too soon. The spark doesn't reignite through a grand gesture — it reignites through one small act of creation that reminds your nervous system what making feels like. Not a project. Not a commitment. One small thing, today, with no stakes and no judgment.",
+      benefit:"<strong>Cognitive benefit:</strong> Small creative acts reactivate dormant neural pathways associated with creative production. The brain's plasticity means that even brief creative engagement begins rebuilding the neural infrastructure that disuse has weakened — and the low-stakes nature prevents the performance anxiety that blocks reentry." },
+    q:"Make one small creative thing today — something that takes less than fifteen minutes, with zero stakes. Then write about what happened.",
+    prompts:["What did you make? It can be anything — a sketch, a few sentences, a photo, a melody, a rearranged shelf.","How did it feel to make something with no audience, no deadline, and no quality requirement?","What happened in your body when you started? Was there resistance? Relief? Awkwardness?","Did anything surprise you — an idea, an impulse, a feeling — that you didn't expect?","What is the difference between making a small thing and thinking about making a small thing?"],
+    fu:{ t:50, q:"What did this small act of creation remind you of about yourself?", prompts:["Did it feel familiar — like returning to something you'd forgotten?","What was the hardest part — starting, or letting it be imperfect?","What would happen if you did this every day for a week?"] },
+    ref:"The spark doesn't return through inspiration. It returns through action — specifically, small action with no stakes. You made something today. That's not trivial. That's the beginning.",
+    action:{ i:"✨", t:"Do it again tomorrow. Same scale — small, low-stakes, no judgment. The goal is not to make something good. The goal is to remind your hands and your brain what making feels like." }
+  },
+  { day:6, phase:2, phaseName:"Reconnect", title:"The Attention Walk",
+    fw:{ name:"Walking and Creativity", author:"Stanford Research — Oppezzo & Schwartz",
+      body:"Stanford researchers found that walking increases creative output by an average of 60%. But the attention walk isn't just about moving your body — it's about retraining your attention to notice. When creative spark dims, so does the habit of paying attention to the world with creative eyes. The attention walk rebuilds that habit.",
+      benefit:"<strong>Cognitive benefit:</strong> Walking activates the brain's default mode network — the same network responsible for creative insight, daydreaming, and novel association. Combining walking with deliberate attention to sensory detail creates optimal conditions for the kind of loose, associative thinking that generates creative ideas." },
+    q:"Take a 20-minute walk with one instruction: notice everything. Then write about what you noticed that you normally wouldn't have.",
+    prompts:["What did you see that you've walked past a hundred times without noticing?","What sounds were present that you usually filter out?","What textures, smells, or physical sensations did you become aware of?","Did any of what you noticed trigger a creative thought, memory, or connection?","What is the relationship between paying attention and feeling creative?"],
+    fu:{ t:50, q:"What does your walk reveal about how much of your daily life you're currently experiencing on autopilot?", prompts:["When did you stop paying this kind of attention to the world?","What would change about your creative work if you noticed the world this way every day?","Is lack of creative spark actually lack of attention — and if so, what killed the attention?"] },
+    ref:"Creativity requires attention, and attention is a practice. When the spark dies, attention usually died first. The walk is not a productivity hack — it's a way of being in the world that feeds everything creative.",
+    action:{ i:"🚶", t:"Take another attention walk tomorrow — but this time, bring something to capture what you notice. A phone for photos, a notebook for words. Start a collection of noticed things." }
+  },
+  { day:7, phase:2, phaseName:"Reconnect", title:"Make Something Bad",
+    fw:{ name:"Art & Fear", author:"David Bayles & Ted Orland — Art & Fear",
+      body:"Bayles and Orland tell the story of a ceramics class divided in two: one group was graded on quantity, the other on quality. The quantity group produced both more work and better work. The lesson: making a lot of bad work is the fastest path to good work. When creative spark dies, perfectionism is often the killer. Making something deliberately bad kills perfectionism.",
+      benefit:"<strong>Cognitive benefit:</strong> Deliberately producing low-quality work deactivates the brain's inner critic — the dorsolateral prefrontal cortex's evaluative function — and frees up the creative generation networks. This produces a neurological state similar to childhood creative play, where production is uninhibited by quality concerns." },
+    q:"Make something deliberately bad today. Not carelessly bad — intentionally, joyfully, aggressively bad. Then write about the experience.",
+    prompts:["What did you make badly? Describe it in all its terrible glory.","What happened when you removed the possibility of quality from the equation? What opened up?","Did you find it harder than expected to make something bad — did your habits of quality keep trying to kick in?","Was it fun? Was it freeing? Was it uncomfortable? All three?","What does this exercise reveal about how much your perfectionism has been controlling your creative output?"],
+    fu:{ t:50, q:"What if 'bad' was just the first stage of every creative project — and the spark you lost was killed by refusing to pass through it?", prompts:["When did you start requiring your work to be good from the beginning?","What creative projects died because you couldn't tolerate them being bad at the start?","What would change if you gave yourself permission to be bad for the first hour of every creative session?"] },
+    ref:"Bad work is not the opposite of good work. It's the beginning of good work. The spark dies when you refuse to make anything less than excellent, because that refusal produces nothing at all.",
+    action:{ i:"💩", t:"Keep the bad thing you made. Display it somewhere. It's proof that you can create without the permission of your inner critic. That proof is more valuable than you think." }
+  },
+  { day:8, phase:2, phaseName:"Reconnect", title:"Follow the Curiosity",
+    fw:{ name:"Big Magic", author:"Elizabeth Gilbert — Big Magic",
+      body:"Gilbert writes that when passion disappears, curiosity is the path back. Passion is loud and demanding. Curiosity is quiet and gentle. You don't need to feel passionate about creating to start again — you just need to follow something that makes you slightly curious. Curiosity is the pilot light that, tended, can reignite the full flame.",
+      benefit:"<strong>Cognitive benefit:</strong> Curiosity activates the brain's dopaminergic reward system and enhances memory formation. Research shows that when people follow genuine curiosity — even mild curiosity — they enter a neurological state that closely mirrors creative flow, with increased attention, reduced self-consciousness, and enhanced pattern recognition." },
+    q:"What are you curious about right now — even mildly? Follow one thread of curiosity today and write about where it led you.",
+    prompts:["What has caught your attention recently — not what you should be interested in, but what genuinely makes you want to know more?","Follow the curiosity for at least 30 minutes today. Read about it, look at it, try it, explore it.","Where did the curiosity lead? Did it connect to anything else — another interest, a creative impulse, a forgotten fascination?","What is the difference between following curiosity and waiting for passion?","Is this curiosity related to your lost creative thread, or is it something entirely new?"],
+    fu:{ t:50, q:"What would your creative life look like if you followed curiosity instead of waiting for passion?", prompts:["How many creative impulses have you dismissed because they weren't passionate enough?","What if passion comes after engagement, not before?","What are you mildly curious about that you've been ignoring because it doesn't seem important enough?"] },
+    ref:"Curiosity is underrated. We wait for passion, for inspiration, for the big feeling. But curiosity is available right now — quiet, modest, and powerful enough to reignite everything if you follow it.",
+    action:{ i:"🔎", t:"Write down three things you're mildly curious about right now. Pick one and spend 20 minutes with it tomorrow. No goal. Just following the thread." }
+  },
+  { day:9, phase:3, phaseName:"Rebuild", title:"The Daily Ritual",
+    fw:{ name:"Daily Rituals", author:"Mason Currey — Daily Rituals",
+      body:"Currey studied the daily habits of hundreds of creative people and found one consistent pattern: they all had rituals. Not inspiration, not talent, not resources — rituals. A specific time, a specific place, a specific way of beginning. The ritual is what makes creative work survive the days when the spark isn't present, because the ritual creates the conditions for the spark to return.",
+      benefit:"<strong>Cognitive benefit:</strong> Consistent creative rituals build what neuroscientists call contextual cues — environmental and temporal signals that prime the brain for creative work. Over time, the ritual itself triggers the neurochemical state associated with creation, reducing the need for motivation or inspiration to begin." },
+    q:"Design your daily creative ritual — the conditions, timing, and structure that will make creating happen regardless of how you feel.",
+    prompts:["What time of day are you most naturally creative? When does your mind feel most free?","What physical space supports your creative work? Where do you need to be?","What is the trigger that starts the ritual — the specific action that signals 'we're creating now'?","How long is the minimum session? Not the ideal session — the minimum. What's the version you'd do on your worst day?","What do you need to remove from the environment — phone, internet, noise, people — to protect the ritual?"],
+    fu:{ t:50, q:"What has stopped you from maintaining a creative ritual before — and what's different now?", prompts:["Is the obstacle time, energy, belief, or something else?","What would change about your relationship to creating if you showed up at the same time every day, regardless of inspiration?","What are you afraid of discovering about yourself if you show up consistently?"] },
+    ref:"Inspiration is not reliable. Rituals are. The most prolific creators in history didn't wait to feel inspired — they showed up at the same time, in the same place, and let the work come when it was ready. Design the ritual. Protect it. Show up.",
+    action:{ i:"⏰", t:"Write your ritual: the time, the place, the trigger, the minimum duration. Put it in your calendar for tomorrow. Show up even if you feel nothing." }
+  },
+  { day:10, phase:3, phaseName:"Rebuild", title:"The Deep Practice",
+    fw:{ name:"The Talent Code", author:"Daniel Coyle — The Talent Code",
+      body:"Coyle's research shows that skill and spark are not separate — they're connected through what he calls deep practice. Not mindless repetition, but focused, deliberate engagement with the edge of your ability. When the spark dims, it often means you've plateaued — you're working within your comfort zone, and the challenge that made creating exciting has disappeared.",
+      benefit:"<strong>Cognitive benefit:</strong> Deep practice builds myelin — the neural insulation that makes skills faster and more automatic. But it also triggers the brain's reward system through the cycle of struggle and resolution. This is why beginners often feel more creative excitement than experts — because everything is a challenge. Deep practice recreates that challenge at any skill level." },
+    q:"What is the edge of your creative ability right now — the place where the work is hard enough to be interesting? Go there and write about what you find.",
+    prompts:["What aspect of your creative work do you avoid because it's hard, uncomfortable, or reveals your limitations?","Spend at least 30 minutes working at the edge of your ability today. What does it feel like?","What is the difference between working in your comfort zone and working at your edge? Which one feels more alive?","When did you last feel genuinely challenged by your creative work? What was the challenge?","Is the loss of spark actually the loss of challenge — and if so, what challenge would reignite it?"],
+    fu:{ t:50, q:"What would your creative practice look like if you deliberately worked at your edge every day instead of staying comfortable?", prompts:["What skill or area of your craft are you avoiding developing?","What new challenge would make creating exciting again?","Is the comfort zone protecting you from failure, or from growth?"] },
+    ref:"Comfort kills spark. The brain needs challenge to generate the neurochemistry that feels like creative excitement. If your work has become easy, it's also become boring. Find the edge again.",
+    action:{ i:"🏋️", t:"Identify one specific area of your creative practice that challenges you. Spend 30 minutes there tomorrow. Not the whole session — just 30 minutes of being uncomfortable. That's deep practice." }
+  },
+  { day:11, phase:3, phaseName:"Rebuild", title:"What Feels Alive",
+    fw:{ name:"Somatic Experiencing", author:"Peter Levine — Waking the Tiger",
+      body:"Levine's work on somatic experiencing shows that the body holds information that the mind doesn't always access. Creative aliveness is a bodily experience — you feel it before you think it. After ten days of remembering, reconnecting, and rebuilding, your body has been giving you signals about what feels alive and what doesn't. Today you learn to read those signals.",
+      benefit:"<strong>Cognitive benefit:</strong> Body-based creative assessment accesses limbic and interoceptive circuits that provide different information than cognitive analysis. Research shows that bodily signals of engagement — increased heart rate, forward lean, energized breathing — are more reliable predictors of sustained creative engagement than intellectual interest alone." },
+    q:"After ten days of this program — what feels alive in your creative practice right now? What makes your body lean forward, your attention sharpen, your energy rise?",
+    prompts:["What creative activity or direction from the past ten days produced the strongest bodily sense of aliveness?","What felt dead — what activities or approaches produced heaviness, fatigue, or flatness?","What has surprised you about what feels alive versus what you expected to feel alive?","Is what feels alive aligned with what you've been doing professionally — or is it something different?","If you trusted your body's signals completely, what would you create next?"],
+    fu:{ t:50, q:"What is the relationship between what feels alive and what you're afraid of?", prompts:["Is the thing that feels most alive also the thing that feels most vulnerable?","What does that tell you about why the spark dimmed in the first place?","What would you choose if fear wasn't a factor?"] },
+    ref:"Aliveness is the signal. Not strategic thinking, not market analysis, not what seems sensible — aliveness. Your body knows what creative work is yours before your mind figures it out. Learn to trust it.",
+    action:{ i:"💓", t:"Write down the three things that felt most alive in the past ten days. These are your compass. Follow them this week, even if they don't make strategic sense." }
+  },
+  { day:12, phase:4, phaseName:"Return", title:"Your New Routine",
+    fw:{ name:"Atomic Habits", author:"James Clear — Atomic Habits",
+      body:"Clear's habit stacking approach — attaching new behaviours to existing ones — is the most reliable way to build lasting change. Your new creative routine isn't about willpower or motivation. It's about designing an environment and a sequence that makes creating the path of least resistance. The goal is to make showing up automatic.",
+      benefit:"<strong>Cognitive benefit:</strong> Habit formation transfers behaviour from the prefrontal cortex (effortful, depletable) to the basal ganglia (automatic, sustainable). Research shows that habits formed through environmental design and cue-response pairing require progressively less willpower and produce progressively more consistent behaviour." },
+    q:"Design your new creative routine — the specific, daily structure that will sustain your reignited practice without relying on motivation.",
+    prompts:["Based on everything you've learned about yourself in this program, what does your ideal creative day look like?","What is the specific trigger that starts your creative time? What existing habit will you attach it to?","What is the environment — the space, the tools, the absence of distractions — that supports your creative work?","What is the reward that follows creative practice — something that makes your brain want to do it again tomorrow?","What is your plan for the days when you don't feel like creating — what will you do instead of skipping?"],
+    fu:{ t:50, q:"What is different about this routine compared to routines you've tried before?", prompts:["Why will this one work when others haven't?","What have you learned about yourself that makes this routine more realistic?","What are you most likely to negotiate yourself out of — and how will you prevent that?"] },
+    ref:"A routine is not a prison — it's a container. It holds the space for your creative work so that you don't have to fight for it every day. The fight for space is what killed the spark. Remove the fight.",
+    action:{ i:"📅", t:"Write your routine out step by step. Pin it where you'll see it. Start tomorrow. Don't wait until Monday, or next week, or when things are calm. Start tomorrow." }
+  },
+  { day:13, phase:4, phaseName:"Return", title:"The Commitment",
+    fw:{ name:"Turning Pro", author:"Steven Pressfield — Turning Pro",
+      body:"Pressfield writes that the professional doesn't wait for the muse. The professional shows up every day, does the work, and lets the muse arrive on its own schedule. The commitment to your reignited creative practice is not a commitment to feeling inspired. It's a commitment to showing up — and trusting that the spark, which has already begun returning, will continue to grow if you don't abandon it.",
+      benefit:"<strong>Cognitive benefit:</strong> Commitment declarations activate the brain's consistency mechanisms — once you've stated who you are and what you do, the brain works to maintain alignment between identity and behaviour. This makes showing up progressively easier over time, even on difficult days." },
+    q:"Write your commitment — what you're committing to in your creative practice, why it matters, and what you'll do when it gets hard.",
+    prompts:["What are you committing to — specifically, in terms of what you'll create, how often, and for how long?","Why does this commitment matter to you — not strategically, personally?","What will you do on the days when the spark feels absent again — because it will?","What are you willing to give up to protect this commitment?","Who will hold you accountable — and what does accountability look like for you?"],
+    fu:{ t:50, q:"What is the difference between this commitment and the ones you've made before?", prompts:["What do you know now about your creative self that you didn't know before?","What conditions are you building that will support this commitment?","What would it mean to actually keep this commitment for six months?"] },
+    ref:"Commitment is not enthusiasm. It's the decision to show up even when enthusiasm is absent. The spark will flicker. The practice continues. That's the difference between reigniting temporarily and reigniting permanently.",
+    action:{ i:"🤝", t:"Tell one person about your commitment today. Not for validation — for accountability. Say: 'I'm creating every day. Ask me about it.' Then keep your word." }
+  },
+  { day:14, phase:4, phaseName:"Return", title:"Back to Yourself",
+    fw:{ name:"The Creative Act", author:"Rick Rubin — The Creative Act",
+      body:"Rubin writes that creativity is not something you do — it's something you are. The spark doesn't need to be reignited from outside. It needs to be uncovered from inside — by removing what was blocking it, rebuilding the conditions that support it, and committing to a practice that sustains it. You are not returning to creativity. You are returning to yourself.",
+      benefit:"<strong>Cognitive benefit:</strong> Integrative self-reflection at the end of a sustained practice period consolidates new neural pathways and self-knowledge into stable identity structures. Research shows that people who reflect on their growth at the end of a program maintain their gains at significantly higher rates than those who simply stop." },
+    q:"After fourteen days of remembering, reconnecting, rebuilding, and returning — who are you now in relation to your creative practice? What has changed?",
+    prompts:["What is different about your relationship to creating compared to Day 1?","What did you rediscover about yourself as a creator that you had forgotten or buried?","What surprised you most about this process — what did you learn that you didn't expect?","What conditions do you now know you need to sustain your creative spark?","What do you want to remember about this experience when the spark inevitably flickers again?"],
+    fu:{ t:50, q:"What would you tell someone who is where you were on Day 1 — spark gone, creativity feeling dead or distant?", prompts:["What do you know now that you needed to hear then?","What was the real problem — and was it what you thought?","What is one sentence you'd offer as a compass for finding their way back?"] },
+    ref:"The spark was never gone. It was buried under conditions that made it impossible to access. You've cleared those conditions, rebuilt the structure, and made the commitment. Now the practice begins. Welcome back.",
+    action:{ i:"🌱", t:"Write one sentence that captures what reigniting means to you. Keep it somewhere you'll see it on the hard days. Let it remind you of what you found here." }
+  }
+];
+
+
+const completed = new Set(JSON.parse(localStorage.getItem('crc-ri') || '[]'));
+
+function init() {
+  buildSidebar();
+  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
+  showDay(1);
+  updateProgress();
+}
+
+function buildSidebar() {
+  const phases = {};
+  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
+  let html = '';
+  Object.entries(phases).forEach(([ph, days]) => {
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d => {
+      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
+        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
+    });
+    html += '</div>';
+  });
+  html += `<div class="phase-group"><div class="phase-label">Review</div>
+    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
+      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-title">Full Journal + AI Reflection</div>
+    </button></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function buildDay(d) {
+  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
+  const done = completed.has(d.day);
+  return `<div class="day-view" id="day-${d.day}">
+    <div class="day-header">
+      <div class="day-meta">
+        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
+        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
+      </div>
+      <div class="day-number-large">${d.day}</div>
+    </div>
+    <div class="framework-card">
+      <div class="framework-eyebrow">framework</div>
+      <div class="framework-name">${d.fw.name}</div>
+      <div class="framework-author">${d.fw.author}</div>
+      <div class="framework-body">${d.fw.body}</div>
+      <div class="framework-benefit">${d.fw.benefit}</div>
+    </div>
+    <div class="section">
+      <div class="section-label">today's question</div>
+      <div class="question-text">"${d.q}"</div>
+      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <div class="char-counter">
+        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
+      </div>
+      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
+        <div class="followup-label">going deeper</div>
+        <div class="followup-question">"${d.fu.q}"</div>
+        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">reflection</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">micro-action</div>
+      <div class="action-card">
+        <div class="action-icon">${d.action.i}</div>
+        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
+      </div>
+    </div>
+    <div class="complete-row">
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
+    </div>
+  </div>`;
+}
+
+function buildJournal() {
+  return `<div class="journal-view" id="journal-view">
+    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Reigniting</em></h1>
+    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
+    <div id="j-entries"></div>
+    <div class="ai-section">
+      <div class="ai-eyebrow">AI Reflection</div>
+      <h2 class="ai-title">What your writing <em>reveals</em></h2>
+      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
+      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
+    </div>
+  </div>`;
+}
+
+function showDay(n) {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('day-'+n)?.classList.add('active');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function showJournal() {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('journal-view').classList.add('active');
+  document.getElementById('nav-journal')?.classList.add('active');
+  populateJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
+
+function populateJournal() {
+  document.getElementById('j-entries').innerHTML = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    return `<div class="journal-entry">
+      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-title">${d.title}</div>
+      <div class="journal-question">"${d.q}"</div>
+      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
+      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onWrite(n) {
+  const v = document.getElementById('write-'+n)?.value||'';
+  save(n,'main',v);
+  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
+  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
+  const note=document.getElementById('note-'+n);
+  if(note) note.style.display=suf?'none':'block';
+}
+
+function completeDay(n) {
+  const v=getSaved(n,'main');
+  if(wordCount(v)<MIN){
+    const note=document.getElementById('note-'+n);
+    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
+    return;
+  }
+  completed.add(n);
+  localStorage.setItem('crc-ri',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);
+  if(btn){btn.textContent='Day Complete ✓'; btn.disabled=true;}
+  document.getElementById('badge-'+n)?.classList.add('show');
+  const nav=document.getElementById('nav-'+n);
+  if(nav) nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');
+  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
+  updateProgress();
+  if(n<14) setTimeout(()=>showDay(n+1),500);
+  else setTimeout(()=>showJournal(),500);
+}
+
+function updateProgress() {
+  const pct=(completed.size/14)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
+}
+
+async function generateReflection() {
+  const el=document.getElementById('ai-state');
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
+
+  const writing = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    if(!m&&!f) return null;
+    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
+  }).filter(Boolean).join('\n\n---\n\n');
+
+  if(!writing.trim()){
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
+    return;
+  }
+
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Reignite" — a program helping people rediscover their creative spark after losing it, grounded in Csikszentmihalyi, Julia Cameron, Elizabeth Gilbert, Steven Pressfield, and Rick Rubin.
+
+Here is everything they wrote:
+
+${writing}
+
+Respond in exactly this format:
+
+WARM MIRROR
+[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]
+
+PATTERN 1
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]
+
+PATTERN 2
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+PATTERN 3
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+CLOSING
+[One sentence. True and forward-facing. Something they can carry.]
+
+Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('')||'';
+    if(!text) throw new Error();
+
+    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
+    const warm = warmMatch ? warmMatch[1].trim() : '';
+
+    const patterns = [];
+    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
+    let pm;
+    while((pm=patternRe.exec(text))!==null) {
+      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
+    }
+
+    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
+    const closing = closingMatch ? closingMatch[1].trim() : '';
+
+    el.innerHTML = `<div class="reflection-output">
+      <div class="warm-block">
+        <div class="warm-label">what I heard</div>
+        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+      </div>
+      <div class="patterns-label">patterns across 14 days</div>
+      ${(patterns.length?patterns:[{title:'THE SPARK WAS NEVER GONE',body:'Across your writing, a consistent thread: the creative impulse was always present, buried under conditions and expectations that made it hard to access.'},{title:'PERMISSION TO PLAY',body:'Your most alive moments in this program came when you removed the pressure to produce something good. That tells you something important about what killed the spark.'},{title:'A PRACTICE, NOT A FEELING',body:'You discovered that showing up matters more than feeling inspired. That shift — from waiting for spark to creating conditions for it — is the most important change you made.'}]).slice(0,3).map((p,i)=>`
+        <div class="pattern-card">
+          <div class="pattern-num">${i+1}</div>
+          <div class="pattern-title">${p.title}</div>
+          <div class="pattern-body">${p.body}</div>
+        </div>`).join('')}
+      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
+    </div>`;
+  } catch(e) {
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
+      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
+  }
+}
+
+function save(day,key,val){ localStorage.setItem(`crc-ri-${day}-${key}`,val); }
+function getSaved(day,key){ return localStorage.getItem(`crc-ri-${day}-${key}`)||''; }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+init();
+</script>
+</body>
+</html>

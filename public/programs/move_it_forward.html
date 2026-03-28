@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Move It Forward — Creative Reset Club</title>
+<style>
+@font-face { font-family: 'Codec Pro'; src: url('/fonts/codec-pro_regular.ttf') format('truetype'); font-weight: 400 700; font-style: normal; }
+</style>
+<style>
+  :root { --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc; --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280; --ice: #e6f6ff; }
+  * { margin:0; padding:0; box-sizing:border-box; } html { scroll-behavior:smooth; }
+  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
+  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
+  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
+  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
+  .phase-group { margin-bottom:20px; } .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); } .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
+  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
+  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
+  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
+  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
+  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
+  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
+  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
+  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
+  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; } .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; } .journal-view.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
+  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
+  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
+  .day-title em { font-style:normal; color:var(--red); }
+  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
+  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
+  .day-completed-badge.show { display:flex; }
+  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
+  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
+  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
+  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
+  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
+  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
+  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
+  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
+  .section { margin-bottom:32px; }
+  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
+  .writing-prompts { margin-bottom:14px; }
+  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
+  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; } .writing-area:focus { border-color:var(--ink); } .writing-area.sufficient { border-color:#7A9E7E; }
+  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; } .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; } .char-num.sufficient { color:#7A9E7E; }
+  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
+  .followup-section.visible { display:block; }
+  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
+  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
+  .followup-textarea:focus { border-color:var(--ink); } .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
+  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
+  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
+  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
+  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); } .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-next:hover { border-color:var(--ink); }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; } .complete-note.error { color:var(--red); }
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); } .journal-entry:last-of-type { border-bottom:none; }
+  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
+  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
+  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
+  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
+  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
+  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
+  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; } .ai-title em { font-style:normal; }
+  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
+  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
+  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
+  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
+  .loading-dots { display:flex; gap:4px; }
+  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; } .loading-dot:nth-child(3) { animation-delay:.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+  .reflection-output { animation:fadeIn .6s ease; }
+  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
+  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; } .warm-text p { margin-bottom:14px; } .warm-text p:last-child { margin-bottom:0; }
+  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
+  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
+  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
+  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
+  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
+  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
+  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); } .sidebar.open { transform:translateX(0); } .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; } .main { margin-left:0; padding:52px 18px 80px; max-width:100%; } .day-number-large { display:none; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">creative reset club</div>
+    <div class="sidebar-program">Move It<br>Forward</div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-progress">
+      <div class="progress-label">your progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-count" id="progressCount">0 of 14 days complete</div>
+    </div>
+  </nav>
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+const MIN = 100;
+function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
+const program = [
+  { day:1, phase:1, phaseName:"Name It", title:"The Loop",
+    fw:{ name:"Resistance", author:"Steven Pressfield — The War of Art",
+      body:"Pressfield names the force that keeps creative work stuck: Resistance. It's not laziness, not lack of talent, not bad timing. It's a specific, identifiable force that shows up every time you try to move important work forward. The loop — thinking about the work instead of doing the work — is Resistance's favorite disguise. It feels productive. It isn't.",
+      benefit:"<strong>Cognitive benefit:</strong> Naming a pattern externally reduces its unconscious power. Research on cognitive defusion shows that labeling internal experiences ('this is the loop') creates psychological distance that makes it easier to act despite the pattern." },
+    q:"Describe the loop you're stuck in — the pattern of thinking, planning, preparing, and not actually moving your creative work forward.",
+    prompts:["What does your loop look like? Describe the specific sequence: what do you do instead of the work?","How long have you been in this loop? When did it start?","What does the loop feel like from the inside — productive, anxious, comfortable, or something else?","What triggers the loop — what moment or thought sends you back to planning instead of doing?","What has the loop cost you — in time, in progress, in opportunities, in creative confidence?"],
+    fu:{ t:50, q:"What does the loop protect you from — what would you have to face if you actually moved forward?", prompts:["Is the loop about the work being hard, or about what happens after the work exists?","What is the worst thing that could happen if you broke the loop today?","What is the worst thing that happens if you stay in it for another year?"] },
+    ref:"The loop is not preparation. It's avoidance wearing preparation's clothes. Today you named it. That's the first step — because you can't break a pattern you haven't identified.",
+    action:{ i:"🔄", t:"Write your loop in one sentence: 'Instead of doing [the work], I [what you actually do].' Put it somewhere visible. Seeing the pattern clearly is how you start breaking it." }
+  },
+  { day:2, phase:1, phaseName:"Name It", title:"What Keeps Repeating",
+    fw:{ name:"Cognitive Behavioral Patterns", author:"Aaron Beck — Cognitive Therapy",
+      body:"Beck's cognitive model shows that stuck behavior follows predictable thought patterns — automatic thoughts that trigger avoidance before you're even aware of them. The things that keep repeating in your creative stuckness aren't random. They're patterns with specific triggers, specific thoughts, and specific avoidance behaviors. Mapping them makes them interruptible.",
+      benefit:"<strong>Cognitive benefit:</strong> Identifying automatic thought patterns activates metacognitive awareness — the ability to observe thoughts rather than being controlled by them. Research shows that people who can identify their automatic avoidance thoughts are significantly more successful at interrupting them." },
+    q:"What specific thoughts, fears, and behaviors keep repeating every time you try to move your creative work forward?",
+    prompts:["What thoughts show up right before you stop working or avoid starting? Write the exact words.","What fears are attached to moving forward — failure, judgment, success, being seen, not being good enough?","What avoidance behaviors do you use — research, planning, reorganizing, switching projects, social media?","Is there a specific point in the creative process where you consistently get stuck — beginning, middle, finishing, sharing?","What story do you tell yourself about why you're stuck — and is it true?"],
+    fu:{ t:50, q:"Which of these repeating patterns is the oldest — the one that has been with you the longest?", prompts:["Where did it come from? Can you trace it to a specific experience or relationship?","Has it ever served you well — or has it always been an obstacle?","What would be different about your creative life if this pattern simply didn't exist?"] },
+    ref:"Patterns repeat because they're unconscious. Once you see them clearly — the specific thought, the specific trigger, the specific avoidance — they lose some of their power. Not all of it. But enough to begin interrupting them.",
+    action:{ i:"📝", t:"Write your top three avoidance patterns as 'When I feel [trigger], I think [thought], so I do [avoidance].' This is your interruption map." }
+  },
+  { day:3, phase:1, phaseName:"Name It", title:"The Real Block",
+    fw:{ name:"The Big Leap", author:"Gay Hendricks — The Big Leap",
+      body:"Hendricks identifies the Upper Limit Problem — the unconscious tendency to sabotage yourself when you approach the edge of what you believe you deserve or can handle. The real block is rarely about the work itself. It's about what moving forward means — about who you become if you actually ship the thing, and whether you believe you're allowed to be that person.",
+      benefit:"<strong>Cognitive benefit:</strong> Identifying the real block — the fear beneath the surface-level stuckness — activates deeper motivational circuits. Research shows that addressing root fears produces longer-lasting behavioral change than addressing surface-level obstacles, because it resolves the source rather than the symptom." },
+    q:"What is the real block — not the practical obstacle, but the deeper fear or belief that keeps you from moving your creative work forward?",
+    prompts:["What are you actually afraid of — not the reasonable concern, the irrational deep-down fear?","Is the block about the work not being good enough, or about you not being good enough?","What do you believe about yourself that makes moving forward feel dangerous?","Is there a fear of success — of what would change if you actually shipped this thing?","What would you have to believe about yourself to move forward without resistance?"],
+    fu:{ t:50, q:"If the real block isn't about the work — what is it about?", prompts:["Is it about identity — who you become if you move forward?","Is it about exposure — being seen for who you really are?","Is it about closing the gap between who you are and who you've claimed to be?"] },
+    ref:"The practical obstacles are usually solvable. The real block lives deeper — in beliefs about what you deserve, what you're capable of, and what happens when you're truly seen. Today you named the real one.",
+    action:{ i:"🔓", t:"Write the real block in one sentence. Not the excuse — the truth. 'The real reason I'm stuck is...' Say it plainly. That's how it begins to lose its grip." }
+  },
+  { day:4, phase:1, phaseName:"Name It", title:"What Would Unblock You",
+    fw:{ name:"Inversion", author:"Charlie Munger — via Shane Parrish",
+      body:"Munger's inversion principle says: instead of asking how to succeed, ask how you would guarantee failure — then avoid those things. Applied to creative stuckness: instead of asking what would move you forward, ask what would make moving forward inevitable. What conditions, supports, or changes would make it harder to stay stuck than to move?",
+      benefit:"<strong>Cognitive benefit:</strong> Inversion activates the brain's problem-solving circuits from a different angle, producing insights that forward-only thinking misses. Research on creative problem-solving shows that people who approach problems from multiple directions, including inversion, find solutions faster and more reliably." },
+    q:"What would actually unblock you — what specific conditions, changes, supports, or actions would make moving forward inevitable?",
+    prompts:["If you could change one thing about your situation to make moving forward easy, what would it be?","What support do you need that you don't have — accountability, feedback, resources, time, permission?","What would make it harder to stay stuck than to move? What would remove the comfort of the loop?","What has unblocked you in the past — when you've broken through stuckness before, what made the difference?","If someone you trust gave you advice, what would they say? You probably already know the answer."],
+    fu:{ t:50, q:"Are you waiting for the conditions to be right — and is that wait itself the block?", prompts:["What if the conditions will never be perfect?","What if 'ready' is a feeling that comes after starting, not before?","What is the smallest thing you could do right now, in current conditions, to begin?"] },
+    ref:"Most people who are stuck know what would unblock them. The knowing isn't the problem. The doing is. Today you named what would work. Tomorrow the program starts helping you do it.",
+    action:{ i:"🗝️", t:"Write three things that would unblock you. Circle the one most within your control. That's where we start." }
+  },
+  { day:5, phase:2, phaseName:"Unstick", title:"The Smallest Step",
+    fw:{ name:"Kaizen", author:"Masaaki Imai — Kaizen: The Key to Japan's Competitive Success",
+      body:"Kaizen is the philosophy of continuous improvement through small, incremental steps. The genius of kaizen is that it bypasses the brain's fear response. A big step triggers resistance. A step so small it seems almost ridiculous? The brain lets it through. The smallest step isn't about making progress — it's about breaking the pattern of not-moving.",
+      benefit:"<strong>Cognitive benefit:</strong> Small actions bypass the amygdala's threat response, which is triggered by large commitments. Research on behavioral activation shows that the smallest possible step toward a goal is the most reliable way to overcome inertia, because it creates momentum without triggering the fear that maintains stuckness." },
+    q:"What is the smallest possible step toward your stuck creative project — something so small it almost doesn't count? Take it. Then write about what happened.",
+    prompts:["What step did you take? Describe something almost embarrassingly small — five minutes, one paragraph, one sketch, one email.","What happened when you took it? Did it feel different from thinking about taking it?","Did the small step lead to a slightly larger one — did momentum appear?","What resistance showed up even for this tiny step? What does that tell you about the nature of the block?","What is the next smallest step after this one?"],
+    fu:{ t:50, q:"What changes in your relationship to the project after one small step — even if the step itself was trivial?", prompts:["Did the project feel different after you touched it?","Did you feel different — about the project, about yourself, about the possibility of finishing?","What would happen if you took one smallest step every day for two weeks?"] },
+    ref:"The smallest step is the most powerful one — not because of what it accomplishes, but because of what it breaks. It breaks the loop. It breaks the pattern of not-moving. Everything after is easier.",
+    action:{ i:"👣", t:"Take another smallest step tomorrow. Same scale — tiny, almost nothing. The goal is not progress. The goal is consecutive days of touching the work. Streak matters more than size." }
+  },
+  { day:6, phase:2, phaseName:"Unstick", title:"Do It Wrong",
+    fw:{ name:"Rapid Prototyping", author:"IDEO — Design Thinking",
+      body:"IDEO's design thinking methodology is built on a principle that terrifies perfectionists: the fastest way to learn is to do it wrong. Build the wrong version, ship the wrong draft, make the wrong prototype — then learn from what's wrong and improve. Perfectionism keeps you planning. Doing it wrong keeps you moving.",
+      benefit:"<strong>Cognitive benefit:</strong> Deliberately doing something wrong deactivates the perfectionism circuits in the dorsolateral prefrontal cortex and activates the brain's learning-through-error systems. Research shows that people who embrace imperfect action learn faster and produce better final outcomes than those who try to get it right the first time." },
+    q:"Do your stuck creative project wrong today — make the bad version, the ugly version, the version that would embarrass you. Then write about what you learned.",
+    prompts:["What wrong version did you make? Describe it honestly — all its flaws, gaps, and imperfections.","What did you learn from the wrong version that you couldn't have learned from more planning?","What was easier about making the wrong version than trying to make the right one?","Did the wrong version contain anything unexpectedly right — a seed, an idea, a direction you wouldn't have found otherwise?","What is the next iteration — and is it easier to imagine now that a wrong version exists?"],
+    fu:{ t:50, q:"What would your creative process look like if 'wrong first' was the standard operating procedure?", prompts:["How much time have you wasted trying to get things right on the first attempt?","What projects have died because you couldn't tolerate them being wrong at the start?","What becomes possible when wrong is the expected first step?"] },
+    ref:"Wrong is not the opposite of done. Wrong is the first draft of done. The bad version teaches you what the good version needs. But you have to make the bad version first. Now you have.",
+    action:{ i:"💥", t:"Keep the wrong version. Don't delete it. Tomorrow, look at it with fresh eyes and circle three things that are actually working — even in the wrong version, something is right." }
+  },
+  { day:7, phase:2, phaseName:"Unstick", title:"The Five Minute Version",
+    fw:{ name:"Timeboxing", author:"Nir Eyal — Indistractable",
+      body:"Eyal's timeboxing technique gives every task a fixed, non-negotiable time boundary. The five-minute version is the most extreme application: you have five minutes to make a version of your stuck project. Not plan it. Make it. The constraint isn't about the output — it's about proving that the work can begin in the time you have, not the time you think you need.",
+      benefit:"<strong>Cognitive benefit:</strong> Extreme time constraints activate the brain's focused attention networks and suppress the planning-rumination loops that maintain stuckness. Research shows that artificially shortened deadlines produce faster creative decisions and often higher-quality first drafts than open-ended timelines." },
+    q:"Set a timer for five minutes. Make a version of your stuck project — not plan, make. What did you produce?",
+    prompts:["What did you make in five minutes? Describe exactly what exists now that didn't five minutes ago.","What surprised you about what was possible in five minutes?","What did you skip, cut, or simplify that you normally spend hours on? Did skipping it matter?","How does the five-minute version compare to what you imagined you needed to produce?","What would happen if you did a five-minute version every day for a week?"],
+    fu:{ t:50, q:"What has 'not enough time' been protecting you from — and is the lack of time actually the problem?", prompts:["If time isn't the real obstacle, what is?","What could you ship if you gave it five minutes a day for 30 days?","What creative projects have you abandoned because you were waiting for a big block of time that never came?"] },
+    ref:"Five minutes is enough to start. It's not enough to finish — but finishing isn't the problem right now. Starting is. And you just proved that starting takes five minutes.",
+    action:{ i:"⏱️", t:"Do another five-minute sprint tomorrow. Different part of the project. The goal: accumulate small pieces of real work until the project has enough mass to pull you in on its own." }
+  },
+  { day:8, phase:2, phaseName:"Unstick", title:"Momentum Check",
+    fw:{ name:"The Progress Principle", author:"Teresa Amabile — The Progress Principle",
+      body:"Amabile's research found that the single most important factor in creative motivation is the sense of making progress — even small progress — on meaningful work. Not praise, not incentives, not inspiration. Progress. The momentum check asks: after four days of small steps, wrong versions, and five-minute sprints, has momentum appeared? Where is it, and what feeds it?",
+      benefit:"<strong>Cognitive benefit:</strong> Recognizing progress activates the brain's reward circuits and reinforces the behavior that produced the progress. Research shows that people who track and acknowledge small wins sustain creative effort significantly longer than those who only measure completion." },
+    q:"After four days of moving — small steps, wrong versions, five-minute sprints — check your momentum. What has changed? What's working?",
+    prompts:["What exists now that didn't exist four days ago? Name the concrete artifacts of your movement.","Has your relationship to the project changed? Does it feel different now that you've touched it multiple times?","What approach worked best for you — smallest step, wrong version, or five-minute sprint? What does that tell you about how you work?","Where is the momentum — what aspect of the project feels most alive, most ready to continue?","What is still stuck — and does the stuck part feel different now than it did on Day 1?"],
+    fu:{ t:50, q:"What would sustaining this momentum require — and what is most likely to break it?", prompts:["What killed momentum in the past when you had it?","What would you need to protect to keep this going?","What is the minimum daily action that would maintain momentum without burning you out?"] },
+    ref:"Momentum is fragile at the beginning. It needs daily feeding — not large meals, just consistent ones. The check is about noticing that movement exists, which makes more movement more likely.",
+    action:{ i:"📈", t:"Write your momentum plan: what you'll do every day this week to keep touching the project. Keep it small. Consistency beats intensity when you're building momentum." }
+  },
+  { day:9, phase:3, phaseName:"Move", title:"The Ugly Draft",
+    fw:{ name:"Ship It", author:"Seth Godin — Linchpin",
+      body:"Godin argues that shipping — getting work out the door, into the world, done — is the most important creative skill. Not quality. Not perfection. Shipping. The ugly draft is the version you could actually finish and share. Not the version you want to make. The version you can make, right now, with what you have. Ugly is shippable. Perfect is not.",
+      benefit:"<strong>Cognitive benefit:</strong> Focusing on a completable version activates the brain's goal-completion circuits, which are distinct from the open-ended creative generation circuits. Research shows that the closer you get to completion, the stronger the pull toward finishing becomes — a psychological phenomenon called the goal gradient effect." },
+    q:"What is the ugly, completable version of your project — the version you could actually finish this week if you let go of what it should be?",
+    prompts:["Describe the ugly version: what would it include? What would you cut?","What is the minimum viable version of this project that would still be meaningful?","What are you including because it should be there versus what actually needs to be there?","If you had to ship this project in its current state to one person, what would you need to add or fix?","What is the gap between the ugly version and 'done' — and is the gap as big as you think?"],
+    fu:{ t:50, q:"What would it cost you to ship the ugly version — and what would it cost you not to?", prompts:["What are you protecting by not shipping — your reputation, your self-image, your potential?","What if the ugly version is better than you think?","What becomes possible once the ugly version exists in the world?"] },
+    ref:"The ugly draft is the bridge between stuck and shipped. It will not be what you wanted. It will be what you made. That's enough. That's always been enough.",
+    action:{ i:"📦", t:"Define your ugly draft scope tonight: exactly what's in, exactly what's out, and a date by which it will be done. Write it down. Commit to the date." }
+  },
+  { day:10, phase:3, phaseName:"Move", title:"Ship Something Small",
+    fw:{ name:"Minimum Viable Product", author:"Eric Ries — The Lean Startup",
+      body:"Ries's MVP concept is often misunderstood as shipping something bad. It's actually about shipping the smallest thing that creates genuine value and produces genuine feedback. Shipping something small — a piece of the project, a preview, a fragment — does two things: it gets real-world response, and it proves to your nervous system that shipping doesn't kill you.",
+      benefit:"<strong>Cognitive benefit:</strong> The act of shipping activates the brain's completion and reward circuits simultaneously, producing a neurochemical state that reinforces future shipping behavior. Research shows that the more frequently someone ships creative work, the less anxiety each subsequent ship produces — because the brain learns that shipping is survivable." },
+    q:"Ship something small from your project today — a piece, a preview, a fragment. Put it in front of at least one other person. Then write about what happened.",
+    prompts:["What did you ship? Describe exactly what you put out and to whom.","What was the experience of shipping like — in your body, in your thinking?","What response did you receive? What did someone else think of your work?","Was the response what you expected? What surprised you?","What did shipping teach you that not-shipping couldn't have?"],
+    fu:{ t:50, q:"What changed in your relationship to the project after someone else saw it?", prompts:["Did it feel more real? More fragile? More solid?","Did the feedback reveal something about the project that you couldn't see from inside?","What would happen if you shipped something small every week?"] },
+    ref:"Shipping is a skill, and like all skills, it gets easier with practice. Today you practiced. The world didn't end. The work exists outside your head now. That changes everything.",
+    action:{ i:"🚀", t:"Schedule your next small ship — another piece of the project, to another person, within the next three days. Build the shipping muscle." }
+  },
+  { day:11, phase:3, phaseName:"Move", title:"The Feedback Loop",
+    fw:{ name:"Feedback Loops", author:"John Boyd — OODA Loop",
+      body:"Boyd's OODA loop — Observe, Orient, Decide, Act — is a decision-making framework used in high-stakes situations. Applied to creative work: observe what's working and what isn't, orient around the real data (not your assumptions), decide what to change, and act. The feedback loop turns shipping from a one-time event into a continuous improvement cycle.",
+      benefit:"<strong>Cognitive benefit:</strong> Structured feedback processing activates the brain's learning and adaptation circuits more effectively than unstructured reflection. Research shows that people who follow a formal observe-orient-decide-act cycle learn from experience 2-3x faster than those who reflect informally." },
+    q:"Based on what you've shipped and the response you've received — what is the feedback telling you? What will you change?",
+    prompts:["What feedback have you received — explicit and implicit — on what you've shipped so far?","What is the feedback telling you about what works and what doesn't?","What assumptions did you have about the project that the feedback has challenged or confirmed?","What will you change based on the feedback — specifically, what's your next move?","How is making decisions based on real feedback different from making decisions based on imagination?"],
+    fu:{ t:50, q:"What is the most uncomfortable piece of feedback — and is it the most important one?", prompts:["What are you tempted to ignore? Why?","What feedback contradicts what you want to believe about the project?","What would change if you built your next iteration around the hardest feedback instead of the easiest?"] },
+    ref:"Feedback is data. Not judgment, not evaluation — data. When you treat feedback as information rather than verdict, it becomes the most powerful tool for making the work better. Use it.",
+    action:{ i:"🔁", t:"Write your OODA: what you observed, how you oriented, what you decided, what you'll do next. Make this your weekly practice as you move the project forward." }
+  },
+  { day:12, phase:4, phaseName:"Ship", title:"Build in Public",
+    fw:{ name:"Working With the Garage Door Up", author:"Austin Kleon — Show Your Work",
+      body:"Kleon advocates for building in public — sharing your process, not just your finished work. Building in public serves two purposes: it creates accountability (you've told people what you're making, so now you have to make it), and it attracts allies (people who see your process and want to support it). Both of these forces push the work forward.",
+      benefit:"<strong>Cognitive benefit:</strong> Public commitment activates the consistency principle — once you've told people what you're doing, the brain works to maintain alignment between your stated intention and your behavior. Research shows that public commitments are 2-3x more likely to be fulfilled than private ones." },
+    q:"Share your creative process publicly — what you're making, where you are, what's hard, what's working. Then write about what happened when you opened the garage door.",
+    prompts:["What did you share and where? Describe what you put out about your process.","What was it like to show unfinished, imperfect work-in-progress?","Did anyone respond? What did they say? Did anyone offer help, encouragement, or connection?","How does public accountability feel different from private intention?","What would building in public regularly do for your creative momentum?"],
+    fu:{ t:50, q:"What are you still hiding — and what would happen if you showed that too?", prompts:["Is the hidden part the most interesting part?","What vulnerability are you protecting by only showing the polished parts of your process?","What would your relationship to the project look like if there was nothing left to hide?"] },
+    ref:"Building in public is scary because it removes the exit. You can't quietly abandon something the world knows about. That constraint — which feels like pressure — is actually the force that gets things finished.",
+    action:{ i:"🏗️", t:"Post one update about your project this week — where you are, what you're working on, what's next. Make it honest, not polished. Let someone hold you to it." }
+  },
+  { day:13, phase:4, phaseName:"Ship", title:"The Final Push",
+    fw:{ name:"The Last Mile", author:"Behavioral Economics — Last Mile Problem",
+      body:"Behavioral economists identify the last mile problem: the final stretch of any project is disproportionately harder than everything before it. Not because the work is harder — because the resistance is highest near completion. Finishing means the work will be judged. Finishing means you can no longer improve it. Finishing means it's real. The final push is not about the work. It's about the willingness to let the work be done.",
+      benefit:"<strong>Cognitive benefit:</strong> Anticipating last-mile resistance activates the brain's pre-commitment systems. Research shows that people who are warned about the difficulty of finishing and plan for it in advance are significantly more likely to complete creative projects than those who encounter the difficulty unexpectedly." },
+    q:"What stands between you and done — the actual gap, not the imagined gap — and what will it take to close it?",
+    prompts:["List everything that remains between your project's current state and 'done.' Be specific — tasks, not feelings.","How many of those remaining tasks are genuinely necessary, and how many are perfectionism disguised as quality?","What is your plan for the final push — dates, milestones, daily actions?","What resistance do you expect to feel as you approach done — and how will you handle it?","What does 'done' actually mean for this project — what is the specific, concrete definition of finished?"],
+    fu:{ t:50, q:"What are you afraid of that lives on the other side of done?", prompts:["Is it judgment? Irreversibility? The loss of potential?","What becomes possible when the project is finished — and is any of that secretly scary?","What would you tell someone else who was this close to finishing and felt the same resistance?"] },
+    ref:"The final push is the hardest. Not because of the work — because of the meaning. Finishing makes it real. Real can be judged. But real also means it exists. And a thing that exists is infinitely more valuable than a thing that almost existed.",
+    action:{ i:"💪", t:"Set your ship date. Write it down. Tell someone. Then work backward: what do you need to do each day between now and then? Write the daily plan. Follow it." }
+  },
+  { day:14, phase:4, phaseName:"Ship", title:"What You Made",
+    fw:{ name:"The Practice", author:"Seth Godin — The Practice",
+      body:"Godin writes that the practice is about showing up and doing the work, consistently, regardless of how it feels. You showed up for fourteen days. You named the block, broke the loop, built momentum, shipped pieces, gathered feedback, and pushed toward done. Today is about looking at what you made — not what you intended to make, what you actually made.",
+      benefit:"<strong>Cognitive benefit:</strong> Reflecting on completed creative work activates the brain's achievement and integration circuits. Research shows that people who deliberately celebrate and reflect on their creative accomplishments build stronger creative self-efficacy — the belief that they can complete future creative work — than those who immediately move to the next project." },
+    q:"After fourteen days of moving forward — what did you make? What exists now that didn't exist before? And who are you now that you've moved?",
+    prompts:["What exists now — what concrete artifacts, pieces, or progress — that didn't exist on Day 1?","What did you learn about your creative process that you didn't know before?","What was the real block — and was it what you thought it was at the start?","What would you do differently next time you're stuck — what tools, approaches, or mindsets will you carry forward?","What do you want to remember about this experience when you're stuck again — because you will be?"],
+    fu:{ t:50, q:"What would you tell someone who is where you were on Day 1 — stuck, looping, unable to move?", prompts:["What do you know now about stuckness that you needed to hear then?","What was the single most important moment of the past fourteen days?","What is one sentence that captures what moving forward actually requires?"] },
+    ref:"You moved. The work exists. Not the perfect version — the real version. That's what matters. The loop is broken. The momentum is built. The shipping muscle is stronger. Now keep going.",
+    action:{ i:"🏁", t:"Write one sentence about what you made. Keep it simple and honest. Then start the next thing — because the practice is not about one project. It's about becoming someone who moves." }
+  }
+];
+
+
+const completed = new Set(JSON.parse(localStorage.getItem('crc-mif') || '[]'));
+
+function init() {
+  buildSidebar();
+  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
+  showDay(1);
+  updateProgress();
+}
+
+function buildSidebar() {
+  const phases = {};
+  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
+  let html = '';
+  Object.entries(phases).forEach(([ph, days]) => {
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d => {
+      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
+        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
+    });
+    html += '</div>';
+  });
+  html += `<div class="phase-group"><div class="phase-label">Review</div>
+    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
+      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-title">Full Journal + AI Reflection</div>
+    </button></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function buildDay(d) {
+  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
+  const done = completed.has(d.day);
+  return `<div class="day-view" id="day-${d.day}">
+    <div class="day-header">
+      <div class="day-meta">
+        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
+        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
+      </div>
+      <div class="day-number-large">${d.day}</div>
+    </div>
+    <div class="framework-card">
+      <div class="framework-eyebrow">framework</div>
+      <div class="framework-name">${d.fw.name}</div>
+      <div class="framework-author">${d.fw.author}</div>
+      <div class="framework-body">${d.fw.body}</div>
+      <div class="framework-benefit">${d.fw.benefit}</div>
+    </div>
+    <div class="section">
+      <div class="section-label">today's question</div>
+      <div class="question-text">"${d.q}"</div>
+      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <div class="char-counter">
+        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
+      </div>
+      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
+        <div class="followup-label">going deeper</div>
+        <div class="followup-question">"${d.fu.q}"</div>
+        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">reflection</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">micro-action</div>
+      <div class="action-card">
+        <div class="action-icon">${d.action.i}</div>
+        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
+      </div>
+    </div>
+    <div class="complete-row">
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
+    </div>
+  </div>`;
+}
+
+function buildJournal() {
+  return `<div class="journal-view" id="journal-view">
+    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Moving Forward</em></h1>
+    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
+    <div id="j-entries"></div>
+    <div class="ai-section">
+      <div class="ai-eyebrow">AI Reflection</div>
+      <h2 class="ai-title">What your writing <em>reveals</em></h2>
+      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
+      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
+    </div>
+  </div>`;
+}
+
+function showDay(n) { document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active')); document.getElementById('day-'+n)?.classList.add('active'); document.getElementById('nav-'+n)?.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); closeSidebar(); }
+
+function showJournal() { document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active')); document.getElementById('journal-view').classList.add('active'); document.getElementById('nav-journal')?.classList.add('active'); populateJournal(); window.scrollTo({top:0,behavior:'smooth'}); closeSidebar(); }
+
+function populateJournal() {
+  document.getElementById('j-entries').innerHTML = program.map(d=>{
+    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    return `<div class="journal-entry">
+      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-title">${d.title}</div>
+      <div class="journal-question">"${d.q}"</div>
+      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
+      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onWrite(n) { const v=document.getElementById('write-'+n)?.value||''; save(n,'main',v); const wc=wordCount(v),pct=Math.min(100,(wc/MIN)*100),suf=wc>=MIN; const fill=document.getElementById('fill-'+n),ctr=document.getElementById('ctr-'+n),ta=document.getElementById('write-'+n); if(fill){fill.style.width=pct+'%';fill.className='char-fill'+(suf?' sufficient':'');} if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`;ctr.className='char-num'+(suf?' sufficient':'');} if(ta)ta.className='writing-area'+(suf?' sufficient':''); if(wordCount(v)>=program[n-1].fu.t)document.getElementById('fu-'+n)?.classList.add('visible'); const note=document.getElementById('note-'+n); if(note)note.style.display=suf?'none':'block'; }
+
+function completeDay(n) { const v=getSaved(n,'main'); if(wordCount(v)<MIN){const note=document.getElementById('note-'+n);if(note){note.className='complete-note error';note.textContent=`Please write at least ${MIN} words first.`;}return;} completed.add(n); localStorage.setItem('crc-mif',JSON.stringify([...completed])); const btn=document.getElementById('cbtn-'+n); if(btn){btn.textContent='Day Complete ✓';btn.disabled=true;} document.getElementById('badge-'+n)?.classList.add('show'); const nav=document.getElementById('nav-'+n); if(nav)nav.classList.add('completed'); const nn=nav?.querySelector('.day-nav-num'); if(nn){nn.style.background='#C84B2F';nn.style.color='white';} updateProgress(); if(n<14)setTimeout(()=>showDay(n+1),500); else setTimeout(()=>showJournal(),500); }
+
+function updateProgress() { const pct=(completed.size/14)*100; document.getElementById('progressFill').style.width=pct+'%'; document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`; }
+
+async function generateReflection() {
+  const el=document.getElementById('ai-state');
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
+  const writing=program.map(d=>{const m=getSaved(d.day,'main'),f=getSaved(d.day,'fu');if(!m&&!f)return null;return`DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`; }).filter(Boolean).join('\n\n---\n\n');
+  if(!writing.trim()){el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;return;}
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Move It Forward" — a program helping stuck creatives break through creative blocks and ship their work, grounded in Steven Pressfield, Seth Godin, IDEO, and Eric Ries.\n\nHere is everything they wrote:\n\n${writing}\n\nRespond in exactly this format:\n\nWARM MIRROR\n[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]\n\nPATTERN 1\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]\n\nPATTERN 2\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote.]\n\nPATTERN 3\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote.]\n\nCLOSING\n[One sentence. True and forward-facing. Something they can carry.]\n\nTone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+  try {
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    const data=await res.json(); const text=data.content?.map(b=>b.text||'').join('')||''; if(!text)throw new Error();
+    const warmMatch=text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i); const warm=warmMatch?warmMatch[1].trim():'';
+    const patterns=[]; const patternRe=/PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi; let pm; while((pm=patternRe.exec(text))!==null){patterns.push({title:pm[1].trim(),body:pm[2].trim()});}
+    const closingMatch=text.match(/CLOSING\s*([\s\S]*?)$/i); const closing=closingMatch?closingMatch[1].trim():'';
+    el.innerHTML=`<div class="reflection-output"><div class="warm-block"><div class="warm-label">what I heard</div><div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div></div><div class="patterns-label">patterns across 14 days</div>${(patterns.length?patterns:[{title:'THE LOOP YOU BROKE',body:'Across your writing, a clear arc: from naming the pattern of avoidance to actively moving through it. The loop that held you is no longer invisible.'},{title:'MOMENTUM OVER PERFECTION',body:'Your most productive moments came when you let go of getting it right and focused on getting it moving. That shift is the most important thing you learned.'},{title:'SHIPPING CHANGED EVERYTHING',body:'The act of putting work in front of another person transformed your relationship to the project. What was theoretical became real — and real was survivable.'}]).slice(0,3).map((p,i)=>`<div class="pattern-card"><div class="pattern-num">${i+1}</div><div class="pattern-title">${p.title}</div><div class="pattern-body">${p.body}</div></div>`).join('')}${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}</div>`;
+  } catch(e) { el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p><button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`; }
+}
+
+function save(day,key,val){ localStorage.setItem(`crc-mif-${day}-${key}`,val); }
+function getSaved(day,key){ return localStorage.getItem(`crc-mif-${day}-${key}`)||''; }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+init();
+</script>
+</body>
+</html>

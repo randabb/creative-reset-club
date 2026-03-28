@@ -100,7 +100,7 @@ export default function Home() {
     setQ2(val);
     // Determine track from Q2 answer value directly
     setAssignedTrack(val);
-    setTimeout(() => go(5), 250); // go to email screen
+    setTimeout(() => go(7), 250); // skip to Q3
   };
 
   const handleSignIn = async () => {
@@ -139,7 +139,7 @@ export default function Home() {
       setSubmitting(false);
       return;
     }
-    go(6); // check inbox screen
+    go(14); // check inbox / guest prompt screen
   };
 
   const handleStartNow = async () => {
@@ -164,9 +164,10 @@ export default function Home() {
     }
   };
 
-  // Total quiz steps for progress: intro(2) + q1(3) + q2(4) + email(5) + inbox(6) + q3(7) + q4(8) + q5(9) + q6(10) + q7(11) + results(12)
-  const totalSteps = 10;
-  const currentStep = screen <= 2 ? 0 : screen <= 4 ? screen - 2 : screen <= 6 ? 3 : screen <= 11 ? screen - 4 : totalSteps;
+  // Quiz steps: q1(3) + q2(4) + q3(7) + q4(8) + q5(9) + q6(10) + q7(11) + results(12)
+  const totalSteps = 8;
+  const stepMap: Record<number, number> = { 3: 1, 4: 2, 7: 3, 8: 4, 9: 5, 10: 6, 11: 7, 12: 8 };
+  const currentStep = stepMap[screen] || 0;
   const progress = Math.min((currentStep / totalSteps) * 100, 100);
 
   // Q2 branching options based on Q1
@@ -235,6 +236,7 @@ export default function Home() {
         .headline-row { display:block; }
         .quiz-screen { animation: fadeUp 0.3s ease forwards; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .results-grid { grid-template-columns: 1fr auto 1fr; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
           .hero-heading { font-size:1.85rem !important; line-height:1.15 !important; }
@@ -251,6 +253,10 @@ export default function Home() {
           .card-row-right { flex-direction:column !important; gap:10px !important; width:100% !important; overflow:hidden; padding:0 !important; box-sizing:border-box; }
           .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block !important; margin:0 !important; }
           .card-row-right > div p { white-space:normal; word-wrap:break-word; overflow-wrap:break-word; max-width:100%; }
+          .results-grid { grid-template-columns:1fr !important; gap:32px !important; }
+          .results-grid > div:first-child { padding-right:0 !important; }
+          .results-grid > div:nth-child(2) { display:none !important; }
+          .results-grid > div:last-child { padding-left:0 !important; }
         }
       `}</style>
 
@@ -311,7 +317,7 @@ export default function Home() {
                 <img src="/stickman.png" alt="playful stickman" className="stickman-mobile" style={{ display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }} />
               </div>
               <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(26,31,58,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>come play. the prompts are already warm.</p>
-              <button onClick={() => go(2)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", transition: "all 0.25s", width: "fit-content", maxWidth: "fit-content", minWidth: 200 }} onMouseEnter={e => { (e.target as HTMLElement).style.background = "#E8846A"; }} onMouseLeave={e => { (e.target as HTMLElement).style.background = "#1a1f3a"; }}>
+              <button onClick={() => go(3)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", transition: "all 0.25s", width: "fit-content", maxWidth: "fit-content", minWidth: 200 }} onMouseEnter={e => { (e.target as HTMLElement).style.background = "#E8846A"; }} onMouseLeave={e => { (e.target as HTMLElement).style.background = "#1a1f3a"; }}>
                 start your first reset
                 <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
@@ -350,25 +356,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* SCREEN 2: INTRO */}
-      {screen === 2 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 560 }}>
-          <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 14 }}>
-            a few questions to understand where you are right now.
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 36 }}>
-            There are no right answers. Just pick what feels most true.
-          </p>
-          <button onClick={() => go(3)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content" }}>
-            begin
-            <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
-          </button>
-        </div>
-      )}
-
-      {/* SCREEN 3: Q1 */}
+      {/* SCREEN 3: Q1 (with intro header) */}
       {screen === 3 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 600 }}>
+          <p style={{ fontSize: 14, color: "rgba(26,31,58,0.45)", lineHeight: 1.5, marginBottom: 6 }}>a few questions to understand where you are right now.</p>
+          <p style={{ fontSize: 12, color: "rgba(26,31,58,0.3)", marginBottom: 32 }}>there are no right answers. just pick what feels most true.</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             When you sit down to think or create lately, what&apos;s the closest feeling?
           </h2>
@@ -391,40 +383,6 @@ export default function Home() {
               <button key={o.val} onClick={() => pickQ2(o.val)} style={cardStyle(q2 === o.val)}>{o.label}</button>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* SCREEN 5: EMAIL CAPTURE */}
-      {screen === 5 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 480 }}>
-          <h2 style={{ fontSize: "clamp(28px,4vw,40px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
-            we&apos;re building your track.
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 28 }}>Where should we send your results?</p>
-          {emailError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{emailError}</p>}
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", marginBottom: 14, width: "100%" }} />
-          <button onClick={handleEmailSubmit} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
-            {submitting ? "sending..." : "show me my results"}
-            <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
-          </button>
-          <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>already have an account? sign in</button>
-        </div>
-      )}
-
-      {/* SCREEN 6: CHECK INBOX */}
-      {screen === 6 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 480 }}>
-          <h2 style={{ fontSize: "clamp(28px,4vw,40px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
-            check your inbox.
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 28 }}>We sent you a link to continue. No password needed, ever.</p>
-          <p style={{ fontSize: 13, color: "rgba(26,31,58,0.35)", marginBottom: 28 }}>
-            Can&apos;t find it? Check your spam or{" "}
-            <button onClick={handleEmailSubmit} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 13, color: "#E8846A", cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>resend</button>
-          </p>
-          <button onClick={() => go(7)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "transparent", color: "#1a1f3a", padding: "14px 28px", borderRadius: 100, fontSize: 14, fontWeight: 700, border: "1.5px solid rgba(26,31,58,0.2)", cursor: "pointer", width: "fit-content" }}>
-            continue the quiz
-          </button>
         </div>
       )}
 
@@ -502,33 +460,55 @@ export default function Home() {
         </div>
       )}
 
-      {/* SCREEN 12: RESULTS */}
+      {/* SCREEN 12: RESULTS + ACCOUNT CREATION */}
       {screen === 12 && result && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 560 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 16 }}>{result.name}</p>
-          <h2 style={{ fontSize: "clamp(32px,5vw,48px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 16 }}>
-            {result.heading}
-          </h2>
-          <p style={{ fontSize: 17, color: "rgba(26,31,58,0.65)", lineHeight: 1.7, marginBottom: 36 }}>
-            {result.body}
-          </p>
-          <button onClick={handleStartNow} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content" }}>
-            start now
-            <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
-          </button>
-          <p style={{ marginTop: 16, fontSize: 12, color: "rgba(26,31,58,0.35)" }}>free to start. no credit card needed.</p>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", alignItems: "center", padding: "120px 48px 80px" }}>
+          <div className="results-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, maxWidth: 960, width: "100%", margin: "0 auto", alignItems: "center" }}>
+            {/* LEFT: Track result */}
+            <div style={{ paddingRight: 48 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 16 }}>{result.name}</p>
+              <h2 style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 16 }}>
+                {result.heading}
+              </h2>
+              <p style={{ fontSize: 16, color: "rgba(26,31,58,0.6)", lineHeight: 1.7 }}>
+                {result.body}
+              </p>
+            </div>
+
+            {/* DIVIDER */}
+            <div style={{ width: 1, background: "rgba(26,31,58,0.1)", alignSelf: "stretch" }} />
+
+            {/* RIGHT: Account creation */}
+            <div style={{ paddingLeft: 48 }}>
+              <h3 style={{ fontSize: "clamp(20px,3vw,28px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
+                one last thing before you begin.
+              </h3>
+              <p style={{ fontSize: 14, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 24 }}>
+                create a free account to save your progress.
+              </p>
+              {emailError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{emailError}</p>}
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", marginBottom: 14, width: "100%" }} />
+              <button onClick={handleEmailSubmit} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
+                {submitting ? "creating..." : "create my account"}
+                <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
+              </button>
+              <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>already have an account? sign in</button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* SCREEN 14: GUEST PROMPT (not verified yet) */}
+      {/* SCREEN 14: CHECK INBOX + CONTINUE */}
       {screen === 14 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 480 }}>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 12 }}>
-            click the link in your email to save your progress.
+          <h2 style={{ fontSize: "clamp(28px,4vw,40px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
+            check your inbox.
           </h2>
-          <p style={{ fontSize: 15, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 28 }}>Then come back and everything will be waiting for you.</p>
-          <button onClick={() => { router.push(`/program/${assignedTrack}`); }} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, color: "#E8846A", cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>
-            continue anyway
+          <p style={{ fontSize: 16, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 12 }}>We sent you a link to save your progress. No password needed, ever.</p>
+          <p style={{ fontSize: 13, color: "rgba(26,31,58,0.35)", marginBottom: 28 }}>Then come back and everything will be waiting for you.</p>
+          <button onClick={() => { router.push(`/program/${assignedTrack}`); }} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content" }}>
+            start my track
+            <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
           </button>
         </div>
       )}
