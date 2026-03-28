@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 const trackResults: Record<string, { name: string; body: string; recognize: string[]; looksLike: string }> = {
   empty_the_head: {
     name: "Empty the Head",
-    body: "Your head is full. Not because you're disorganized or unfocused. Because you care about a lot of things and none of them have had a chance to land. You've been holding too much at once, and the mental weight of it is making it hard to think clearly about any of it.",
+    body: "Your head is full. You care about a lot of things and none of them have had a chance to land. You've been holding too much at once, and the mental weight of it is making it hard to think clearly about any of it.",
     recognize: [
       "you start things but can't decide which one actually matters",
       "your best thinking happens in the shower or on a walk, never at your desk",
@@ -36,13 +36,13 @@ const trackResults: Record<string, { name: string; body: string; recognize: stri
   },
   refill: {
     name: "Refill",
-    body: "The well ran dry. Not because you stopped caring, because you kept going without replenishing. You've been producing, delivering, showing up. But the creative energy that used to feel natural has gotten thin. What used to come easily now takes effort. What used to excite you now just feels like more to do.",
+    body: "The well ran dry. You kept going without replenishing. You've been producing, delivering, showing up. But the creative energy that used to feel natural has gotten thin. What used to come easily now takes effort. What used to excite you now just feels like more to do.",
     recognize: [
       "you feel like you're running on fumes creatively",
       "you can execute but you can't remember the last time you felt genuinely inspired",
       "rest doesn't seem to help as much as it used to",
     ],
-    looksLike: "You'll start by slowing down on purpose. Not to stop, to restore. You'll spend time noticing, receiving, and giving yourself permission to take in before you put out. By the end the well will have something in it again.",
+    looksLike: "You'll start by slowing down on purpose, enough to restore. You'll spend time noticing, receiving, and giving yourself permission to take in before you put out. By the end the well will have something in it again.",
   },
   move_it_forward: {
     name: "Move It Forward",
