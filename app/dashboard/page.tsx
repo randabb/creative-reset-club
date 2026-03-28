@@ -6,7 +6,7 @@ const programs: Record<string, { title: string; subtitle: string; description: s
   fear: {
     title: "Fear to First Move",
     subtitle: "14 days · Phase 1: Name It",
-    description: "You already know what you want. This program helps you move toward it.",
+    description: "You already know what you want. This track helps you move toward it.",
   },
   ai: {
     title: "Think Before You Build",
@@ -16,12 +16,12 @@ const programs: Record<string, { title: string; subtitle: string; description: s
   overwhelmed: {
     title: "From Many to One",
     subtitle: "14 days · Phase 1: Empty the Head",
-    description: "Too many directions. This program helps you choose one and mean it.",
+    description: "Too many directions. This track helps you choose one and mean it.",
   },
   blank: {
     title: "Back to the Well",
     subtitle: "14 days · Phase 1: Diagnose",
-    description: "The creativity didn't leave. This program helps you find it again.",
+    description: "The creativity didn't leave. This track helps you find it again.",
   },
 };
 
@@ -55,7 +55,7 @@ const dailyPrompts: Record<string, string[]> = {
     "Write the origin story of your work or idea — why this found you, what it felt like, and why you can't leave it alone.",
     "Write a one-page portrait of the person you're making for — everything you know about who they are, what they want, what they fear, and what would make them trust you.",
     "What exists in your field or market right now, what does it do well, where does it consistently fall short — and where does your work live in relation to all of that?",
-    "Write the one-page context document that captures everything you've developed across this program — your thinking about your work, distilled.",
+    "Write the one-page context document that captures everything you've developed across this track — your thinking about your work, distilled.",
     "Use AI today — with everything you've developed as context — and document what's different about the experience.",
   ],
   overwhelmed: [
@@ -87,7 +87,7 @@ const dailyPrompts: Record<string, string[]> = {
     "Make something in ten minutes using only what is physically in front of you right now — no AI, no references, no looking anything up — and write about what came out.",
     "Write badly for fifteen minutes — whatever comes, without stopping, without editing, without rereading, without wondering if AI could do it better — and then write about what came out.",
     "What is the smallest possible version of the creative work or project you've been avoiding — and what happened when you actually did it?",
-    "Show one small thing you've made during this program to one person — a creative peer, a trusted friend — and write about what it felt like to show it.",
+    "Show one small thing you've made during this track to one person — a creative peer, a trusted friend — and write about what it felt like to show it.",
     "Write your recommitment — what you're returning to as a creative or builder, what you understand now that you didn't when you started, and how you'll keep the well from going empty again.",
   ],
 };
@@ -209,7 +209,7 @@ export default function Dashboard() {
 
       <div style={{ padding: "0 16px" }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)", padding: "0 12px", marginBottom: 10 }}>
-          other programs
+          other tracks
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {otherPrograms.map(([id, p]) => (
@@ -371,7 +371,7 @@ export default function Dashboard() {
               <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: "radial-gradient(circle, rgba(255,144,144,0.15) 0%, transparent 70%)", borderRadius: "50%" }} />
 
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9090", marginBottom: 16, position: "relative" }}>
-                your program
+                your track
               </p>
               <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#f4f2ee", marginBottom: 20, position: "relative" }}>
                 {matched.title}
@@ -390,7 +390,7 @@ export default function Dashboard() {
               {/* TODAY'S PROMPT or COMPLETION */}
               {isComplete ? (
                 <div style={{ padding: "16px 20px", background: "rgba(244,242,238,0.06)", borderRadius: 12, marginBottom: 24, position: "relative" }}>
-                  <p style={{ fontSize: 13, color: "#ff9090", fontWeight: 700, marginBottom: 4 }}>program complete</p>
+                  <p style={{ fontSize: 13, color: "#ff9090", fontWeight: 700, marginBottom: 4 }}>track complete</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.55)", lineHeight: 1.6 }}>
                     you showed up for 14 days. that matters more than you think.
                   </p>
@@ -414,7 +414,7 @@ export default function Dashboard() {
                   position: "relative",
                 }}
               >
-                {isComplete ? "revisit program →" : completedDays > 0 ? "continue →" : "start program →"}
+                {isComplete ? "revisit track →" : completedDays > 0 ? "continue →" : "start track →"}
               </a>
             </div>
           ) : (
@@ -424,7 +424,7 @@ export default function Dashboard() {
             }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: "radial-gradient(circle, rgba(255,144,144,0.15) 0%, transparent 70%)", borderRadius: "50%" }} />
               <p style={{ fontSize: 15, color: "rgba(244,242,238,0.7)", lineHeight: 1.7, marginBottom: 24, position: "relative" }}>
-                find out which program is right for you.
+                find out which track is right for you.
               </p>
               <a
                 href="/"

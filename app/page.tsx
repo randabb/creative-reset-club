@@ -339,7 +339,7 @@ export default function Home() {
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,3,50,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#f4f2ee", borderRadius: 24, padding: "40px 44px", maxWidth: 400, width: "100%" }}>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: "#000332", marginBottom: 6 }}>welcome back.</h2>
-            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", marginBottom: 24 }}>sign in to access your program.</p>
+            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", marginBottom: 24 }}>sign in to access your track.</p>
             {signInError && <p style={{ fontSize: 13, color: "#ff9090", marginBottom: 14 }}>{signInError}</p>}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input type="email" value={signInEmail} onChange={e => setSignInEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none" }} />
@@ -513,7 +513,7 @@ export default function Home() {
 
             <div style={{ background: "#000332", borderRadius: 24, padding: 40, marginBottom: 28, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: "radial-gradient(circle, rgba(255,144,144,0.2) 0%, transparent 70%)", borderRadius: "50%" }} />
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#ff9090", marginBottom: 14, position: "relative" }}>your program</p>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "#ff9090", marginBottom: 14, position: "relative" }}>your track</p>
               <h2 style={{ fontSize: "clamp(22px,3vw,32px)", fontWeight: 700, color: "#f4f2ee", lineHeight: 1.2, marginBottom: 20, position: "relative" }}>{programNames[userState]}</h2>
 
               <p style={{ fontSize: 15, lineHeight: 1.75, color: "rgba(244,242,238,0.85)", marginBottom: 16, position: "relative" }}>{matchMessage[0]}</p>
@@ -528,7 +528,7 @@ export default function Home() {
             <div style={{ marginBottom: 24 }}>
               <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 6, lineHeight: 1.2 }}>
                 create your account to access{" "}
-                <span style={{ color: "#ff9090" }}>your program.</span>
+                <span style={{ color: "#ff9090" }}>your track.</span>
               </h3>
               <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", marginBottom: 20, lineHeight: 1.6 }}>your 14-day practice is ready. create a free account to begin.</p>
 
@@ -563,7 +563,7 @@ export default function Home() {
 
                 <div style={{ background: "#e6f6ff", borderRadius: 16, padding: "20px 24px", marginTop: 8 }}>
                   <p style={{ fontSize: 13, lineHeight: 1.65, color: "rgba(0,3,50,0.6)", marginBottom: 14 }}>
-                    We&apos;re building a group experience around these programs — a 4-week cohort where a small group of creatives and builders move through the practice together, with weekly live sessions and shared reflection. If that sounds like something you&apos;d want, tick the box and we&apos;ll reach out when it&apos;s ready.
+                    We&apos;re building a group experience around these tracks — a 4-week cohort where a small group of creatives and builders move through the practice together, with weekly live sessions and shared reflection. If that sounds like something you&apos;d want, tick the box and we&apos;ll reach out when it&apos;s ready.
                   </p>
                   <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#000332" }}>
                     <input

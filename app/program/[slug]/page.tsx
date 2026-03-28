@@ -664,7 +664,7 @@ init = function() {
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16
       }}>
         <p style={{ fontFamily: "'Codec Pro',sans-serif", color: "#000332", fontSize: 18 }}>
-          program not found.
+          track not found.
         </p>
         <a href="/dashboard" style={{
           fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700,
