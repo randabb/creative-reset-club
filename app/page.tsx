@@ -3,29 +3,35 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const trackResults: Record<string, { name: string; body: string }> = {
+const trackResults: Record<string, { name: string; heading: string; body: string }> = {
   empty_the_head: {
     name: "Empty the Head",
+    heading: "Your head is full.",
     body: "Too many things competing at once. The problem isn't that you don't have ideas. It's that you can't hear them over everything else. This track starts by clearing space.",
   },
   make_it_yours: {
     name: "Make It Yours",
+    heading: "You've been making for everyone else.",
     body: "You're still producing. But somewhere along the way it stopped feeling like yours. This track is about making something with no audience in mind.",
   },
   reignite: {
     name: "Reignite",
+    heading: "The thread went quiet.",
     body: "The connection to your own thinking hasn't disappeared. It's just been quiet. This track is about finding your way back, one thought at a time.",
   },
   refill: {
     name: "Refill",
+    heading: "The well ran dry.",
     body: "You've been giving out more than you've been taking in. Before anything else, you need to restore. This track starts there.",
   },
   move_it_forward: {
     name: "Move It Forward",
+    heading: "You're stuck in the loop.",
     body: "The thinking is there. The movement isn't. This track is designed to break the cycle and get something out of your head and into the world.",
   },
   one_thing: {
     name: "One Thing at a Time",
+    heading: "You know what you want to make.",
     body: "Something keeps stopping you. And it's not a lack of ideas or ability. This track creates the conditions to finally move toward the thing you've been avoiding.",
   },
 };
@@ -462,9 +468,13 @@ export default function Home() {
           <div className="results-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, maxWidth: 960, width: "100%", margin: "0 auto", alignItems: "center" }}>
             {/* LEFT: Track result */}
             <div style={{ paddingRight: 48 }}>
-              <div style={{ background: "#1a1f3a", borderRadius: 16, padding: 40 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 20 }}>{result.name}</p>
-                <p style={{ fontSize: 15, color: "rgba(244,242,238,0.7)", lineHeight: 1.7, marginBottom: 24 }}>
+              <div style={{ background: "#0f1428", borderRadius: 16, padding: 40, border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, background: "radial-gradient(circle, rgba(232,132,106,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 14, position: "relative" }}>{result.name}</p>
+                <h2 style={{ fontSize: "clamp(26px,3.5vw,38px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#f4f2ee", marginBottom: 14, position: "relative" }}>
+                  {result.heading}
+                </h2>
+                <p style={{ fontSize: 15, color: "rgba(244,242,238,0.6)", lineHeight: 1.7, marginBottom: 24, position: "relative" }}>
                   {result.body}
                 </p>
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", marginBottom: 24 }} />
