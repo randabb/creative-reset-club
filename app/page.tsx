@@ -570,6 +570,7 @@ export default function Home() {
                 <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
               <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>already have an account? sign in</button>
+              <button onClick={() => go(3)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 8, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>want to retake the quiz?</button>
             </div>
           </div>
         </div>
