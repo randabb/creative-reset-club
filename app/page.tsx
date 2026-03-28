@@ -47,7 +47,9 @@ export default function Home() {
   const [q6, setQ6] = useState("");
   const [q7, setQ7] = useState("");
   const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [signupError, setSignupError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [signInEmail, setSignInEmail] = useState("");
@@ -122,46 +124,49 @@ export default function Home() {
     router.push("/dashboard");
   };
 
-  const handleEmailSubmit = async () => {
+  const handleSignup = async () => {
     if (!email || !email.includes("@")) {
-      setEmailError("Please enter a valid email address.");
+      setSignupError("Please enter a valid email address.");
+      return;
+    }
+    if (!password || password.length < 6) {
+      setSignupError("Password must be at least 6 characters.");
       return;
     }
     setSubmitting(true);
-    setEmailError("");
+    setSignupError("");
 
-    // Save quiz state to localStorage before magic link redirect
-    localStorage.setItem("crc-quiz", JSON.stringify({ q1, q2, assignedTrack, email }));
-
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
-      setEmailError(error.message);
+      if (error.message.toLowerCase().includes("already")) {
+        setSignupError("That email is already in use. Sign in instead.");
+      } else {
+        setSignupError(error.message);
+      }
       setSubmitting(false);
       return;
     }
-    go(14); // check inbox / guest prompt screen
-  };
 
-  const handleStartNow = async () => {
-    // Check if user has an active session (clicked magic link)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      // Save quiz data to profile
+    const userId = data.user?.id;
+    if (userId) {
       await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user.id,
+          userId,
           email,
           matched_program: assignedTrack,
           cohort_waitlist: false,
+          q3_block_location: q3,
+          q4_ai_relationship: q4,
+          q5_creative_style: q5,
+          q6_time_available: q6,
+          q7_intention: q7,
         }),
       });
-      router.push(`/program/${assignedTrack}`);
-    } else {
-      // Not verified yet, go to gentle prompt
-      go(14); // guest prompt screen
     }
+
+    router.push("/dashboard");
   };
 
   // Quiz steps: q1(3) + q2(4) + q3(7) + q4(8) + q5(9) + q6(10) + q7(11) + results(12)
@@ -483,10 +488,16 @@ export default function Home() {
               <p style={{ fontSize: 14, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 24 }}>
                 create a free account to save your progress.
               </p>
-              {emailError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{emailError}</p>}
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", marginBottom: 14, width: "100%" }} />
-              <button onClick={handleEmailSubmit} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
-                {submitting ? "creating..." : "create my account"}
+              {signupError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{signupError}</p>}
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", marginBottom: 10, width: "100%" }} />
+              <div style={{ position: "relative", marginBottom: 14 }}>
+                <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="create a password" style={{ padding: "16px 20px", paddingRight: 48, border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", width: "100%" }} />
+                <button onClick={() => setShowPassword(!showPassword)} type="button" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "rgba(26,31,58,0.35)", fontFamily: "'Codec Pro',sans-serif" }}>
+                  {showPassword ? "hide" : "show"}
+                </button>
+              </div>
+              <button onClick={handleSignup} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
+                {submitting ? "creating your account..." : "create my account"}
                 <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
               <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>already have an account? sign in</button>
@@ -495,20 +506,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* SCREEN 14: CHECK INBOX + CONTINUE */}
-      {screen === 14 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 480 }}>
-          <h2 style={{ fontSize: "clamp(28px,4vw,40px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
-            check your inbox.
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 12 }}>We sent you a link to save your progress. No password needed, ever.</p>
-          <p style={{ fontSize: 13, color: "rgba(26,31,58,0.35)", marginBottom: 28 }}>Then come back and everything will be waiting for you.</p>
-          <button onClick={() => { router.push(`/program/${assignedTrack}`); }} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content" }}>
-            start my track
-            <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
-          </button>
-        </div>
-      )}
     </>
   );
 }
