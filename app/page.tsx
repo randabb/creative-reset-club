@@ -192,23 +192,6 @@ export default function Home() {
     ? "What's closer to what's happening?"
     : "What's keeping you there?";
 
-  const cardStyle = (isSelected: boolean) => ({
-    display: "block" as const,
-    width: "100%",
-    padding: "20px 24px",
-    border: isSelected ? "2px solid #E8846A" : "1.5px solid rgba(26,31,58,0.1)",
-    borderRadius: 16,
-    background: isSelected ? "rgba(232,132,106,0.06)" : "transparent",
-    cursor: "pointer" as const,
-    textAlign: "left" as const,
-    fontFamily: "'Codec Pro',sans-serif",
-    fontSize: 15,
-    fontWeight: 500,
-    color: "#1a1f3a",
-    lineHeight: 1.5,
-    transition: "all 0.2s ease",
-  });
-
   const result = trackResults[assignedTrack];
 
   return (
@@ -221,7 +204,7 @@ export default function Home() {
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; overflow-x:hidden; }
-        body { background:#f4f2ee; color:#1a1f3a; font-family:'Codec Pro',sans-serif; overflow-x:hidden; }
+        body { background:#f4f2ee; color:#1a1f3a; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
         .stickman-img { width:200px; animation:idle 4s ease-in-out infinite; }
         @keyframes idle {
           0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
@@ -236,6 +219,10 @@ export default function Home() {
         .headline-row { display:block; }
         .quiz-screen { animation: fadeUp 0.3s ease forwards; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .quiz-screen, .quiz-screen * { font-family:'Codec Pro',sans-serif; }
+        .quiz-card { display:block; width:100%; padding:20px 24px; border:1.5px solid rgba(26,31,58,0.1); border-radius:16px; background:transparent; cursor:pointer; text-align:left; font-family:'Codec Pro',sans-serif; font-size:15px; font-weight:500; color:#1a1f3a; line-height:1.5; transition:all 0.2s ease; }
+        .quiz-card:hover { background:rgba(232,132,106,0.08); border-color:#E8846A; }
+        .quiz-card.selected { background:rgba(232,132,106,0.12); border:2px solid #E8846A; }
         .results-grid { grid-template-columns: 1fr auto 1fr; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
@@ -365,9 +352,9 @@ export default function Home() {
             When you sit down to think or create lately, what&apos;s the closest feeling?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ1, "full", 4)} style={cardStyle(q1 === "full")}>My head is full. Too many things competing at once.</button>
-            <button onClick={() => pick(setQ1, "flat", 4)} style={cardStyle(q1 === "flat")}>I feel flat. Low energy, disconnected, not much coming up.</button>
-            <button onClick={() => pick(setQ1, "stuck", 4)} style={cardStyle(q1 === "stuck")}>I&apos;m stuck. Something&apos;s there but it won&apos;t move.</button>
+            <button onClick={() => pick(setQ1, "full", 4)} className={`quiz-card ${q1 === "full" ? "selected" : ""}`}>My head is full. Too many things competing at once.</button>
+            <button onClick={() => pick(setQ1, "flat", 4)} className={`quiz-card ${q1 === "flat" ? "selected" : ""}`}>I feel flat. Low energy, disconnected, not much coming up.</button>
+            <button onClick={() => pick(setQ1, "stuck", 4)} className={`quiz-card ${q1 === "stuck" ? "selected" : ""}`}>I&apos;m stuck. Something&apos;s there but it won&apos;t move.</button>
           </div>
         </div>
       )}
@@ -380,7 +367,7 @@ export default function Home() {
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {q2Options.map(o => (
-              <button key={o.val} onClick={() => pickQ2(o.val)} style={cardStyle(q2 === o.val)}>{o.label}</button>
+              <button key={o.val} onClick={() => pickQ2(o.val)} className={`quiz-card ${q2 === o.val ? "selected" : ""}`}>{o.label}</button>
             ))}
           </div>
         </div>
@@ -393,10 +380,10 @@ export default function Home() {
             Where do you feel the block most?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ3, "head", 8)} style={cardStyle(q3 === "head")}>In my head. I can&apos;t stop thinking.</button>
-            <button onClick={() => pick(setQ3, "body", 8)} style={cardStyle(q3 === "body")}>In my body. I feel tense, tired, or numb.</button>
-            <button onClick={() => pick(setQ3, "habits", 8)} style={cardStyle(q3 === "habits")}>In my habits. I keep defaulting to the same patterns.</button>
-            <button onClick={() => pick(setQ3, "confidence", 8)} style={cardStyle(q3 === "confidence")}>In my confidence. I don&apos;t trust what comes up.</button>
+            <button onClick={() => pick(setQ3, "head", 8)} className={`quiz-card ${q3 === "head" ? "selected" : ""}`}>In my head. I can&apos;t stop thinking.</button>
+            <button onClick={() => pick(setQ3, "body", 8)} className={`quiz-card ${q3 === "body" ? "selected" : ""}`}>In my body. I feel tense, tired, or numb.</button>
+            <button onClick={() => pick(setQ3, "habits", 8)} className={`quiz-card ${q3 === "habits" ? "selected" : ""}`}>In my habits. I keep defaulting to the same patterns.</button>
+            <button onClick={() => pick(setQ3, "confidence", 8)} className={`quiz-card ${q3 === "confidence" ? "selected" : ""}`}>In my confidence. I don&apos;t trust what comes up.</button>
           </div>
         </div>
       )}
@@ -408,10 +395,10 @@ export default function Home() {
             When it comes to AI tools, which feels most true right now?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ4, "before_thinking", 9)} style={cardStyle(q4 === "before_thinking")}>I reach for them before I&apos;ve even tried thinking myself.</button>
-            <button onClick={() => pick(setQ4, "losing_something", 9)} style={cardStyle(q4 === "losing_something")}>I use them but I&apos;m aware I&apos;m losing something.</button>
-            <button onClick={() => pick(setQ4, "avoid_pressure", 9)} style={cardStyle(q4 === "avoid_pressure")}>I avoid them but feel the pressure to use them more.</button>
-            <button onClick={() => pick(setQ4, "found_balance", 9)} style={cardStyle(q4 === "found_balance")}>I&apos;ve found a balance. This is more about getting back to myself.</button>
+            <button onClick={() => pick(setQ4, "before_thinking", 9)} className={`quiz-card ${q4 === "before_thinking" ? "selected" : ""}`}>I reach for them before I&apos;ve even tried thinking myself.</button>
+            <button onClick={() => pick(setQ4, "losing_something", 9)} className={`quiz-card ${q4 === "losing_something" ? "selected" : ""}`}>I use them but I&apos;m aware I&apos;m losing something.</button>
+            <button onClick={() => pick(setQ4, "avoid_pressure", 9)} className={`quiz-card ${q4 === "avoid_pressure" ? "selected" : ""}`}>I avoid them but feel the pressure to use them more.</button>
+            <button onClick={() => pick(setQ4, "found_balance", 9)} className={`quiz-card ${q4 === "found_balance" ? "selected" : ""}`}>I&apos;ve found a balance. This is more about getting back to myself.</button>
           </div>
         </div>
       )}
@@ -423,10 +410,10 @@ export default function Home() {
             On a good creative day, what does it feel like?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ5, "deep_focus", 10)} style={cardStyle(q5 === "deep_focus")}>I go deep on one thing and lose track of time.</button>
-            <button onClick={() => pick(setQ5, "connections", 10)} style={cardStyle(q5 === "connections")}>I make unexpected connections between unrelated ideas.</button>
-            <button onClick={() => pick(setQ5, "expression", 10)} style={cardStyle(q5 === "expression")}>I express something I didn&apos;t know I thought until I said it out loud.</button>
-            <button onClick={() => pick(setQ5, "genuinely_mine", 10)} style={cardStyle(q5 === "genuinely_mine")}>I make something and it feels genuinely mine.</button>
+            <button onClick={() => pick(setQ5, "deep_focus", 10)} className={`quiz-card ${q5 === "deep_focus" ? "selected" : ""}`}>I go deep on one thing and lose track of time.</button>
+            <button onClick={() => pick(setQ5, "connections", 10)} className={`quiz-card ${q5 === "connections" ? "selected" : ""}`}>I make unexpected connections between unrelated ideas.</button>
+            <button onClick={() => pick(setQ5, "expression", 10)} className={`quiz-card ${q5 === "expression" ? "selected" : ""}`}>I express something I didn&apos;t know I thought until I said it out loud.</button>
+            <button onClick={() => pick(setQ5, "genuinely_mine", 10)} className={`quiz-card ${q5 === "genuinely_mine" ? "selected" : ""}`}>I make something and it feels genuinely mine.</button>
           </div>
         </div>
       )}
@@ -438,9 +425,9 @@ export default function Home() {
             How much time do you have each day?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ6, "5min", 11)} style={cardStyle(q6 === "5min")}>5 minutes. Keep it short and focused.</button>
-            <button onClick={() => pick(setQ6, "15min", 11)} style={cardStyle(q6 === "15min")}>10 to 15 minutes. I can go a bit deeper.</button>
-            <button onClick={() => pick(setQ6, "30min", 11)} style={cardStyle(q6 === "30min")}>30+ minutes. I want the full experience.</button>
+            <button onClick={() => pick(setQ6, "5min", 11)} className={`quiz-card ${q6 === "5min" ? "selected" : ""}`}>5 minutes. Keep it short and focused.</button>
+            <button onClick={() => pick(setQ6, "15min", 11)} className={`quiz-card ${q6 === "15min" ? "selected" : ""}`}>10 to 15 minutes. I can go a bit deeper.</button>
+            <button onClick={() => pick(setQ6, "30min", 11)} className={`quiz-card ${q6 === "30min" ? "selected" : ""}`}>30+ minutes. I want the full experience.</button>
           </div>
         </div>
       )}
@@ -452,10 +439,10 @@ export default function Home() {
             Three weeks from now, what would feel most meaningful?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <button onClick={() => pick(setQ7, "clear_thinking", 12)} style={cardStyle(q7 === "clear_thinking")}>Thinking more clearly without reaching for external input first.</button>
-            <button onClick={() => pick(setQ7, "finishing", 12)} style={cardStyle(q7 === "finishing")}>Actually finishing something I&apos;ve been avoiding.</button>
-            <button onClick={() => pick(setQ7, "energized", 12)} style={cardStyle(q7 === "energized")}>Feeling creatively energized again.</button>
-            <button onClick={() => pick(setQ7, "trusting", 12)} style={cardStyle(q7 === "trusting")}>Trusting my own ideas again.</button>
+            <button onClick={() => pick(setQ7, "clear_thinking", 12)} className={`quiz-card ${q7 === "clear_thinking" ? "selected" : ""}`}>Thinking more clearly without reaching for external input first.</button>
+            <button onClick={() => pick(setQ7, "finishing", 12)} className={`quiz-card ${q7 === "finishing" ? "selected" : ""}`}>Actually finishing something I&apos;ve been avoiding.</button>
+            <button onClick={() => pick(setQ7, "energized", 12)} className={`quiz-card ${q7 === "energized" ? "selected" : ""}`}>Feeling creatively energized again.</button>
+            <button onClick={() => pick(setQ7, "trusting", 12)} className={`quiz-card ${q7 === "trusting" ? "selected" : ""}`}>Trusting my own ideas again.</button>
           </div>
         </div>
       )}
