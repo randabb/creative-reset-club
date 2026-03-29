@@ -337,7 +337,7 @@ export default function Home() {
         <div className="hero-outer" style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", width: 500, height: 500, background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)", borderRadius: "50%", top: -120, right: -200, pointerEvents: "none", zIndex: 0 }} />
           <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 48, alignItems: "start", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
-            <div className="hero-left" style={{ paddingLeft: "4rem", paddingTop: 60 }}>
+            <div className="hero-left" style={{ paddingLeft: "4rem", paddingTop: 80 }}>
               <div className="headline-row" style={{ marginBottom: 16 }}>
                 <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
                   your daily prompt<br />
