@@ -662,3 +662,92 @@
   from{opacity:0}
   to{opacity:1}
 }
+
+/* ══════════════════════════════════════
+   MOBILE — stack & reorder
+══════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* NAV */
+  .nav { padding: 20px 24px; }
+
+  /* HERO — single column, orbital on top */
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .heroRight {
+    order: -1;
+    padding: 80px 0 0;
+    justify-content: center;
+  }
+  .orbitalSystem {
+    width: 420px; height: 420px;
+    transform: scale(0.62);
+    transform-origin: center center;
+    margin: -80px 0;
+  }
+
+  .heroLeft {
+    padding: 16px 24px 40px;
+    animation: none;
+  }
+  .heroHeadline {
+    font-size: clamp(28px, 7vw, 40px);
+    margin-bottom: 12px;
+  }
+  .heroSub {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+  .heroCta {
+    font-size: 12px;
+    padding: 12px 12px 12px 20px;
+  }
+  .ctaDot {
+    width: 28px; height: 28px;
+    font-size: 13px;
+  }
+  .heroProofRow {
+    margin-top: 20px;
+    gap: 12px;
+  }
+  .heroProofRow span { font-size: 10px; }
+
+  .heroDivider { display: none; }
+  .scrollHint { display: none; }
+  .heroCurve { height: 36px; }
+
+  /* INTRO STRIP */
+  .introStrip { padding: 36px 24px 32px; }
+  .introStripLead { font-size: clamp(16px, 4.5vw, 20px); }
+  .introStripSub { font-size: 13px; }
+
+  /* BENEFIT SECTIONS — animation above text */
+  .benefit {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 48px 24px;
+  }
+  .benefitAnimWrap {
+    order: -1;
+    min-height: 200px;
+  }
+  /* undo desktop flip — on mobile animation always first */
+  .benefitTextFlipped { order: 0; }
+  .benefitAnimFlipped { order: -1; }
+
+  .benefitTitle { font-size: clamp(22px, 5.5vw, 30px); }
+  .benefitDesc { font-size: 14px; }
+  .benefitShift { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+
+  /* QUOTE BREAK */
+  .quoteBreak { padding: 48px 24px; }
+
+  /* BOTTOM CTA */
+  .bottomCta { padding: 56px 24px 72px; }
+  .bottomCtaText { font-size: 16px; }
+  .bottomMeta { flex-wrap: wrap; justify-content: center; gap: 8px; }
+}
