@@ -1,3 +1,10 @@
+// CRC VOICE RULES:
+// - calm, not soft. intelligent, not academic. guiding, not instructing.
+// - we say: "start here" · "notice this" · "stay with this" · "see what comes up"
+// - we never say: "complete this exercise" · "optimize" · "improve your creativity"
+// - no gamification language. no celebration. no "congratulations."
+// - the page should feel like entering a different pace.
+
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -371,12 +378,12 @@ export default function Home() {
 
             {/* RIGHT: Prompt Preview Card */}
             <div className="hero-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <div className="prompt-card" style={{ width: "100%" }}>
+              <div className="prompt-card" style={{ width: "100%", background: "#000332", border: "none" }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 16 }}>today&apos;s prompt</p>
-                <p className="prompt-text" style={{ fontSize: 19, color: "#000332", lineHeight: 1.55, marginBottom: 20, fontWeight: 400, animationDelay: "0.2s" }}>
-                  &ldquo;Write the worst possible version of your current idea. Make it terrible on purpose. Now look at what you avoided. That&apos;s your taste talking.&rdquo;
+                <p className="prompt-text" style={{ fontSize: 19, color: "#FAF7F0", lineHeight: 1.55, marginBottom: 20, fontWeight: 400, animationDelay: "0.2s" }}>
+                  &ldquo;write without stopping for two minutes. don&apos;t edit. don&apos;t pause. just follow the thought.&rdquo;
                 </p>
-                <div className="prompt-input-fake">start writing...</div>
+                <div className="prompt-input-fake" style={{ background: "rgba(244,242,238,0.06)", border: "1px solid rgba(244,242,238,0.1)", color: "rgba(244,242,238,0.3)" }}>start here...</div>
               </div>
             </div>
           </div>
@@ -390,15 +397,15 @@ export default function Home() {
           <div ref={statRowRef} style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 0, paddingTop: 40, paddingBottom: 40, borderTop: "1px solid rgba(0,3,50,0.08)" }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>2 minutes</p>
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>to shift how you think today</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>to return to your own thinking</p>
             </div>
             <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
               <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>1 prompt</p>
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>a different creative exercise every day</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>a different practice every day</p>
             </div>
             <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
-              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>0 rules</p>
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>just you, a blank page, and permission to play</p>
+              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>0 pressure</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>just you, a blank page, and space to think</p>
             </div>
           </div>
 
@@ -419,20 +426,20 @@ export default function Home() {
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>why it works</p>
-                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>Each prompt is built to get you out of autopilot and into your own head. Less overthinking, more making. That&apos;s the reset.</p>
-                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>The part of your brain that thinks original thoughts. The part no tool can replicate.</p>
+                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65 }}>Each practice is designed to quiet the noise, move past resistance, and return you to your own thinking. Not to teach you something. Just to create space for something to come through.</p>
               </div>
             </div>
           </div>
 
           {/* CLOSING CTA SECTION */}
           <div className="closing-cta" style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: "48px 0 80px" }}>
-            <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left" }}>
+            <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left", background: "#000332", border: "none" }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 14 }}>another one</p>
-              <p style={{ fontSize: 17, color: "#000332", lineHeight: 1.55, fontWeight: 400 }}>
-                &ldquo;Name three things you used to make before you started optimizing everything. Pick one. Make it again today.&rdquo;
+              <p style={{ fontSize: 17, color: "#FAF7F0", lineHeight: 1.55, fontWeight: 400 }}>
+                &ldquo;what&apos;s one idea you&apos;ve been circling but haven&apos;t said out loud yet? say it now, badly.&rdquo;
               </p>
             </div>
+            <p style={{ fontSize: 17, color: "rgba(0,3,50,0.6)", lineHeight: 1.6, marginBottom: 28 }}>you don&apos;t need to be ready. you just need to start.</p>
             <button className="hero-cta" onClick={() => go(3)}>
               start your first reset
               <span className="cta-arrow">→</span>
