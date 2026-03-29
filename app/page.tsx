@@ -388,7 +388,7 @@ export default function Home() {
 
       {/* SCREEN 3: Q1 (with intro header) */}
       {screen === 3 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 14, color: "rgba(26,31,58,0.45)", lineHeight: 1.5, marginBottom: 6 }}>a few questions to understand where you are right now.</p>
           <p style={{ fontSize: 12, color: "rgba(26,31,58,0.3)", marginBottom: 32 }}>there are no right answers. just pick what feels most true.</p>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>01 / 07</p>
@@ -405,7 +405,7 @@ export default function Home() {
 
       {/* SCREEN 4: Q2 (branched) */}
       {screen === 4 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>02 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             {q2Question}
@@ -420,7 +420,7 @@ export default function Home() {
 
       {/* SCREEN 7: Q3 */}
       {screen === 7 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>03 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             Where do you feel the block most?
@@ -436,7 +436,7 @@ export default function Home() {
 
       {/* SCREEN 8: Q4 */}
       {screen === 8 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>04 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             When it comes to AI tools, which feels most true right now?
@@ -452,7 +452,7 @@ export default function Home() {
 
       {/* SCREEN 9: Q5 */}
       {screen === 9 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>05 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             On a good creative day, what does it feel like?
@@ -468,7 +468,7 @@ export default function Home() {
 
       {/* SCREEN 10: Q6 */}
       {screen === 10 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>06 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             How much time do you have each day?
@@ -483,7 +483,7 @@ export default function Home() {
 
       {/* SCREEN 11: Q7 */}
       {screen === 11 && (
-        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+        <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>07 / 07</p>
           <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
             Three weeks from now, what would feel most meaningful?
