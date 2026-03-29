@@ -100,6 +100,8 @@ export default function Home() {
   const [statValues, setStatValues] = useState([0, 0]);
   const [fadeKey, setFadeKey] = useState(0);
   const statRowRef = useRef<HTMLDivElement>(null);
+  const pullquoteRef = useRef<HTMLDivElement>(null);
+  const [pullquoteVisible, setPullquoteVisible] = useState(false);
   const router = useRouter();
 
   // Stat counter animation
@@ -125,6 +127,16 @@ export default function Home() {
     observer.observe(statRowRef.current);
     return () => observer.disconnect();
   }, [statsAnimated]);
+
+  useEffect(() => {
+    if (!pullquoteRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setPullquoteVisible(true); },
+      { threshold: 0.3 }
+    );
+    obs.observe(pullquoteRef.current);
+    return () => obs.disconnect();
+  }, []);
 
   const go = (n: number) => {
     setFadeKey(k => k + 1);
@@ -250,17 +262,21 @@ export default function Home() {
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; overflow-x:hidden; }
         body { background:#f4f2ee; color:#000332; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
-        .stickman-img { width:280px; min-height:280px; object-fit:contain; animation:idle 4s ease-in-out infinite; }
-        @keyframes idle {
-          0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
-          25% { transform: translateY(-4px) rotate(0.5deg) scaleX(-1); }
-          75% { transform: translateY(2px) rotate(-0.5deg) scaleX(-1); }
-        }
-        .stat-countup { transition: opacity 0.4s ease; }
+        .prompt-card { background:white; border-radius:20px; padding:32px 36px; box-shadow:0 4px 24px rgba(0,3,50,0.08); transition:all 0.3s ease; }
+        .prompt-card:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,3,50,0.12); }
+        .prompt-text { animation:promptReveal 0.6s ease forwards; opacity:0; }
+        @keyframes promptReveal { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .prompt-input-fake { background:rgba(0,3,50,0.03); border:1px solid rgba(0,3,50,0.08); border-radius:12px; padding:16px 20px; color:rgba(0,3,50,0.25); font-size:14px; backdrop-filter:blur(4px); }
         .stat-fadein { animation: statFade 1.5s ease-out forwards; }
         @keyframes statFade { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
-        .stickman-mobile { display:none !important; }
-        .stickman-desktop { display:block; }
+        .pullquote-fade { opacity:0; transform:translateY(16px); transition:all 0.8s ease; }
+        .pullquote-fade.visible { opacity:1; transform:translateY(0); }
+        .hero-cta { display:inline-flex; align-items:center; gap:14px; background:#000332; color:#FAF7F0; padding:22px 44px; border-radius:100px; font-size:16px; font-weight:700; border:none; cursor:pointer; transition:all 0.3s ease; font-family:'Codec Pro',sans-serif; }
+        .hero-cta:hover { background:#FF9090; color:#000332; transform:scale(1.04); box-shadow:0 6px 24px rgba(255,144,144,0.3); }
+        .hero-cta .cta-arrow { width:24px; height:24px; background:#FF9090; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; transition:background 0.3s ease; }
+        .hero-cta:hover .cta-arrow { background:#000332; color:#FAF7F0; }
+        .scroll-hint { animation:scrollBounce 2s ease infinite; opacity:0.4; transition:opacity 0.3s; }
+        @keyframes scrollBounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(6px); } }
         .headline-row { display:block; }
         .quiz-screen { animation: fadeUp 0.3s ease forwards; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -273,21 +289,20 @@ export default function Home() {
         .quiz-card.selected .card-num { color:#FF9090; }
         .results-grid { grid-template-columns: 1fr auto 1fr; }
         @media (max-width:768px) {
-          .stickman-img { width:100px; }
           .hero-heading { font-size:1.85rem !important; line-height:1.15 !important; }
-          .hero-outer { padding:40px 35px 0 35px !important; }
+          .hero-outer { padding:40px 24px 0 24px !important; }
           .hero-grid { grid-template-columns:1fr !important; gap:24px !important; min-height:auto !important; margin-top:40px !important; }
-          .hero-left { padding-left:0 !important; }
-          .headline-row { display:flex !important; align-items:center; gap:4px; }
-          .stickman-mobile { display:block !important; align-self:center; }
-          .stickman-desktop { display:none !important; }
-          .hero-right { width:calc(100vw - 70px) !important; max-width:calc(100vw - 70px) !important; overflow:hidden; }
+          .hero-left { padding-left:0 !important; padding-top:20px !important; }
+          .hero-right { width:100% !important; max-width:100% !important; overflow:hidden; }
+          .hero-cta { width:100%; justify-content:center; }
           .stat-row-right { flex-direction:row !important; gap:12px !important; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; scroll-snap-type:x mandatory; }
           .stat-row-right > div { border-left:none !important; padding-left:0 !important; min-width:140px; flex-shrink:0 !important; flex:none !important; background:transparent; border:1px solid rgba(0,3,50,0.12); border-radius:12px; padding:16px !important; scroll-snap-align:start; }
           .stat-row-right > div p:last-child { white-space:normal; word-wrap:break-word; }
           .card-row-right { flex-direction:column !important; gap:10px !important; width:100% !important; overflow:hidden; padding:0 !important; box-sizing:border-box; }
           .card-row-right > div { flex:none !important; height:auto !important; width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block !important; margin:0 !important; }
           .card-row-right > div p { white-space:normal; word-wrap:break-word; overflow-wrap:break-word; max-width:100%; }
+          .pullquote-section { padding:48px 24px !important; }
+          .closing-cta { padding:48px 24px !important; }
           .results-grid { grid-template-columns:1fr !important; gap:32px !important; }
           .results-grid > div:first-child { padding-right:0 !important; }
           .results-grid > div:nth-child(2) { display:none !important; }
@@ -334,54 +349,95 @@ export default function Home() {
 
       {/* SCREEN 1: HERO */}
       {screen === 1 && (
-        <div className="hero-outer" style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
+        <div className="hero-outer" style={{ padding: "0 48px", paddingTop: 60, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", width: 500, height: 500, background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)", borderRadius: "50%", top: -120, right: -200, pointerEvents: "none", zIndex: 0 }} />
-          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 48, alignItems: "start", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
-            <div className="hero-left" style={{ paddingLeft: "4rem", paddingTop: 80 }}>
-              <div className="headline-row" style={{ marginBottom: 16 }}>
-                <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
-                  your daily prompt<br />
-                  for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
-                  <span style={{ color: "#FF9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
-                </h1>
-                <img src="/stickman.png" alt="playful stickman" className="stickman-mobile" style={{ display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }} />
-              </div>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>come play. the prompts are already warm.</p>
-              <button onClick={() => go(3)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#000332", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", transition: "all 0.25s", width: "fit-content", maxWidth: "fit-content", minWidth: 200 }} onMouseEnter={e => { (e.target as HTMLElement).style.background = "#FF9090"; }} onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}>
+
+          {/* HERO TWO-COLUMN */}
+          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
+            {/* LEFT: Headline + CTA */}
+            <div className="hero-left" style={{ paddingLeft: "4rem" }}>
+              <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 20 }}>
+                your daily prompt<br />
+                for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
+                <span style={{ color: "#FF9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
+              </h1>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 36, fontWeight: 400 }}>come play. the prompts are already warm.</p>
+              <button className="hero-cta" onClick={() => go(3)}>
                 start your first reset
-                <span style={{ width: 20, height: 20, background: "#FF9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
+                <span className="cta-arrow">→</span>
               </button>
-              <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
+              <p style={{ marginTop: 20, fontSize: 13, color: "#000332", opacity: 0.5 }}>backed by behavioral science&nbsp;&nbsp;·&nbsp;&nbsp;takes 2 minutes&nbsp;&nbsp;·&nbsp;&nbsp;free to start</p>
             </div>
-            <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>
-              <div className="stickman-desktop" style={{ marginBottom: 0 }}><img src="/stickman.png" alt="playful stickman" className="stickman-img" style={{ display: "block", objectFit: "contain", objectPosition: "bottom", marginBottom: -4 }} /></div>
-              <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0, width: "100%" }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
-                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>drop in creative thinking since 2020</p>
-                </div>
-                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
-                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[1]} in 2` : "0"}</p>
-                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>people say AI dulls their creativity</p>
-                </div>
-                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
-                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6, opacity: statsAnimated ? 1 : 0 }}>1 daily practice.</p>
-                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45, opacity: statsAnimated ? 1 : 0 }}>use it or lose it.</p>
-                </div>
-              </div>
-              <div className="card-row-right" style={{ display: "flex", gap: 12, alignItems: "stretch", width: "100%" }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10 }}>daily exercises</p>
-                  <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts</p>
-                  <p style={{ fontSize: 12, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>A different practice every day. All designed to get you out of your head and onto the page.</p>
-                </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10 }}>why it works</p>
-                  <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>Every exercise is designed to reduce cognitive load, bypass your inner critic, and rebuild the neural pathways that daily AI use quietly erodes.</p>
-                  <p style={{ fontSize: 12, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>Because the most valuable thing you bring to your work isn&apos;t your output. It&apos;s how you think.</p>
-                </div>
+
+            {/* RIGHT: Prompt Preview Card */}
+            <div className="hero-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <div className="prompt-card" style={{ width: "100%" }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 16 }}>today&apos;s prompt</p>
+                <p className="prompt-text" style={{ fontSize: 19, color: "#000332", lineHeight: 1.55, marginBottom: 20, fontWeight: 400, animationDelay: "0.2s" }}>
+                  &ldquo;Write the worst possible version of your current idea. Make it terrible on purpose. Now look at what you avoided. That&apos;s your taste talking.&rdquo;
+                </p>
+                <div className="prompt-input-fake">start writing...</div>
               </div>
             </div>
+          </div>
+
+          {/* SCROLL HINT */}
+          <div style={{ textAlign: "center", paddingBottom: 24 }}>
+            <svg className="scroll-hint" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000332" strokeWidth="2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+          </div>
+
+          {/* STATS STRIP — reframed */}
+          <div ref={statRowRef} style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 0, paddingTop: 40, paddingBottom: 40, borderTop: "1px solid rgba(0,3,50,0.08)" }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>2 minutes</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>to shift how you think today</p>
+            </div>
+            <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>1 prompt</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>a different creative exercise every day</p>
+            </div>
+            <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>0 rules</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>just you, a blank page, and permission to play</p>
+            </div>
+          </div>
+
+          {/* PULL-QUOTE SECTION */}
+          <div ref={pullquoteRef} className="pullquote-section" style={{ maxWidth: 800, margin: "0 auto", padding: "64px 0", textAlign: "center" }}>
+            <p className={`pullquote-fade ${pullquoteVisible ? "visible" : ""}`} style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#000332", lineHeight: 1.35 }}>
+              The most valuable thing you bring to your work isn&apos;t your output. It&apos;s how you think.
+            </p>
+          </div>
+
+          {/* FEATURE CARDS */}
+          <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 16, paddingBottom: 48 }}>
+            <div className="card-row-right" style={{ display: "flex", gap: 16, width: "100%" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>daily exercises</p>
+                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts</p>
+                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>A different practice every day. All designed to get you out of your head and onto the page.</p>
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>why it works</p>
+                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>Each prompt is built to get you out of autopilot and into your own head. Less overthinking, more making. That&apos;s the reset.</p>
+                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>The part of your brain that thinks original thoughts. The part no tool can replicate.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CLOSING CTA SECTION */}
+          <div className="closing-cta" style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: "48px 0 80px" }}>
+            <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left" }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 14 }}>another one</p>
+              <p style={{ fontSize: 17, color: "#000332", lineHeight: 1.55, fontWeight: 400 }}>
+                &ldquo;Name three things you used to make before you started optimizing everything. Pick one. Make it again today.&rdquo;
+              </p>
+            </div>
+            <button className="hero-cta" onClick={() => go(3)}>
+              start your first reset
+              <span className="cta-arrow">→</span>
+            </button>
+            <p style={{ marginTop: 20, fontSize: 13, color: "#000332", opacity: 0.5 }}>backed by behavioral science&nbsp;&nbsp;·&nbsp;&nbsp;takes 2 minutes&nbsp;&nbsp;·&nbsp;&nbsp;free to start</p>
           </div>
         </div>
       )}
