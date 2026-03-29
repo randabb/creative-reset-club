@@ -364,11 +364,11 @@ export default function Home() {
             {/* LEFT: Headline + CTA */}
             <div className="hero-left" style={{ paddingLeft: "4rem" }}>
               <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em", marginBottom: 20 }}>
-                your daily prompt<br />
+                your daily practice<br />
                 for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
                 <span style={{ color: "#FF9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
               </h1>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 36, fontWeight: 400 }}>come play. the prompts are already warm.</p>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 36, fontWeight: 400 }}>come play. you already know how to do this.</p>
               <button className="hero-cta" onClick={() => go(3)}>
                 start your first reset
                 <span className="cta-arrow">→</span>
@@ -376,14 +376,22 @@ export default function Home() {
               <p style={{ marginTop: 20, fontSize: 13, color: "#000332", opacity: 0.5 }}>backed by behavioral science&nbsp;&nbsp;·&nbsp;&nbsp;takes 2 minutes&nbsp;&nbsp;·&nbsp;&nbsp;free to start</p>
             </div>
 
-            {/* RIGHT: Prompt Preview Card */}
+            {/* RIGHT: Practice Preview Card */}
             <div className="hero-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
               <div className="prompt-card" style={{ width: "100%", background: "#000332", border: "none" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 16 }}>today&apos;s prompt</p>
-                <p className="prompt-text" style={{ fontSize: 19, color: "#FAF7F0", lineHeight: 1.55, marginBottom: 20, fontWeight: 400, animationDelay: "0.2s" }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 16 }}>today&apos;s practice</p>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#FF9090" }}>start here</span>
+                  <span style={{ fontSize: 10, color: "rgba(244,242,238,0.25)" }}>→</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>keep going</span>
+                  <span style={{ fontSize: 10, color: "rgba(244,242,238,0.25)" }}>→</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>say it out loud</span>
+                  <span style={{ fontSize: 10, color: "rgba(244,242,238,0.25)" }}>→</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>notice this</span>
+                </div>
+                <p className="prompt-text" style={{ fontSize: 19, color: "#FAF7F0", lineHeight: 1.55, fontWeight: 400, animationDelay: "0.2s" }}>
                   &ldquo;write without stopping for two minutes. don&apos;t edit. don&apos;t pause. just follow the thought.&rdquo;
                 </p>
-                <div className="prompt-input-fake" style={{ background: "rgba(244,242,238,0.06)", border: "1px solid rgba(244,242,238,0.1)", color: "rgba(244,242,238,0.3)" }}>start here...</div>
               </div>
             </div>
           </div>
@@ -400,8 +408,8 @@ export default function Home() {
               <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>to return to your own thinking</p>
             </div>
             <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
-              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>1 prompt</p>
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>a different practice every day</p>
+              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>1 practice</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>a different guided experience every day</p>
             </div>
             <div style={{ flex: 1, paddingLeft: 24, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
               <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>0 pressure</p>
@@ -420,9 +428,9 @@ export default function Home() {
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 16, paddingBottom: 48 }}>
             <div className="card-row-right" style={{ display: "flex", gap: 16, width: "100%" }}>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>daily exercises</p>
-                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts</p>
-                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>A different practice every day. All designed to get you out of your head and onto the page.</p>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>what a day looks like</p>
+                <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>start here → go deeper → express something → notice what shifted.</p>
+                <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>each day follows a simple structure. it takes a few minutes. it moves you from thinking about your ideas to being inside them.</p>
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>why it works</p>
@@ -434,7 +442,16 @@ export default function Home() {
           {/* CLOSING CTA SECTION */}
           <div className="closing-cta" style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: "48px 0 80px" }}>
             <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left", background: "#000332", border: "none" }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 14 }}>another one</p>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>try a reset</p>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#FF9090" }}>start here</span>
+                <span style={{ fontSize: 9, color: "rgba(244,242,238,0.25)" }}>→</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>keep going</span>
+                <span style={{ fontSize: 9, color: "rgba(244,242,238,0.25)" }}>→</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>say it out loud</span>
+                <span style={{ fontSize: 9, color: "rgba(244,242,238,0.25)" }}>→</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(244,242,238,0.3)" }}>notice this</span>
+              </div>
               <p style={{ fontSize: 17, color: "#FAF7F0", lineHeight: 1.55, fontWeight: 400 }}>
                 &ldquo;what&apos;s one idea you&apos;ve been circling but haven&apos;t said out loud yet? say it now, badly.&rdquo;
               </p>
