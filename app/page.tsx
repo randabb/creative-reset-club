@@ -249,7 +249,7 @@ export default function Home() {
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; overflow-x:hidden; }
-        body { background:#f4f2ee; color:#1a1f3a; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
+        body { background:#f4f2ee; color:#000332; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
         .stickman-img { width:200px; animation:idle 4s ease-in-out infinite; }
         @keyframes idle {
           0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
@@ -265,12 +265,12 @@ export default function Home() {
         .quiz-screen { animation: fadeUp 0.3s ease forwards; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         .quiz-screen, .quiz-screen * { font-family:'Codec Pro',sans-serif; }
-        .quiz-card { display:flex; align-items:flex-start; gap:14px; width:100%; padding:20px 24px; border:1px solid rgba(26,31,58,0.1); border-radius:16px; background:white; cursor:pointer; text-align:left; font-family:'Codec Pro',sans-serif; font-size:15px; font-weight:500; color:#1a1f3a; line-height:1.5; transition:all 0.2s ease; box-shadow:0 2px 8px rgba(26,31,58,0.06); }
-        .quiz-card:hover { background:#1a1f3a; border-color:#1a1f3a; color:#f4f2ee; }
-        .quiz-card.selected { background:#1a1f3a; border-color:#1a1f3a; color:#f4f2ee; }
-        .quiz-card .card-num { font-size:11px; font-weight:700; color:#E8846A; min-width:20px; padding-top:3px; transition:all 0.2s ease; }
-        .quiz-card:hover .card-num { color:#E8846A; }
-        .quiz-card.selected .card-num { color:#E8846A; }
+        .quiz-card { display:flex; align-items:flex-start; gap:14px; width:100%; padding:20px 24px; border:1px solid rgba(0,3,50,0.1); border-radius:16px; background:white; cursor:pointer; text-align:left; font-family:'Codec Pro',sans-serif; font-size:15px; font-weight:500; color:#000332; line-height:1.5; transition:all 0.2s ease; box-shadow:0 2px 8px rgba(0,3,50,0.06); }
+        .quiz-card:hover { background:#000332; border-color:#000332; color:#f4f2ee; }
+        .quiz-card.selected { background:#000332; border-color:#000332; color:#f4f2ee; }
+        .quiz-card .card-num { font-size:11px; font-weight:700; color:#FF9090; min-width:20px; padding-top:3px; transition:all 0.2s ease; }
+        .quiz-card:hover .card-num { color:#FF9090; }
+        .quiz-card.selected .card-num { color:#FF9090; }
         .results-grid { grid-template-columns: 1fr auto 1fr; }
         @media (max-width:768px) {
           .stickman-img { width:100px; }
@@ -307,7 +307,7 @@ export default function Home() {
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <button
             onClick={() => setShowSignIn(true)}
-            style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(26,31,58,0.45)", cursor: "pointer", padding: 0 }}
+            style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", cursor: "pointer", padding: 0 }}
           >
             sign in
           </button>
@@ -316,15 +316,15 @@ export default function Home() {
 
       {/* SIGN IN MODAL */}
       {showSignIn && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(26,31,58,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,3,50,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSignIn(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#f4f2ee", borderRadius: 24, padding: "40px 44px", maxWidth: 400, width: "100%" }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1a1f3a", marginBottom: 6 }}>welcome back.</h2>
-            <p style={{ fontSize: 14, color: "rgba(26,31,58,0.5)", marginBottom: 24 }}>sign in to access your track.</p>
-            {signInError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{signInError}</p>}
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#000332", marginBottom: 6 }}>welcome back.</h2>
+            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", marginBottom: 24 }}>sign in to access your track.</p>
+            {signInError && <p style={{ fontSize: 13, color: "#FF9090", marginBottom: 14 }}>{signInError}</p>}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <input type="email" value={signInEmail} onChange={e => setSignInEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none" }} />
-              <input type="password" value={signInPassword} onChange={e => setSignInPassword(e.target.value)} placeholder="password" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none" }} />
-              <button onClick={handleSignIn} disabled={signingIn} style={{ background: "#1a1f3a", color: "#f4f2ee", border: "none", padding: "16px 28px", borderRadius: 100, fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: signingIn ? 0.6 : 1 }}>
+              <input type="email" value={signInEmail} onChange={e => setSignInEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none" }} />
+              <input type="password" value={signInPassword} onChange={e => setSignInPassword(e.target.value)} placeholder="password" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none" }} />
+              <button onClick={handleSignIn} disabled={signingIn} style={{ background: "#000332", color: "#f4f2ee", border: "none", padding: "16px 28px", borderRadius: 100, fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: signingIn ? 0.6 : 1 }}>
                 {signingIn ? "signing in..." : "sign in"}
               </button>
             </div>
@@ -342,41 +342,41 @@ export default function Home() {
                 <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
                   your daily prompt<br />
                   for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
-                  <span style={{ color: "#E8846A", whiteSpace: "nowrap" }}>in the age of AI.</span>
+                  <span style={{ color: "#FF9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
                 </h1>
                 <img src="/stickman.png" alt="playful stickman" className="stickman-mobile" style={{ display: "none", objectFit: "contain", objectPosition: "bottom", width: 120, flexShrink: 0 }} />
               </div>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(26,31,58,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>come play. the prompts are already warm.</p>
-              <button onClick={() => go(3)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", transition: "all 0.25s", width: "fit-content", maxWidth: "fit-content", minWidth: 200 }} onMouseEnter={e => { (e.target as HTMLElement).style.background = "#E8846A"; }} onMouseLeave={e => { (e.target as HTMLElement).style.background = "#1a1f3a"; }}>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(0,3,50,0.7)", maxWidth: 480, marginBottom: 32, fontWeight: 400 }}>come play. the prompts are already warm.</p>
+              <button onClick={() => go(3)} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#000332", color: "#f4f2ee", padding: "18px 36px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", transition: "all 0.25s", width: "fit-content", maxWidth: "fit-content", minWidth: 200 }} onMouseEnter={e => { (e.target as HTMLElement).style.background = "#FF9090"; }} onMouseLeave={e => { (e.target as HTMLElement).style.background = "#000332"; }}>
                 start your first reset
-                <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
+                <span style={{ width: 20, height: 20, background: "#FF9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
-              <p style={{ marginTop: 20, fontSize: 12, color: "rgba(26,31,58,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
+              <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
             </div>
             <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
               <div className="stickman-desktop"><img src="/stickman.png" alt="playful stickman" className="stickman-img" style={{ display: "block", objectFit: "contain", objectPosition: "bottom" }} /></div>
               <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0 }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#1a1f3a", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
-                  <p style={{ fontSize: 12, color: "rgba(26,31,58,0.45)", lineHeight: 1.45 }}>drop in creative thinking since 2020</p>
+                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>drop in creative thinking since 2020</p>
                 </div>
-                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(26,31,58,0.12)" }}>
-                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#1a1f3a", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[1]} in 2` : "0"}</p>
-                  <p style={{ fontSize: 12, color: "rgba(26,31,58,0.45)", lineHeight: 1.45 }}>people say AI dulls their creativity</p>
+                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+                  <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[1]} in 2` : "0"}</p>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>people say AI dulls their creativity</p>
                 </div>
-                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(26,31,58,0.12)" }}>
-                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: "2rem", fontWeight: 700, color: "#1a1f3a", lineHeight: 1.1, marginBottom: 6, opacity: statsAnimated ? 1 : 0 }}>1 daily practice.</p>
-                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: 12, color: "rgba(26,31,58,0.45)", lineHeight: 1.45, opacity: statsAnimated ? 1 : 0 }}>use it or lose it.</p>
+                <div style={{ flex: 1, paddingLeft: 20, borderLeft: "1px solid rgba(0,3,50,0.12)" }}>
+                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6, opacity: statsAnimated ? 1 : 0 }}>1 daily practice.</p>
+                  <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45, opacity: statsAnimated ? 1 : 0 }}>use it or lose it.</p>
                 </div>
               </div>
               <div className="card-row-right" style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#1a1f3a", borderRadius: 16, padding: "24px 24px" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10 }}>daily exercises</p>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10 }}>daily exercises</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts</p>
                   <p style={{ fontSize: 12, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>A different practice every day. All designed to get you out of your head and onto the page.</p>
                 </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#1a1f3a", borderRadius: 16, padding: "24px 24px" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10 }}>why it works</p>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10 }}>why it works</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>Every exercise is designed to reduce cognitive load, bypass your inner critic, and rebuild the neural pathways that daily AI use quietly erodes.</p>
                   <p style={{ fontSize: 12, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>Because the most valuable thing you bring to your work isn&apos;t your output. It&apos;s how you think.</p>
                 </div>
@@ -389,10 +389,10 @@ export default function Home() {
       {/* SCREEN 3: Q1 (with intro header) */}
       {screen === 3 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 14, color: "rgba(26,31,58,0.45)", lineHeight: 1.5, marginBottom: 6 }}>a few questions to understand where you are right now.</p>
-          <p style={{ fontSize: 12, color: "rgba(26,31,58,0.3)", marginBottom: 32 }}>there are no right answers. just pick what feels most true.</p>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>01 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 14, color: "rgba(0,3,50,0.45)", lineHeight: 1.5, marginBottom: 6 }}>a few questions to understand where you are right now.</p>
+          <p style={{ fontSize: 12, color: "rgba(0,3,50,0.3)", marginBottom: 32 }}>there are no right answers. just pick what feels most true.</p>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>01 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             When you sit down to think or create lately, what&apos;s the closest feeling?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -406,8 +406,8 @@ export default function Home() {
       {/* SCREEN 4: Q2 (branched) */}
       {screen === 4 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>02 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>02 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             {q2Question}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -421,8 +421,8 @@ export default function Home() {
       {/* SCREEN 7: Q3 */}
       {screen === 7 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>03 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>03 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             Where do you feel the block most?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -437,8 +437,8 @@ export default function Home() {
       {/* SCREEN 8: Q4 */}
       {screen === 8 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>04 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>04 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             When it comes to AI tools, which feels most true right now?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -453,8 +453,8 @@ export default function Home() {
       {/* SCREEN 9: Q5 */}
       {screen === 9 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>05 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>05 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             On a good creative day, what does it feel like?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -469,8 +469,8 @@ export default function Home() {
       {/* SCREEN 10: Q6 */}
       {screen === 10 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>06 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>06 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             How much time do you have each day?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -484,8 +484,8 @@ export default function Home() {
       {/* SCREEN 11: Q7 */}
       {screen === 11 && (
         <div key={fadeKey} className="quiz-screen" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px", maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8846A", marginBottom: 12 }}>07 / 07</p>
-          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>07 / 07</p>
+          <h2 style={{ fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 32 }}>
             Three weeks from now, what would feel most meaningful?
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -503,10 +503,10 @@ export default function Home() {
           <div className="results-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, maxWidth: 960, width: "100%", margin: "0 auto", alignItems: "center" }}>
             {/* LEFT: Track result */}
             <div style={{ paddingRight: 48 }}>
-              <div style={{ background: "#0f1428", borderRadius: 16, padding: 40, border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, background: "radial-gradient(circle, rgba(232,132,106,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
+              <div style={{ background: "#000332", borderRadius: 16, padding: 40, border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, background: "radial-gradient(circle, rgba(255,144,144,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 20, position: "relative" }}>your track: {result.name}</p>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 20, position: "relative" }}>your track: {result.name}</p>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, position: "relative" }}>
                   <p style={{ fontSize: 12, lineHeight: 1.5 }}>
@@ -529,7 +529,7 @@ export default function Home() {
                   {result.body}
                 </p>
 
-                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10, position: "relative" }}>you might recognize this if:</p>
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10, position: "relative" }}>you might recognize this if:</p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px 0", position: "relative" }}>
                   {result.recognize.map((r, i) => (
                     <li key={i} style={{ fontSize: 13, color: "rgba(244,242,238,0.55)", lineHeight: 1.6, paddingLeft: 14, position: "relative", marginBottom: 4 }}>
@@ -539,7 +539,7 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#E8846A", marginBottom: 10, position: "relative" }}>what your track looks like:</p>
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10, position: "relative" }}>what your track looks like:</p>
                 <p style={{ fontSize: 13, color: "rgba(244,242,238,0.55)", lineHeight: 1.7, marginBottom: 20, position: "relative" }}>
                   {result.looksLike}
                 </p>
@@ -549,30 +549,30 @@ export default function Home() {
             </div>
 
             {/* DIVIDER */}
-            <div style={{ width: 1, background: "rgba(26,31,58,0.1)", alignSelf: "stretch" }} />
+            <div style={{ width: 1, background: "rgba(0,3,50,0.1)", alignSelf: "stretch" }} />
 
             {/* RIGHT: Account creation */}
             <div style={{ paddingLeft: 48 }}>
-              <h3 style={{ fontSize: "clamp(20px,3vw,28px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#1a1f3a", marginBottom: 8 }}>
+              <h3 style={{ fontSize: "clamp(20px,3vw,28px)", fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#000332", marginBottom: 8 }}>
                 one last thing before you begin.
               </h3>
-              <p style={{ fontSize: 14, color: "rgba(26,31,58,0.5)", lineHeight: 1.6, marginBottom: 24 }}>
+              <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", lineHeight: 1.6, marginBottom: 24 }}>
                 create a free account to save your progress.
               </p>
-              {signupError && <p style={{ fontSize: 13, color: "#E8846A", marginBottom: 14 }}>{signupError}</p>}
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", marginBottom: 10, width: "100%" }} />
+              {signupError && <p style={{ fontSize: 13, color: "#FF9090", marginBottom: 14 }}>{signupError}</p>}
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your email" style={{ padding: "16px 20px", border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none", marginBottom: 10, width: "100%" }} />
               <div style={{ position: "relative", marginBottom: 14 }}>
-                <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="create a password" style={{ padding: "16px 20px", paddingRight: 48, border: "1.5px solid rgba(26,31,58,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#1a1f3a", outline: "none", width: "100%" }} />
-                <button onClick={() => setShowPassword(!showPassword)} type="button" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "rgba(26,31,58,0.35)", fontFamily: "'Codec Pro',sans-serif" }}>
+                <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="create a password" style={{ padding: "16px 20px", paddingRight: 48, border: "1.5px solid rgba(0,3,50,0.15)", borderRadius: 100, background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 14, color: "#000332", outline: "none", width: "100%" }} />
+                <button onClick={() => setShowPassword(!showPassword)} type="button" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "rgba(0,3,50,0.35)", fontFamily: "'Codec Pro',sans-serif" }}>
                   {showPassword ? "hide" : "show"}
                 </button>
               </div>
-              <button onClick={handleSignup} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#1a1f3a", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
+              <button onClick={handleSignup} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: 12, background: "#000332", color: "#f4f2ee", padding: "16px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", width: "fit-content", opacity: submitting ? 0.6 : 1 }}>
                 {submitting ? "creating your account..." : "create my account"}
-                <span style={{ width: 20, height: 20, background: "#E8846A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
+                <span style={{ width: 20, height: 20, background: "#FF9090", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>→</span>
               </button>
-              <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>already have an account? sign in</button>
-              <button onClick={() => go(3)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(26,31,58,0.4)", cursor: "pointer", marginTop: 8, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>want to retake the quiz?</button>
+              <button onClick={() => setShowSignIn(true)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(0,3,50,0.4)", cursor: "pointer", marginTop: 16, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>already have an account? sign in</button>
+              <button onClick={() => go(3)} style={{ background: "none", border: "none", fontFamily: "'Codec Pro',sans-serif", fontSize: 12, color: "rgba(0,3,50,0.4)", cursor: "pointer", marginTop: 8, padding: 0, textDecoration: "underline", textUnderlineOffset: 3, display: "block" }}>want to retake the quiz?</button>
             </div>
           </div>
         </div>

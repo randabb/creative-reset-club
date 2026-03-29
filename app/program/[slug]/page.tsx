@@ -52,7 +52,7 @@ export default function ProgramPage() {
         );
         html = html.replace(
           /\.sidebar \{([^}]*?)background:var\(--ink\)/,
-          '.sidebar {$1background:#1a1f3a'
+          '.sidebar {$1background:#000332'
         );
 
         // Fix 2: Inject ← Home link pointing to /dashboard
@@ -85,14 +85,14 @@ export default function ProgramPage() {
           @keyframes revealUp { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
 
           /* Part 3: Writing box with smooth expand */
-          .writing-area { border:1px solid rgba(26,31,58,0.1) !important; min-height:120px !important; max-height:none !important; transition:border-color 0.2s ease, min-height 0.3s ease; }
+          .writing-area { border:1px solid rgba(0,3,50,0.1) !important; min-height:120px !important; max-height:none !important; transition:border-color 0.2s ease, min-height 0.3s ease; }
           .writing-area.typing { min-height:220px !important; }
-          .writing-area:focus { border-color:rgba(26,31,58,0.25) !important; }
+          .writing-area:focus { border-color:rgba(0,3,50,0.25) !important; }
           .writing-area.sufficient { border-color:rgba(122,158,126,0.5) !important; }
           .writing-encouragement { font-size:12px; color:var(--sand-mid); margin-top:6px; font-weight:300; transition:opacity 0.3s ease; }
 
           /* Part 5: Celebration overlay with sequenced animations */
-          .celebration-overlay { position:fixed; inset:0; background:#f5f2ef; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
+          .celebration-overlay { position:fixed; inset:0; background:#FAF7F0; z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
           .celebration-overlay.show { opacity:1; pointer-events:auto; }
           .celebration-symbol { font-size:48px; color:var(--red); margin-bottom:20px; opacity:0; transform:scale(0); }
           .celebration-overlay.show .celebration-symbol { animation:celebScale 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
