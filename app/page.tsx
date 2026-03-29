@@ -250,7 +250,7 @@ export default function Home() {
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; overflow-x:hidden; }
         body { background:#f4f2ee; color:#000332; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
-        .stickman-img { width:200px; animation:idle 4s ease-in-out infinite; }
+        .stickman-img { width:280px; animation:idle 4s ease-in-out infinite; }
         @keyframes idle {
           0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
           25% { transform: translateY(-4px) rotate(0.5deg) scaleX(-1); }
@@ -336,8 +336,8 @@ export default function Home() {
       {screen === 1 && (
         <div className="hero-outer" style={{ padding: "0 48px", paddingTop: 60, paddingBottom: 48, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", width: 500, height: 500, background: "radial-gradient(circle, rgba(230,246,255,0.4) 0%, transparent 70%)", borderRadius: "50%", top: -120, right: -200, pointerEvents: "none", zIndex: 0 }} />
-          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
-            <div className="hero-left" style={{ paddingLeft: "4rem" }}>
+          <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 48, alignItems: "start", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
+            <div className="hero-left" style={{ paddingLeft: "4rem", paddingTop: 60 }}>
               <div className="headline-row" style={{ marginBottom: 16 }}>
                 <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
                   your daily prompt<br />
@@ -353,9 +353,9 @@ export default function Home() {
               </button>
               <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
             </div>
-            <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+            <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>
               <div className="stickman-desktop"><img src="/stickman.png" alt="playful stickman" className="stickman-img" style={{ display: "block", objectFit: "contain", objectPosition: "bottom" }} /></div>
-              <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0 }}>
+              <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0, width: "100%" }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
                   <p style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45 }}>drop in creative thinking since 2020</p>
@@ -369,7 +369,7 @@ export default function Home() {
                   <p className={statsAnimated ? "stat-fadein" : ""} style={{ fontSize: 12, color: "rgba(0,3,50,0.45)", lineHeight: 1.45, opacity: statsAnimated ? 1 : 0 }}>use it or lose it.</p>
                 </div>
               </div>
-              <div className="card-row-right" style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+              <div className="card-row-right" style={{ display: "flex", gap: 12, alignItems: "stretch", width: "100%" }}>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "24px 24px" }}>
                   <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 10 }}>daily exercises</p>
                   <p style={{ fontSize: 13, color: "rgba(244,242,238,0.7)", lineHeight: 1.6, marginBottom: 10 }}>morning pages · brain dumps · timed sprints · ugly first drafts · constraint prompts</p>
