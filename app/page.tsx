@@ -397,7 +397,7 @@ export default function Home() {
           </div>
 
           {/* SCROLL HINT */}
-          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 24, maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "center", padding: "16px 0 32px", maxWidth: 1200, margin: "0 auto" }}>
             <svg className="scroll-hint" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000332" strokeWidth="2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
           </div>
 
@@ -425,7 +425,7 @@ export default function Home() {
           </div>
 
           {/* FEATURE CARDS */}
-          <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 16, paddingBottom: 48 }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 16, paddingTop: 48, paddingBottom: 48 }}>
             <div className="card-row-right" style={{ display: "flex", gap: 16, width: "100%", alignItems: "stretch" }}>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px", minHeight: 180 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>what a day looks like</p>
