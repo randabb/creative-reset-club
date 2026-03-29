@@ -3,24 +3,35 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --navy:       #000332;
+  --coral:      #FF9090;
+  --cream:      #FAF7F0;
+  --ink:        #00011A;
+  --coral-hot:  #FF6B6B;
+  --coral-soft: #FFB8B8;
+  --coral-pale: #FFE0D0;
+  --gold:       #E8C97A;
+  --sage:       #7ABFA8;
+  --lilac:      #B8A8E8;
+  --navy-card:  #000844;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  background: var(--cream);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
 }
