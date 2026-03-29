@@ -62,7 +62,7 @@
   .day-completed-badge.show { display:flex; }
   .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
 
-  /* FRAMEWORK */
+  /* FRAMEWORK (kept for backwards compat) */
   .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
   .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
   .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
@@ -91,15 +91,6 @@
   .char-fill.sufficient { background:#7A9E7E; }
   .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
   .char-num.sufficient { color:#7A9E7E; }
-
-  /* FOLLOWUP */
-  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
-  .followup-section.visible { display:block; }
-  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
-  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
-  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
-  .followup-textarea:focus { border-color:var(--ink); }
-  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
 
   /* REFLECTION + ACTION */
   .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
@@ -157,6 +148,15 @@
   .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
   .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
 
+  /* UNDER THE SURFACE COLLAPSIBLE */
+  .uts-section { margin-bottom:32px; }
+  .uts-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:16px 20px; background:rgba(0,3,50,0.03); border-radius:4px; border:1px solid rgba(0,3,50,0.06); list-style:none; }
+  .uts-toggle::-webkit-details-marker { display:none; }
+  .uts-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); }
+  .uts-icon { font-size:16px; color:var(--sand-mid); transition:transform 0.2s; }
+  details[open] .uts-icon { transform:rotate(45deg); }
+  .uts-body { padding:20px 20px 4px; font-size:14px; line-height:1.75; color:var(--ink-soft); font-weight:300; }
+
   /* MOBILE */
   .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
   .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
@@ -191,145 +191,131 @@
 const MIN = 100;
 function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
 const program = [
-  { day:1, phase:1, phaseName:"Clear", title:"The Brain Dump",
-    fw:{ name:"Capture Everything", author:"David Allen — Getting Things Done",
-      body:"Your mind is not a storage device — it's a processing engine. Every incomplete thought, half-finished plan, and vague worry occupies mental RAM that could be used for actual creative work. The brain dump is the first act of clearing: get everything out, without judgment, without sorting.",
-      benefit:"<strong>Cognitive benefit:</strong> Externalising open loops frees working memory capacity. Research shows that simply writing down pending tasks reduces intrusive thinking about them by up to 33%, even before you act on any of them." },
-    q:"Write down absolutely everything that is currently occupying your mind — every task, worry, idea, obligation, and half-thought. Empty the entire container.",
-    prompts:["Start with what's loudest — the things that shout at you when you're trying to sleep or focus.","Include the small things: emails to send, calls to make, errands that have been nagging you for weeks.","Write down the creative ideas that are half-formed — the ones you haven't committed to but can't let go of.","Include the emotional weight: relationships that need attention, conversations you've been avoiding, guilt you're carrying.","Keep going until you genuinely feel empty. Most people stop too soon. Push past the first wave."],
-    fu:{ t:50, q:"Looking at everything you just dumped — what is the feeling of seeing it all outside your head?", prompts:["Is there relief, or does it feel heavier seeing it written down?","What was hiding underneath the obvious stuff — what surfaced only after the first layer was cleared?","Which items have been in your head the longest without being addressed?"] },
-    ref:"The first dump is never complete. But even an incomplete dump creates space you didn't have five minutes ago. Notice how your mind feels lighter — that's working memory coming back online.",
-    action:{ i:"🧠", t:"Count your items. Circle the three that have been in your head the longest. Those are the ones costing you the most mental energy — not because they're important, but because they're unresolved." }
+  { day:1, phase:1, phaseName:"Empty the Head", title:"The Complete Inventory",
+    uts:"There's a reason your best ideas come in the shower. Your brain isn't being lazy. It's finally free from the mental tabs you've had open all day. David Allen figured this out decades ago: the brain is terrible at holding things, but brilliant at processing them. Every unwritten idea, half-formed plan, or nagging 'I should really...' is quietly eating your mental energy. Getting it out doesn't make a decision. It creates the conditions where a real decision becomes possible.",
+    q:"Write down every idea, direction, project, and creative possibility that is currently competing for your attention. Every single one, without filtering.",
+    prompts:["Don't edit as you go. Don't rank or evaluate. Just get everything out of your head and onto the page.","Include the ones that feel half-formed, embarrassing, or too weird to say out loud. Especially those.","Include the ones that came from other people. Things someone suggested you should make or do. They count too.","Include the ones you've already started. The ones you've abandoned. The ones that have been living rent-free in your head for years.","Keep going until the page feels empty. Most people have more than they think."],
+    kg:"Look at your list. Circle the three that make you feel something when you read them. Not the most practical ones. The ones that have some charge to them.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice what came up that surprised you. The thing you almost didn't write down. That one's worth paying attention to.",
+    action:{ i:"📋", t:"Count how many items are on your list. Write the number at the top. That's not a to-do list. That's proof your brain has been working overtime. Now it's on paper, and paper can hold it while you think." }
   },
-  { day:2, phase:1, phaseName:"Clear", title:"What's Actually Urgent",
-    fw:{ name:"The Eisenhower Matrix", author:"Dwight Eisenhower — via Stephen Covey",
-      body:"Eisenhower distinguished between urgent and important — and observed that most people confuse the two. Urgent things demand attention now but rarely matter long-term. Important things build the life you want but rarely feel pressing. Mental clutter thrives in the gap: everything feels urgent when nothing has been sorted.",
-      benefit:"<strong>Cognitive benefit:</strong> Categorising tasks by urgency and importance activates the prefrontal cortex's executive function, reducing the amygdala's tendency to treat everything as equally threatening. This sorting alone reduces perceived overwhelm." },
-    q:"Go through your brain dump from yesterday. For each item, honestly assess: is it truly urgent, truly important, both, or neither?",
-    prompts:["Mark each item: U for urgent (time-sensitive, real consequences if delayed), I for important (matters for your actual goals and values), B for both, or N for neither.","How many items marked urgent are actually someone else's urgency that you've absorbed?","Which important items have you been neglecting because they don't scream at you?","How many 'neither' items have been taking up mental space despite not actually mattering?","What would happen — honestly — if you dropped every item marked N? Would anyone notice?"],
-    fu:{ t:50, q:"What pattern do you see in how you've been allocating your mental energy versus what actually matters?", prompts:["Are you spending your best thinking on urgent-but-unimportant tasks?","What important thing have you been postponing that deserves your attention most?","What would your days look like if you only worked on the important items?"] },
-    ref:"Most mental clutter is not important — it's just loud. Sorting reveals that you have far fewer genuine priorities than your anxiety suggests. The noise was drowning out the signal.",
-    action:{ i:"📊", t:"Take every item marked N — neither urgent nor important — and cross it off your list. Not 'maybe later.' Gone. Notice how that feels." }
+  { day:2, phase:1, phaseName:"Empty the Head", title:"Where Each Idea Came From",
+    uts:"A lot of creative overload isn't really about having too many ideas. It's about carrying other people's ideas alongside your own without realizing it. Dan McAdams' work on narrative identity shows that we often take on stories that don't belong to us, and then wonder why we feel scattered. Sorting yours from theirs isn't rejection. It's clarity.",
+    q:"Take your list from yesterday. For each item, write one word next to it: yours, theirs, or both. Yours means it came from something you genuinely want. Theirs means it came from what you think you should want.",
+    prompts:["Don't overthink the categories. Your first instinct is usually right.","Some things will feel like both. That's fine. Write both.","Pay attention to the ones you labeled 'theirs.' Where did that expectation actually come from?"],
+    kg:"Pick one item you labeled 'theirs.' Write a sentence about why you've been carrying it. Not why it's wrong to carry it. Just why you picked it up in the first place.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice how many things on your list belong to someone else's idea of what you should be doing. This isn't about dropping everything. It's just about seeing it clearly.",
+    action:{ i:"✏️", t:"Go back through your list and mark everything you labeled 'yours' with an asterisk. Those are yours to protect." }
   },
-  { day:3, phase:1, phaseName:"Clear", title:"The Noise Inventory",
-    fw:{ name:"Deep Work", author:"Cal Newport — Deep Work",
-      body:"Newport argues that knowledge workers have lost the ability to focus because they've normalised constant shallow input. The noise inventory maps where your attention actually goes versus where you want it to go. Most people discover a shocking gap between their stated priorities and their actual attention patterns.",
-      benefit:"<strong>Cognitive benefit:</strong> Attention residue — the cognitive cost of switching between tasks — persists for up to 23 minutes after each switch. By inventorying your noise sources, you identify where attention residue is being generated throughout your day." },
-    q:"Map every source of mental noise in your daily life — every notification, interruption, input stream, and attention grab. Be brutally honest about what you let in.",
-    prompts:["List every app that sends you notifications. Every one. How many did you choose versus how many defaulted on?","Track your information inputs: news, social media, podcasts, newsletters, group chats. How many do you actually need?","Name the people and relationships that generate mental noise — not because they're bad, but because interactions with them leave you mentally spinning.","What environments create noise for you? Open offices, cluttered spaces, background TV?","What internal noise generators do you have — perfectionism, comparison, catastrophising — that run regardless of external inputs?"],
-    fu:{ t:50, q:"If you could only keep five sources of input in your entire life, which five would you keep?", prompts:["What would you lose by cutting the rest? What would you gain?","Which noise sources do you keep because you're afraid of missing something?","What are you actually missing right now because of all the noise?"] },
-    ref:"You cannot think clearly in a noisy room. Your mind is a room. Today you mapped the noise. Tomorrow you'll decide what stays and what goes.",
-    action:{ i:"🔇", t:"Turn off notifications for every app except phone calls and messages from the five people who matter most. Just for 24 hours. See what happens." }
+  { day:3, phase:1, phaseName:"Empty the Head", title:"What You've Already Tried",
+    uts:"Steven Pressfield calls it Resistance. The force that shows up most strongly closest to the work that matters. It doesn't announce itself. It looks like procrastination, distraction, suddenly remembering something else you need to do. Recognizing it doesn't make it disappear. But naming it gives you something to work with.",
+    q:"Look at your list again. Mark anything you've already attempted in some form. Started, researched, planned, or abandoned.",
+    prompts:["Write one sentence about what actually happened. Not a judgment. Just what happened.","What did you learn from it, even if it didn't work?","Is it on the list because you genuinely want to try again, or because you feel like you should?"],
+    kg:"Pick one thing you abandoned that you still think about. Write about why you stopped. Be honest. Not about what sounds good, about what actually happened.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice whether you stopped because it wasn't right, or because it got hard. Those are very different reasons with very different implications.",
+    action:{ i:"📝", t:"Next to each attempted item, write either 'done' or 'not yet.' Done means you've made peace with it. Not yet means there's still something there worth returning to." }
   },
-  { day:4, phase:1, phaseName:"Clear", title:"Permission to Drop",
-    fw:{ name:"Essentialism", author:"Greg McKeown — Essentialism",
-      body:"McKeown's central argument is that almost everything is noise, and very few things are essential. The disciplined pursuit of less requires active permission to drop things — not defer them, drop them. Most people carry obligations, projects, and commitments they picked up years ago and never consciously chose to keep.",
-      benefit:"<strong>Cognitive benefit:</strong> Decision fatigue is cumulative — every uncommitted decision drains cognitive resources. Deliberately closing open loops through conscious dropping restores decision-making capacity and reduces the background cognitive load that makes everything feel harder than it is." },
-    q:"What are you carrying that you have permission to put down — obligations, projects, commitments, and expectations that no longer serve you?",
-    prompts:["What commitments are you keeping out of guilt rather than genuine desire or necessity?","What projects have you been 'meaning to get to' for months or years that you can honestly admit you're never going to do?","What expectations — from others or yourself — are you performing that don't align with who you actually are now?","What would you drop immediately if no one would judge you for it?","Write a permission slip to yourself for each thing you're dropping. Make it explicit: 'I give myself permission to stop...'"],
-    fu:{ t:50, q:"What is the hardest thing to give yourself permission to drop — and what does the difficulty tell you?", prompts:["Is the difficulty about the thing itself, or about your identity as someone who does that thing?","Who are you without this commitment or obligation?","What becomes possible when this weight is gone?"] },
-    ref:"Dropping is not failing. It is choosing. Every thing you carry that doesn't matter makes the things that do matter harder to hold. Today you made space.",
-    action:{ i:"✂️", t:"Choose one commitment you identified and actually drop it today. Send the email, have the conversation, delete the project folder. Make it real." }
+  { day:4, phase:1, phaseName:"Empty the Head", title:"What You're Afraid of Losing",
+    uts:"Loss aversion is one of the most powerful forces in decision-making. We don't just weigh what we might gain. We weigh what we might have to give up to get there. A lot of creative paralysis isn't really about the ideas. It's about what saying yes to one thing means saying no to everything else.",
+    q:"Look at your list. For each item, write what you'd have to give up to actually pursue it. Time, identity, security, other options. Be specific.",
+    prompts:["Don't skip this step. The thing you'd have to give up is usually the real reason you haven't started.","Some of what you'd lose is real. Some of it is imagined. Write it all down anyway.","Which loss feels biggest? Which one keeps coming up?"],
+    kg:"Pick the item where the loss feels most significant. Write about whether what you'd gain is worth what you'd lose. Don't try to convince yourself either way. Just think it through.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if you've been avoiding something not because you don't want it, but because wanting it feels risky.",
+    action:{ i:"🕯️", t:"Write down one thing you're willing to lose in order to move forward. Just one. You don't have to act on it today. Just name it." }
   },
-  { day:5, phase:2, phaseName:"Sort", title:"The Energy Sort",
-    fw:{ name:"The Power of Full Engagement", author:"Jim Loehr & Tony Schwartz",
-      body:"Loehr and Schwartz argue that energy, not time, is the fundamental currency of performance. You can have all the time in the world, but if your energy is depleted or misallocated, nothing meaningful gets done. The energy sort examines where your energy actually goes — and whether it matches where you want it to go.",
-      benefit:"<strong>Cognitive benefit:</strong> Energy management engages the body's autonomic regulatory systems. Research shows that aligning high-energy periods with high-priority tasks produces up to 500% more output than working on important things during low-energy windows." },
-    q:"Map your energy across a typical day. When are you sharp? When are you depleted? What gives you energy and what takes it away?",
-    prompts:["Track your energy levels hour by hour through a typical day. When do you peak? When do you crash?","What activities consistently leave you more energised than when you started?","What activities consistently drain you — even if they're supposed to be enjoyable or productive?","What are you doing during your peak energy hours? Is it your most important work, or is it email and admin?","What would your day look like if you ruthlessly protected your peak hours for your most important creative work?"],
-    fu:{ t:50, q:"What is the single biggest energy leak in your current daily life — the thing that costs the most for the least return?", prompts:["How long has this leak been running?","What would plugging it free up for you?","What has stopped you from addressing it until now?"] },
-    ref:"Your energy has a pattern. Most people ignore it and try to force productivity at all hours equally. That's like trying to swim against the current. Today you mapped the current. Now you can work with it.",
-    action:{ i:"⚡", t:"Tomorrow, schedule your single most important task during your peak energy window. Protect that time like an appointment you can't cancel." }
+  { day:5, phase:2, phaseName:"Run the Filters", title:"The Energy Test",
+    uts:"Not all ideas cost the same. Some give energy back as you work on them. Others drain it quietly, even when they look good on paper. Teresa Amabile's research on intrinsic motivation shows that the ideas we're most likely to follow through on are the ones that feel alive from the inside. Not the ones that look most impressive from the outside.",
+    q:"Go through your list one more time. Next to each item write one of three things: energized, neutral, or drained. How do you feel when you imagine actually working on it?",
+    prompts:["Don't rate how you feel about the idea in theory. Rate how you feel about the actual work of doing it.","Energized doesn't mean easy. It means something in you leans toward it.","Drained doesn't mean bad. It means something in you pulls away."],
+    kg:"Look at your energized items. Pick one and write about what specifically makes it feel alive. Try to be precise. Not just 'I love it' but what aspect of it, what part of the doing.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if any of the items you most 'should' be doing landed in the drained column. That's information worth sitting with.",
+    action:{ i:"⚡", t:"Go back through your list and mark everything in the drained column with an X. Write one sentence about how it feels to let those go." }
   },
-  { day:6, phase:2, phaseName:"Sort", title:"One Thread",
-    fw:{ name:"The ONE Thing", author:"Gary Keller — The ONE Thing",
-      body:"Keller asks a focusing question that cuts through complexity: What is the ONE thing you can do, such that by doing it, everything else becomes easier or unnecessary? Not the most urgent thing. Not the most impressive thing. The one thing that would create the most downstream clarity. When your head is full, pulling one thread is how the tangle starts to loosen.",
-      benefit:"<strong>Cognitive benefit:</strong> Single-task focus activates the brain's default mode network in a productive way — allowing deeper processing, pattern recognition, and insight generation that multitasking completely suppresses." },
-    q:"Of everything in your cleared and sorted mental landscape — what is the ONE thread that, if you pulled it, would unravel the most complexity?",
-    prompts:["Look at your important items from Day 2 and your energy map from Day 5. Where do they intersect?","What single action or decision would resolve the most open loops simultaneously?","What have you been avoiding that, if addressed, would make five other things easier?","If you could only accomplish one thing in the next two weeks, what would create the most relief and forward motion?","Why haven't you pulled this thread yet? What's been stopping you?"],
-    fu:{ t:50, q:"What would change in your daily experience if this one thread was resolved?", prompts:["How much mental space would it free up?","What would you think about instead?","What would become possible that isn't possible now?"] },
-    ref:"Clarity doesn't come from sorting everything perfectly. It comes from finding the one thread that matters most and giving it your full attention. Everything else can wait.",
-    action:{ i:"🧵", t:"Write your one thread on a sticky note. Put it where you'll see it first thing tomorrow. This is your only priority until it's resolved." }
+  { day:6, phase:2, phaseName:"Run the Filters", title:"The Identity Filter",
+    uts:"James Clear talks about identity-based habits. The idea that the most sustainable changes come from who we're becoming, not just what we're doing. The same applies to creative direction. The ideas most likely to stick are the ones that feel like an expression of who you already are, or who you're genuinely becoming.",
+    q:"Look at what's left on your list. For each remaining item, ask yourself: does this feel like me? Not the me I think I should be. The me I actually am when I'm at my best.",
+    prompts:["This isn't about being consistent with your past. It's about being honest about your present.","Some things might feel like you even if they're new. Some things might not feel like you even if you've been doing them for years.","Trust the feeling more than the logic here."],
+    kg:"Pick one item that feels most like you. Write about why. What about it connects to how you actually think, what you actually care about, how you actually work.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if there's anything on your list you've been pursuing because it fits someone else's image of you, not yours.",
+    action:{ i:"⭐", t:"Mark everything that passed the identity filter with a star. These are your keepers." }
   },
-  { day:7, phase:2, phaseName:"Sort", title:"The Constraint Test",
-    fw:{ name:"Theory of Constraints", author:"Eliyahu Goldratt — The Goal",
-      body:"Goldratt's Theory of Constraints says that every system has exactly one bottleneck that limits its throughput. Improving anything other than the bottleneck is an illusion of progress. Applied to your mental clarity: there is one constraint — one stuck point, one unresolved question, one avoided decision — that is limiting everything else.",
-      benefit:"<strong>Cognitive benefit:</strong> Identifying the binding constraint focuses cognitive resources on the highest-leverage point. Research on problem-solving shows that people who correctly identify the bottleneck solve complex problems 40% faster than those who work on multiple issues simultaneously." },
-    q:"What is the single biggest constraint in your thinking right now — the one stuck point that, if resolved, would unlock flow in everything else?",
-    prompts:["Is your constraint a decision you haven't made? A conversation you haven't had? A truth you haven't admitted?","Is it internal (a belief, a fear, a pattern) or external (a resource, a person, a circumstance)?","How long has this constraint been active? When did it first appear?","What have you tried to work around it rather than through it?","What would resolving it actually require of you — not in theory, but in specific, concrete action?"],
-    fu:{ t:50, q:"What are you afraid will happen if you address this constraint directly?", prompts:["Is the fear based on evidence or assumption?","What is the cost of not addressing it for another month? Another year?","What is the smallest action that would begin to loosen this constraint?"] },
-    ref:"Constraints don't dissolve on their own. They persist until addressed directly. The good news: once you identify the real constraint, you stop wasting energy on everything that isn't it.",
-    action:{ i:"🔑", t:"Name your constraint in one sentence. Then write the smallest possible action you could take tomorrow to begin addressing it. Not solving it — beginning." }
+  { day:7, phase:2, phaseName:"Run the Filters", title:"The Buffett Filter",
+    uts:"Warren Buffett reportedly told his pilot to write down his top 25 goals, then circle his top 5. The instruction for the remaining 20: avoid them at all costs. They're not the second tier. They're the distraction tier. The things good enough to feel worthwhile but not important enough to deserve your best attention.",
+    q:"Look at your starred items from yesterday. If you could only focus on one for the next three months, which one would it be?",
+    prompts:["Don't choose the most impressive one. Choose the one that actually pulls you.","If two feel equal, ask yourself: which one would I regret not starting?","You're not eliminating the others forever. You're choosing what gets your real attention now."],
+    kg:"Write about what the next three months could look like if this one thing got your genuine focus. Be specific. Not just outcomes, but what the actual days might feel like.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice how it feels to choose. Relief, grief, excitement, resistance. Whatever comes up is worth acknowledging.",
+    action:{ i:"🎯", t:"Write the name of your one thing at the top of a new entry. Leave space below it. That's where the next seven days begin." }
   },
-  { day:8, phase:2, phaseName:"Sort", title:"Build the Filter",
-    fw:{ name:"Principles", author:"Ray Dalio — Principles",
-      body:"Dalio argues that clear principles — explicit rules for decision-making — eliminate the cognitive cost of deciding from scratch every time. When you know what matters to you and have clear criteria for what gets your attention, most decisions make themselves. The filter is not restrictive — it's liberating. It means you stop spending mental energy on things that don't pass.",
-      benefit:"<strong>Cognitive benefit:</strong> Pre-committed decision rules reduce cognitive load by converting complex decisions into simple pattern matches. Research on decision-making shows that people with explicit criteria make faster, more consistent, and more satisfying decisions than those who evaluate each choice from scratch." },
-    q:"Build your personal filter — the explicit criteria for what gets your mental energy, your time, and your attention from now on.",
-    prompts:["Based on everything you've learned in the past seven days, what are your three to five non-negotiable priorities?","What is your rule for new inputs — what criteria must something meet to earn your attention?","What is your rule for commitments — what must be true before you say yes to anything new?","What is your rule for when to quit — at what point do you stop investing energy in something that isn't working?","Write these rules as clear, simple statements. Not aspirational — operational. Rules you can actually apply tomorrow."],
-    fu:{ t:50, q:"What would be different about your daily life if you actually applied these filters consistently?", prompts:["What currently in your life would not pass the filter?","What are you willing to do about that?","What makes you most nervous about enforcing these boundaries?"] },
-    ref:"A filter is only useful if you use it. Writing it down is the first step. Using it when something shiny and urgent tries to push through — that's the practice.",
-    action:{ i:"🔍", t:"Write your filter rules on a card you can keep at your desk. Tomorrow, use them to make at least one decision you would normally deliberate over." }
+  { day:8, phase:3, phaseName:"Go Deeper", title:"The Problem Test",
+    uts:"Most creative projects stall not because the idea is wrong but because the problem it's solving isn't clear enough. When you know exactly what you're trying to fix, change, or express, the work finds its own direction. When you don't, everything feels equally possible and equally hard.",
+    q:"Write about the problem your one thing is trying to solve. Not the product or the output. The problem. What exists in the world, or in you, that this is a response to?",
+    prompts:["It doesn't have to be a grand problem. It can be small and specific.","If it's a creative project rather than a practical one, the problem might be emotional or expressive. Something you need to say, something you need to work out.","Try to say it in one sentence. If you can't, keep writing until you can."],
+    kg:"Write about who else has this problem. Not your target audience. Just other humans who feel what you feel or need what you need. Get specific about one of them.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if the problem you're solving is one you've personally experienced. The work that comes from lived understanding tends to be sharper than the work that comes from observation.",
+    action:{ i:"💡", t:"Write your one-sentence problem statement at the top of today's entry. Read it back. If it doesn't feel right yet, rewrite it until it does." }
   },
-  { day:9, phase:3, phaseName:"Focus", title:"Morning Practice",
-    fw:{ name:"Atomic Habits — Habit Stacking", author:"James Clear — Atomic Habits",
-      body:"Clear's research on habit formation shows that the most reliable way to build a new behaviour is to attach it to an existing one. A morning practice for mental clarity doesn't need to be elaborate — it needs to be consistent. The goal is a daily clearing ritual that prevents the mental clutter from re-accumulating.",
-      benefit:"<strong>Cognitive benefit:</strong> Morning routines that include cognitive clearing activate the prefrontal cortex before the day's reactive demands take over. Research shows that even 10 minutes of intentional reflection in the morning produces measurably better focus and decision-making throughout the day." },
-    q:"Design your morning clearing practice — a daily ritual that empties your head before the world starts filling it up again.",
-    prompts:["What time would you need to start to have even 15 minutes before the demands begin?","What would your clearing ritual include? Brain dump? Priority setting? Journaling? Meditation? Something else?","What existing morning behaviour can you attach this to — what's the trigger that starts the ritual?","What is the minimum viable version of this practice — the version so small you'd do it even on your worst day?","What would your mornings feel like if the first thing you did was clear your head instead of check your phone?"],
-    fu:{ t:50, q:"What has historically stopped you from maintaining a morning practice — and what's different now?", prompts:["Have you tried morning routines before? What happened?","What's the real obstacle — time, willpower, or belief that it matters?","What would convince you to keep this up for 30 days?"] },
-    ref:"The practice doesn't need to be long. It needs to be first. Before email, before news, before anyone else's agenda enters your mind — you clear the space. That's the whole thing.",
-    action:{ i:"🌅", t:"Set an alarm for tomorrow. Do your minimum viable morning clearing practice — even if it's just five minutes of writing down what's in your head. Start the streak." }
+  { day:9, phase:3, phaseName:"Go Deeper", title:"The Person Test",
+    uts:"The clearest creative work is usually made for one specific person, even if it reaches many. Not a demographic, not a user persona. A real human whose experience you understand well enough to make something that genuinely speaks to them. The more specific the person, the more universal the resonance tends to be.",
+    q:"Write about one specific person your work is for. Someone real, or someone you can imagine vividly. Not a category. A person.",
+    prompts:["What does their day look like? What do they carry around that most people don't see?","What have they tried that hasn't worked? What do they wish existed?","What would it mean to them if your thing existed and was exactly right?"],
+    kg:"Write a letter to this person. Tell them what you're making and why you're making it for them. Don't make it polished. Make it honest.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if writing to a real person made the work feel more urgent or more clear. That's the effect of specificity.",
+    action:{ i:"💌", t:"Write one sentence that starts with 'I'm making this for anyone who has ever...' Finish it as honestly as you can." }
   },
-  { day:10, phase:3, phaseName:"Focus", title:"The Deep Hour",
-    fw:{ name:"Deep Work Scheduling", author:"Cal Newport — Deep Work",
-      body:"Newport advocates for scheduling blocks of deep, uninterrupted focus — not finding time for them, scheduling them. The deep hour is a non-negotiable block where you work on your one most important thing with zero interruptions. Not two hours. Not four hours. One hour. Because one hour of genuine deep work produces more than a full day of scattered attention.",
-      benefit:"<strong>Cognitive benefit:</strong> Uninterrupted focus for 60+ minutes allows the brain to enter a state of cognitive flow where processing speed, pattern recognition, and creative insight all increase dramatically. This state is neurologically impossible to achieve in sessions shorter than 25-30 minutes." },
-    q:"Design your deep hour — when it happens, what you work on, and how you protect it from interruption.",
-    prompts:["Based on your energy map from Day 5, when is your peak cognitive hour?","What will you work on during your deep hour? It should be your one thread, your most important thing.","What interruptions will you need to eliminate? Phone, email, people, environment?","What does the physical setup look like — where are you, what's on your desk, what's not?","What is your commitment for this week — how many deep hours will you schedule?"],
-    fu:{ t:50, q:"What scares you about committing to one uninterrupted hour on your most important work?", prompts:["Is the fear about what you'll discover about the work, or about yourself?","What has shallow, scattered work been protecting you from?","What becomes possible if you do this consistently for 30 days?"] },
-    ref:"One hour of deep work is worth more than eight hours of shallow multitasking. This isn't productivity advice — it's a fact about how your brain works. Protect the hour.",
-    action:{ i:"⏰", t:"Block one hour in your calendar tomorrow. Label it 'Deep Hour — Do Not Move.' Put your phone in another room. Work on your one thing." }
+  { day:10, phase:3, phaseName:"Go Deeper", title:"The Commitment Test",
+    uts:"There's a difference between being interested in something and being committed to it. Interest shows up when it's easy. Commitment shows up when it's hard. Most people confuse the two until the resistance arrives, and then they think something is wrong with the idea, when actually something is right about it.",
+    q:"Write honestly about your commitment level to your one thing. Not how committed you think you should be. How committed you actually are right now.",
+    prompts:["What would make you quit? Be honest. Not what you hope would make you quit, what actually might.","What has already made you slow down or pull back?","What would have to be true for you to keep going even when it gets hard?"],
+    kg:"Write about what this would look like if you stayed with it for a full year. Not the outcomes. The practice. The showing up, the days it doesn't feel good, the slow progress. Can you see yourself doing that?",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if your commitment is contingent on results. That's fragile. The most sustainable commitment is to the practice itself, regardless of what it produces.",
+    action:{ i:"🔒", t:"Write one condition that would make you stop and one that would make you keep going no matter what. Knowing both is useful." }
   },
-  { day:11, phase:3, phaseName:"Focus", title:"Signal Check",
-    fw:{ name:"Noise", author:"Daniel Kahneman — Noise",
-      body:"Kahneman distinguishes between signal (information that helps you make better decisions) and noise (information that feels important but actually degrades decision quality). After clearing and sorting your mental landscape, the signal check tests whether you're actually hearing the signal more clearly — or whether noise is creeping back in.",
-      benefit:"<strong>Cognitive benefit:</strong> Regular signal-to-noise assessment trains the brain's discriminative attention — the ability to distinguish relevant from irrelevant information. This capacity strengthens with practice, making future filtering faster and more automatic." },
-    q:"After eleven days of clearing and sorting — what is the signal in your life right now? What is the noise? And can you tell the difference more easily than you could before?",
-    prompts:["What information, inputs, and activities in your current life are genuine signal — they help you think, decide, and create better?","What has revealed itself as noise — things that felt important but actually add nothing?","Has your capacity to distinguish signal from noise changed since Day 1? How?","What noise sources have crept back in since you started clearing? What pulled them back?","What is the clearest signal you're receiving right now — the thing your clearer mind is telling you that the cluttered mind couldn't hear?"],
-    fu:{ t:50, q:"What is the most important thing you can hear now that you couldn't hear before you started clearing?", prompts:["Is it about your work, your relationships, or yourself?","What does this signal ask of you?","What would you do about it if you trusted it completely?"] },
-    ref:"A clear mind doesn't stay clear automatically. Noise is the default state of modern life. Clarity requires active, ongoing maintenance — which is why the daily practice matters more than the initial dump.",
-    action:{ i:"📡", t:"Write down the three strongest signals you're receiving right now. These are your compass. Check them weekly." }
+  { day:11, phase:4, phaseName:"Choose and Commit", title:"Letters to the Unchosen",
+    uts:"Grief is part of choosing. Every yes contains a no. The ideas you're setting aside deserve acknowledgment. Not because you're abandoning them forever, but because pretending they don't matter is its own kind of avoidance. Giving them a proper goodbye creates space for what you're actually choosing.",
+    q:"Pick two or three things from your original list that you're setting aside. Write each of them a short letter. Thank them for what they offered. Explain why now isn't their time.",
+    prompts:["Be warm, not dismissive. These ideas came from somewhere real.","You don't have to say goodbye forever. Just goodbye for now.","Notice if any of them fight back. If one does, it might not be ready to be set aside."],
+    kg:"Write about what it feels like to let these go. Relief, loss, guilt, clarity. Whatever is actually there.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if the act of letting go created any unexpected space. Sometimes what's been crowding everything else out was something we already knew wasn't right.",
+    action:{ i:"✉️", t:"Write one more sentence to each letter: what you hope for it. Even setting something aside deserves a wish." }
   },
-  { day:12, phase:4, phaseName:"Build", title:"Your System",
-    fw:{ name:"Building a Second Brain", author:"Tiago Forte — Building a Second Brain",
-      body:"Forte argues that the solution to mental clutter isn't just clearing — it's building a reliable external system that catches, organises, and resurfaces what matters. A second brain means you never have to hold things in your head again. Not because your head is broken, but because it's designed for thinking, not storage.",
-      benefit:"<strong>Cognitive benefit:</strong> External knowledge management systems reduce cognitive load continuously. Research shows that people with trusted external systems experience less anxiety about forgetting important things and make more creative connections between ideas — because their working memory is free for thinking rather than remembering." },
-    q:"Design your system — the external structure that will keep your head clear on an ongoing basis. Where does everything go? How does it flow?",
-    prompts:["Where will you capture new inputs — ideas, tasks, notes — so they don't stay in your head?","How will you process what you've captured? What's your regular review rhythm?","Where will you store reference material so you can find it when you need it?","How will you surface your priorities daily — what system ensures your one thing stays front and center?","What tools will you use? Keep it simple. The best system is the one you'll actually maintain."],
-    fu:{ t:50, q:"What has prevented you from building or maintaining an external system before now?", prompts:["Was it complexity, perfectionism, or not believing it would help?","What's the minimum viable system — the simplest version that would keep your head clear?","What would change in your daily experience if you could trust your system completely?"] },
-    ref:"The system doesn't need to be perfect. It needs to be trusted. If you trust it to catch what matters, your brain will let go. That's the whole point.",
-    action:{ i:"🗂️", t:"Set up the simplest possible capture system today — one place where everything goes. A notes app, a notebook, a single document. Start using it immediately." }
+  { day:12, phase:4, phaseName:"Choose and Commit", title:"The Commitment Statement",
+    uts:"Implementation intentions are one of the most well-researched tools in behavioral science for turning decisions into action. The specificity isn't bureaucratic. It's the difference between intending to do something and actually doing it. Vague commitments produce vague follow-through.",
+    q:"Write your commitment statement. What you're making, why it matters to you, and what you're willing to give it.",
+    prompts:["Be specific. Not 'I'm going to work on my project' but what, when, how often, for how long.","Include what you're willing to sacrifice. Time, comfort, other options.","Write it like you mean it, because you do."],
+    kg:"Write about what success looks like in 90 days. Not the finished product. The state you're in. What are you doing, how are you feeling, what has shifted?",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if writing it down made it feel more real or more scary. Both are good signs.",
+    action:{ i:"📜", t:"Write your commitment statement one more time in the simplest possible words. Sometimes saying the same thing twice makes it more real." }
   },
-  { day:13, phase:4, phaseName:"Build", title:"The Test Week",
-    fw:{ name:"Sprint", author:"Jake Knapp — Sprint",
-      body:"Knapp's sprint methodology is built on a simple insight: the fastest way to learn if something works is to test it in real conditions. Your clearing practice, your morning ritual, your deep hour, your filter, your system — they've been designed over twelve days. Now they need to be tested in the mess of actual life, where things don't go as planned.",
-      benefit:"<strong>Cognitive benefit:</strong> Implementation testing with reflection activates experiential learning circuits that conceptual planning alone cannot reach. The brain updates its models most effectively through real-world feedback, not through further planning." },
-    q:"How will you test your entire system this week — your morning practice, deep hour, filter, and capture system — in the reality of your actual life?",
-    prompts:["What does your ideal Monday look like with all your new practices in place?","What is most likely to break first — which practice or system element is most fragile?","What is your plan for when something breaks? Not if — when.","How will you track what's working and what isn't? What does your end-of-day reflection look like?","What is your commitment for this test week — what will you do no matter what, and what are you willing to adjust?"],
-    fu:{ t:50, q:"What are you most afraid of discovering during the test week?", prompts:["That the system doesn't work? Or that it does, and now you have to maintain it?","What would it mean if clarity is genuinely available to you as a daily experience?","What excuses are you pre-loading for when the test gets hard?"] },
-    ref:"The test week isn't about perfection. It's about data. Every breakdown is information about where the system needs reinforcement. Approach it like a scientist, not a student.",
-    action:{ i:"🧪", t:"Write your test week schedule tonight. Block your morning practice, deep hour, and processing time for each of the next five days. Then start tomorrow." }
+  { day:13, phase:4, phaseName:"Choose and Commit", title:"The First Move",
+    uts:"BJ Fogg's Tiny Habits research shows that the size of the first action matters less than the act of starting. A tiny first move, done consistently, builds the neural pathway that makes the next move easier. The goal today isn't progress. It's momentum.",
+    q:"What is the smallest possible first move you could make on your one thing today? Not the most impressive first move. The most doable one.",
+    prompts:["It should take less than 10 minutes.","It should be something you could do right now, or before the end of today.","If it feels too small, good. Do it anyway."],
+    kg:"Write about what comes after the first move. What would the second move be? The third? You're not committing to all of them. Just mapping the path a little.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice if the first move felt different from how you imagined it would. The beginning rarely feels like the beginning.",
+    action:{ i:"👣", t:"Write one sentence about what the first move is. Then write the word 'done' underneath it, even before you've done it. Sometimes claiming it first makes it easier to follow through." }
   },
-  { day:14, phase:4, phaseName:"Build", title:"What Stayed",
-    fw:{ name:"Reflection and Integration", author:"Dr. James Pennebaker — Writing to Heal",
-      body:"Pennebaker's research shows that the deepest learning comes not from the experience itself, but from reflecting on it afterward. Fourteen days of clearing, sorting, focusing, and building has changed your relationship with your own mind. Today is about naming what changed — not theoretically, but from the lived experience of two weeks with a clearer head.",
-      benefit:"<strong>Cognitive benefit:</strong> Written reflection on personal change activates narrative identity processes — the brain's capacity to integrate new self-knowledge into a coherent self-story. This integration is what makes temporary changes permanent." },
-    q:"After fourteen days of emptying your head and building a system to keep it clear — what stayed? What changed? Who are you with a clearer mind?",
-    prompts:["What is different about your daily mental experience compared to Day 1?","Which practices or tools from this program have become genuinely yours — things you'll keep doing because they work, not because you should?","What did you learn about your own mind that you didn't know or hadn't admitted before?","What is the clearest insight you've gained about what you actually need to think clearly and create well?","What do you want to remember about this experience when the clutter inevitably tries to return?"],
-    fu:{ t:50, q:"What would you tell someone who is where you were on Day 1 — head full, unable to focus, drowning in mental noise?", prompts:["What do you know now that you needed to hear then?","What was the real problem — and was it what you thought it was at the start?","What is one sentence you could carry forward as your compass for mental clarity?"] },
-    ref:"A clear head is not a permanent achievement — it's a practice. What you've built here is not a one-time reset but a repeatable system. The clutter will return. Now you know how to meet it.",
-    action:{ i:"🌱", t:"Write your one-sentence clarity compass — the principle you'll return to when the noise builds up again. Keep it somewhere you'll see it daily." }
+  { day:14, phase:5, phaseName:"The Declaration", title:"The Declaration",
+    uts:"You started this track with a head full of competing things. You've spent two weeks clearing, filtering, testing, and choosing. What you have now isn't just a clearer idea. It's a clearer relationship to your own thinking. That's the thing worth protecting.",
+    q:"Write about where you started and where you are now. Not in terms of what you've produced. In terms of how you're thinking.",
+    prompts:["What did you know at Day 1 that you couldn't see clearly? What can you see now?","What surprised you most about this process?","What do you want to remember from these two weeks?"],
+    kg:"Write your declaration. What you're committed to, what you're leaving behind, and what kind of creative thinker you're choosing to be from here.",
+    sit:"You have 1 minute. Don't read back what you wrote. Just talk. What did you actually just discover?",
+    notice:"Notice what's different. It might be subtle. That's fine. Subtle is how real change arrives.",
+    action:{ i:"🌱", t:"Write three words that describe how you want to think from here. Say them out loud once. Then write one sentence about what you're going to do next." }
   }
 ];
 
@@ -364,7 +350,7 @@ function buildSidebar() {
 }
 
 function buildDay(d) {
-  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const sv = getSaved(d.day,'main');
   const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
   const done = completed.has(d.day);
   return `<div class="day-view" id="day-${d.day}">
@@ -376,15 +362,15 @@ function buildDay(d) {
       </div>
       <div class="day-number-large">${d.day}</div>
     </div>
-    <div class="framework-card">
-      <div class="framework-eyebrow">framework</div>
-      <div class="framework-name">${d.fw.name}</div>
-      <div class="framework-author">${d.fw.author}</div>
-      <div class="framework-body">${d.fw.body}</div>
-      <div class="framework-benefit">${d.fw.benefit}</div>
-    </div>
+    <details class="uts-section">
+      <summary class="uts-toggle">
+        <span class="uts-label">under the surface</span>
+        <span class="uts-icon">+</span>
+      </summary>
+      <div class="uts-body">${d.uts}</div>
+    </details>
     <div class="section">
-      <div class="section-label">today's question</div>
+      <div class="section-label">start here</div>
       <div class="question-text">"${d.q}"</div>
       <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
       <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
@@ -392,16 +378,14 @@ function buildDay(d) {
         <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
         <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
       </div>
-      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
-        <div class="followup-label">going deeper</div>
-        <div class="followup-question">"${d.fu.q}"</div>
-        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
-        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
-      </div>
     </div>
     <div class="section">
-      <div class="section-label">reflection</div>
-      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+      <div class="section-label">keep going</div>
+      <div class="question-text">"${d.kg}"</div>
+    </div>
+    <div class="section">
+      <div class="section-label">notice this</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.notice}</div></div>
     </div>
     <div class="section">
       <div class="section-label">micro-action</div>
@@ -454,13 +438,12 @@ function showJournal() {
 
 function populateJournal() {
   document.getElementById('j-entries').innerHTML = program.map(d=>{
-    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    const m=getSaved(d.day,'main');
     return `<div class="journal-entry">
       <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
       <div class="journal-day-title">${d.title}</div>
       <div class="journal-question">"${d.q}"</div>
       ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
-      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
     </div>`;
   }).join('');
 }
@@ -473,7 +456,6 @@ function onWrite(n) {
   if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
   if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
   if(ta) ta.className='writing-area'+(suf?' sufficient':'');
-  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
   const note=document.getElementById('note-'+n);
   if(note) note.style.display=suf?'none':'block';
 }
@@ -510,9 +492,9 @@ async function generateReflection() {
   el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
 
   const writing = program.map(d=>{
-    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
-    if(!m&&!f) return null;
-    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
+    const m=getSaved(d.day,'main');
+    if(!m) return null;
+    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}`;
   }).filter(Boolean).join('\n\n---\n\n');
 
   if(!writing.trim()){
@@ -520,7 +502,7 @@ async function generateReflection() {
     return;
   }
 
-  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Empty the Head" — a program helping people clear mental clutter, build focus systems, and find clarity, grounded in David Allen, Cal Newport, Greg McKeown, and James Clear.
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Empty the Head" — a program helping people clear mental clutter, filter competing ideas, go deeper on what matters, and make a committed creative choice.
 
 Here is everything they wrote:
 
