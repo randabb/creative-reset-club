@@ -680,19 +680,23 @@
   }
   .heroRight {
     order: -1;
-    padding: 80px 0 0;
+    padding: 72px 0 0;
     justify-content: center;
+    align-items: center;
+    overflow: visible;
   }
   .orbitalSystem {
     width: 420px; height: 420px;
-    transform: scale(0.62);
+    transform: scale(calc(min(85vw, 320px) / 420));
     transform-origin: center center;
-    margin: -80px 0;
+    margin: -60px auto -68px;
   }
 
   .heroLeft {
-    padding: 16px 24px 40px;
+    padding: 0 24px 40px;
     animation: none;
+    align-items: center;
+    text-align: center;
   }
   .heroHeadline {
     font-size: clamp(28px, 7vw, 40px);
@@ -700,11 +704,13 @@
   }
   .heroSub {
     font-size: 14px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+    max-width: 300px;
   }
   .heroCta {
     font-size: 12px;
     padding: 12px 12px 12px 20px;
+    margin: 0 auto;
   }
   .ctaDot {
     width: 28px; height: 28px;
@@ -712,7 +718,8 @@
   }
   .heroProofRow {
     margin-top: 20px;
-    gap: 12px;
+    gap: 8px;
+    justify-content: center;
   }
   .heroProofRow span { font-size: 10px; }
 
