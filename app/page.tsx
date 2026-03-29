@@ -250,7 +250,7 @@ export default function Home() {
         * { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior:smooth; overflow-x:hidden; }
         body { background:#f4f2ee; color:#000332; font-family:'Codec Pro',sans-serif !important; overflow-x:hidden; }
-        .stickman-img { width:280px; animation:idle 4s ease-in-out infinite; }
+        .stickman-img { width:280px; min-height:280px; object-fit:contain; animation:idle 4s ease-in-out infinite; }
         @keyframes idle {
           0%, 100% { transform: translateY(0px) rotate(0deg) scaleX(-1); }
           25% { transform: translateY(-4px) rotate(0.5deg) scaleX(-1); }
@@ -354,7 +354,7 @@ export default function Home() {
               <p style={{ marginTop: 20, fontSize: 12, color: "rgba(0,3,50,0.4)" }}>backed by behavioral science · takes 2 minutes · free to start</p>
             </div>
             <div className="hero-right" style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>
-              <div className="stickman-desktop"><img src="/stickman.png" alt="playful stickman" className="stickman-img" style={{ display: "block", objectFit: "contain", objectPosition: "bottom" }} /></div>
+              <div className="stickman-desktop" style={{ marginBottom: 0 }}><img src="/stickman.png" alt="playful stickman" className="stickman-img" style={{ display: "block", objectFit: "contain", objectPosition: "bottom", marginBottom: -4 }} /></div>
               <div ref={statRowRef} className="stat-row-right" style={{ display: "flex", gap: 0, width: "100%" }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: "2rem", fontWeight: 700, color: "#000332", lineHeight: 1.1, marginBottom: 6 }}>{statsAnimated ? `${statValues[0]}%` : "0%"}</p>
