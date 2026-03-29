@@ -397,7 +397,7 @@ export default function Home() {
           </div>
 
           {/* SCROLL HINT */}
-          <div style={{ textAlign: "center", paddingBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 24, maxWidth: 1200, margin: "0 auto" }}>
             <svg className="scroll-hint" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000332" strokeWidth="2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
           </div>
 
@@ -418,21 +418,21 @@ export default function Home() {
           </div>
 
           {/* PULL-QUOTE SECTION */}
-          <div ref={pullquoteRef} className="pullquote-section" style={{ maxWidth: 800, margin: "0 auto", padding: "64px 0", textAlign: "center" }}>
-            <p className={`pullquote-fade ${pullquoteVisible ? "visible" : ""}`} style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#000332", lineHeight: 1.35 }}>
+          <div ref={pullquoteRef} className="pullquote-section" style={{ background: "#000332", margin: "0 -48px", padding: "72px 48px", textAlign: "center" }}>
+            <p className={`pullquote-fade ${pullquoteVisible ? "visible" : ""}`} style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 700, color: "#FAF7F0", lineHeight: 1.35, maxWidth: 800, margin: "0 auto" }}>
               The most valuable thing you bring to your work isn&apos;t your output. It&apos;s how you think.
             </p>
           </div>
 
           {/* FEATURE CARDS */}
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 16, paddingBottom: 48 }}>
-            <div className="card-row-right" style={{ display: "flex", gap: 16, width: "100%" }}>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
+            <div className="card-row-right" style={{ display: "flex", gap: 16, width: "100%", alignItems: "stretch" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px", minHeight: 180 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>what a day looks like</p>
                 <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65, marginBottom: 10 }}>start here → go deeper → express something → notice what shifted.</p>
                 <p style={{ fontSize: 13, color: "rgba(244,242,238,0.45)", lineHeight: 1.55 }}>each day follows a simple structure. it takes a few minutes. it moves you from thinking about your ideas to being inside them.</p>
               </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#000332", borderRadius: 16, padding: "28px 28px", minHeight: 180 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>why it works</p>
                 <p style={{ fontSize: 14, color: "rgba(244,242,238,0.7)", lineHeight: 1.65 }}>Each practice is designed to quiet the noise, move past resistance, and return you to your own thinking. Not to teach you something. Just to create space for something to come through.</p>
               </div>
@@ -440,8 +440,8 @@ export default function Home() {
           </div>
 
           {/* CLOSING CTA SECTION */}
-          <div className="closing-cta" style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: "48px 0 80px" }}>
-            <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left", background: "#000332", border: "none" }}>
+          <div className="closing-cta" style={{ maxWidth: 540, margin: "0 auto", textAlign: "center", padding: "48px 0 80px" }}>
+            <div className="prompt-card" style={{ marginBottom: 36, textAlign: "left", background: "#000332", border: "none", maxWidth: 520 }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF9090", marginBottom: 12 }}>try a reset</p>
               <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#FF9090" }}>start here</span>
@@ -456,12 +456,12 @@ export default function Home() {
                 &ldquo;what&apos;s one idea you&apos;ve been circling but haven&apos;t said out loud yet? say it now, badly.&rdquo;
               </p>
             </div>
-            <p style={{ fontSize: 17, color: "rgba(0,3,50,0.6)", lineHeight: 1.6, marginBottom: 28 }}>you don&apos;t need to be ready. you just need to start.</p>
+            <p style={{ fontSize: 19, color: "#000332", lineHeight: 1.5, marginTop: 40, marginBottom: 28, fontWeight: 500 }}>you don&apos;t need to be ready. you just need to start.</p>
             <button className="hero-cta" onClick={() => go(3)}>
               start your first reset
               <span className="cta-arrow">→</span>
             </button>
-            <p style={{ marginTop: 20, fontSize: 13, color: "#000332", opacity: 0.5 }}>backed by behavioral science&nbsp;&nbsp;·&nbsp;&nbsp;takes 2 minutes&nbsp;&nbsp;·&nbsp;&nbsp;free to start</p>
+            <p style={{ marginTop: 20, fontSize: 14, color: "#000332", opacity: 0.4 }}>backed by behavioral science&nbsp;&nbsp;·&nbsp;&nbsp;takes 2 minutes&nbsp;&nbsp;·&nbsp;&nbsp;free to start</p>
           </div>
         </div>
       )}
