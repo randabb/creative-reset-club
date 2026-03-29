@@ -339,7 +339,7 @@ export default function Home() {
           <div className="hero-grid" style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", maxWidth: 1200, margin: "0 auto", minHeight: "calc(100vh - 120px)" }}>
             <div className="hero-left" style={{ paddingLeft: "4rem" }}>
               <div className="headline-row" style={{ marginBottom: 16 }}>
-                <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
+                <h1 className="hero-heading" style={{ fontSize: "clamp(36px, 6.5vw, 82px)", fontWeight: 700, lineHeight: 1.0, letterSpacing: "-0.02em" }}>
                   your daily prompt<br />
                   for <span style={{ fontStyle: "italic" }}>creative thinking,</span><br />
                   <span style={{ color: "#FF9090", whiteSpace: "nowrap" }}>in the age of AI.</span>
