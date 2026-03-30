@@ -67,17 +67,16 @@ export default function ProgramPage() {
         // Fix 3: Day locking + Part 2 progressive reveal + Part 3 writing box + Part 5 celebration
         const injectedCSS = `
           /* Sidebar collapse toggle */
-          .sidebar-toggle { position:absolute; top:14px; right:-14px; width:28px; height:28px; border-radius:50%; background:var(--ink); border:1.5px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.5); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:60; transition:transform 0.2s, right 0.2s; }
-          .sidebar-toggle:hover { color:var(--cream); border-color:rgba(255,255,255,0.25); }
-          .sidebar.collapsed { width:48px; padding:32px 8px; overflow:hidden; }
-          .sidebar.collapsed .sidebar-logo,
-          .sidebar.collapsed .sidebar-program,
-          .sidebar.collapsed #sidebarNav,
-          .sidebar.collapsed .sidebar-progress { display:none; }
-          .sidebar.collapsed .sidebar-toggle { right:-14px; }
+          .sidebar { transition:width 0.3s ease, padding 0.3s ease; }
+          .sidebar-toggle { position:absolute; top:28px; right:-16px; width:32px; height:32px; border-radius:50%; background:#000332; border:2px solid rgba(255,255,255,0.2); color:#FAF7F0; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:60; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+          .sidebar-toggle:hover { background:#FF9090; border-color:#FF9090; }
+          .sidebar-toggle span { display:block; transition:transform 0.3s; }
+          .sidebar.collapsed { width:0; padding:0; overflow:hidden; min-width:0; }
+          .sidebar.collapsed * { visibility:hidden; }
+          .sidebar.collapsed .sidebar-toggle { visibility:visible; position:fixed; top:28px; left:8px; right:auto; }
           .sidebar.collapsed .sidebar-toggle span { transform:rotate(180deg); }
           .app .main { transition:margin-left 0.3s ease, max-width 0.3s ease; }
-          .sidebar.collapsed ~ .main { margin-left:48px; max-width:calc(100% - 48px); }
+          .sidebar.collapsed ~ .main { margin-left:40px; max-width:calc(100% - 40px); }
           @media(max-width:768px) { .sidebar-toggle { display:none; } }
 
           .day-nav-item.locked { opacity:0.5; cursor:not-allowed; pointer-events:none; }
