@@ -643,12 +643,14 @@ window.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'completedDays') {
     if (event.data.days && Array.isArray(event.data.days)) {
       event.data.days.forEach(function(d) { completedDaysFromDB.add(d); });
-      // If day 1 is showing and completed, render it immediately
+      // Apply completed state to the active day immediately
       var activeDay = document.querySelector('.day-view.active');
       if (activeDay) {
         var dn = parseInt(activeDay.id.replace('day-',''));
         if (completedDaysFromDB.has(dn)) showCompletedDay(dn);
       }
+      // Also update sidebar to show completed badges
+      if (typeof buildSidebar === 'function') buildSidebar();
     }
   }
   if (event.data && event.data.type === 'existingVoiceUrl') {
@@ -665,16 +667,12 @@ window.addEventListener('message', function(event) {
     if (event.data.keepGoingResponse) {
       savedKeepGoingResponses[dayNum] = event.data.keepGoingResponse;
     }
-    // Apply read-only display if this is a completed day
+    // Apply full read-only state if this is a completed day
     if (completedDaysFromDB.has(dayNum)) {
       applyReadOnlyToCompletedDay(dayNum);
-    }
-    // Restore completed voice UI if data exists
-    if (event.data.url || event.data.transcript) {
-      // On completed days, apply the full read-only treatment (hides controls)
-      if (completedDaysFromDB.has(dayNum)) {
-        applyReadOnlyToCompletedDay(dayNum);
-      } else {
+    } else if (event.data.url || event.data.transcript) {
+      // On incomplete days, just show voice result alongside controls
+      {
         // On incomplete days, just show the result alongside controls
         var result = document.getElementById('vresult-' + dayNum);
         var voiceSection = document.getElementById('voice-' + dayNum);
@@ -987,29 +985,35 @@ function applyReadOnlyToCompletedDay(dayNum) {
   var contentWrap = document.getElementById('day-content-' + dayNum);
   if (!contentWrap) return;
 
-  // Replace main writing textarea
+  // 1. Replace main writing textarea with read-only text
   var mainText = savedWrittenResponses[dayNum] || getSaved(dayNum, 'main') || '';
   var mainTa = document.getElementById('write-' + dayNum);
-  if (mainTa && !document.getElementById('readonly-main-' + dayNum)) {
+  if (mainTa) {
     var mainContainer = mainTa.parentNode;
+    mainTa.style.display = 'none';
     var charCounter = mainContainer.querySelector('.char-counter');
     if (charCounter) charCounter.style.display = 'none';
     var encouragement = mainContainer.querySelector('.writing-encouragement');
     if (encouragement) encouragement.style.display = 'none';
-    var readOnlyWrap = document.createElement('div');
-    readOnlyWrap.id = 'readonly-main-' + dayNum;
-    mainTa.style.display = 'none';
-    mainContainer.insertBefore(readOnlyWrap, mainTa);
-    renderReadOnlyText(readOnlyWrap, mainText, dayNum, 'main');
+    // Remove old read-only wrapper if exists (idempotent)
+    var oldRo = document.getElementById('readonly-main-' + dayNum);
+    if (oldRo) oldRo.remove();
+    if (mainText) {
+      var readOnlyWrap = document.createElement('div');
+      readOnlyWrap.id = 'readonly-main-' + dayNum;
+      mainContainer.insertBefore(readOnlyWrap, mainTa);
+      renderReadOnlyText(readOnlyWrap, mainText, dayNum, 'main');
+    }
   }
 
-  // Replace Keep Going response
+  // 2. Replace Keep Going response with read-only text
   var kgText = savedKeepGoingResponses[dayNum] || '';
   var kgContent = document.getElementById('kg-content-' + dayNum);
-  if (kgContent && !document.getElementById('readonly-kg-' + dayNum)) {
-    // Hide any existing KG response textarea
+  if (kgContent) {
     var kgTa = kgContent.querySelector('.kg-response-area');
     if (kgTa) kgTa.style.display = 'none';
+    var oldKgRo = document.getElementById('readonly-kg-' + dayNum);
+    if (oldKgRo) oldKgRo.remove();
     if (kgText) {
       var kgReadOnly = document.createElement('div');
       kgReadOnly.id = 'readonly-kg-' + dayNum;
@@ -1018,24 +1022,25 @@ function applyReadOnlyToCompletedDay(dayNum) {
     }
   }
 
-  // Restore voice UI: hide record controls, show player + transcript
+  // 3. Restore voice UI: hide record controls, show player + transcript
   var voiceSection = document.getElementById('voice-' + dayNum);
-  if (voiceSection && (voiceUrlCache[dayNum] || voiceTranscriptCache[dayNum])) {
-    // Hide recording controls
-    var controls = voiceSection.querySelector('.voice-controls');
-    if (controls) controls.style.display = 'none';
-    var privacy = voiceSection.querySelector('.voice-privacy');
-    if (privacy) privacy.style.display = 'none';
-    // Render player + transcript in result area
-    var result = document.getElementById('vresult-' + dayNum);
-    if (result && !result.querySelector('.voice-transcript-card') && !result.querySelector('.voice-player')) {
-      var url = voiceUrlCache[dayNum] || '';
-      var transcript = voiceTranscriptCache[dayNum] || '';
-      var playerHtml = url ? '<div class="voice-player"><audio controls src="' + url + '"></audio></div>' : '';
-      if (transcript) {
-        result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
-      } else if (url) {
-        result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+  if (voiceSection) {
+    var hasVoiceData = voiceUrlCache[dayNum] || voiceTranscriptCache[dayNum];
+    if (hasVoiceData) {
+      var controls = voiceSection.querySelector('.voice-controls');
+      if (controls) controls.style.display = 'none';
+      var privacy = voiceSection.querySelector('.voice-privacy');
+      if (privacy) privacy.style.display = 'none';
+      var result = document.getElementById('vresult-' + dayNum);
+      if (result) {
+        var url = voiceUrlCache[dayNum] || '';
+        var transcript = voiceTranscriptCache[dayNum] || '';
+        var playerHtml = url ? '<div class="voice-player"><audio controls src="' + url + '"></audio></div>' : '';
+        if (transcript) {
+          result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+        } else if (url) {
+          result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+        }
       }
     }
   }
@@ -1067,15 +1072,21 @@ function showCompletedDay(dayNum) {
   var settleWrap = document.getElementById('settle-' + dayNum);
   var collapsedH = document.getElementById('settle-collapsed-' + dayNum);
   var contentWrap = document.getElementById('day-content-' + dayNum);
-  if (settleWrap) { settleWrap.classList.add('settled-done'); settleWrap.classList.remove('settled-expanded'); }
+  if (settleWrap) {
+    settleWrap.classList.add('settled-done');
+    settleWrap.classList.remove('settled-expanded');
+    // Stop any running settle animation
+    stopSettleAnimation(getSettleExercise(dayNum));
+  }
   if (collapsedH) { collapsedH.classList.add('show'); collapsedH.classList.remove('expanded'); }
   if (contentWrap) {
     contentWrap.style.display = 'block';
     showAllStepsExpanded(dayNum);
   }
-  // Show voice continue button (voice data will be loaded by fetchVoiceUrl)
   var vcBtn = document.getElementById('pstep-voice-btn-' + dayNum);
   if (vcBtn) vcBtn.style.display = 'none';
+  // Apply read-only state if data is available
+  applyReadOnlyToCompletedDay(dayNum);
 }
 
 function showStepsForDay(dayNum) {
