@@ -68,7 +68,7 @@ export default function ProgramPage() {
         const injectedCSS = `
           /* Sidebar collapse toggle */
           .sidebar { transition:width 0.3s ease, padding 0.3s ease; }
-          .sidebar-toggle { position:absolute; top:28px; right:-16px; width:32px; height:32px; border-radius:50%; background:#000332; border:2px solid rgba(255,255,255,0.2); color:#FAF7F0; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:60; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+          .sidebar-toggle { position:absolute; top:28px; right:12px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); color:#FAF7F0; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:60; }
           .sidebar-toggle:hover { background:#FF9090; border-color:#FF9090; }
           .sidebar-toggle span { display:block; transition:transform 0.3s; }
           .sidebar.collapsed { width:0; padding:0; overflow:hidden; min-width:0; }
