@@ -1024,24 +1024,29 @@ function applyReadOnlyToCompletedDay(dayNum) {
 
   // 3. Restore voice UI: hide record controls, show player + transcript
   var voiceSection = document.getElementById('voice-' + dayNum);
-  if (voiceSection) {
-    var hasVoiceData = voiceUrlCache[dayNum] || voiceTranscriptCache[dayNum];
-    if (hasVoiceData) {
-      var controls = voiceSection.querySelector('.voice-controls');
-      if (controls) controls.style.display = 'none';
-      var privacy = voiceSection.querySelector('.voice-privacy');
-      if (privacy) privacy.style.display = 'none';
-      var result = document.getElementById('vresult-' + dayNum);
-      if (result) {
-        var url = voiceUrlCache[dayNum] || '';
-        var transcript = voiceTranscriptCache[dayNum] || '';
-        var playerHtml = url ? '<div class="voice-player"><audio controls src="' + url + '"></audio></div>' : '';
-        if (transcript) {
-          result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
-        } else if (url) {
-          result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
-        }
+  var voiceUrl = voiceUrlCache[dayNum] || '';
+  var voiceTranscript = voiceTranscriptCache[dayNum] || '';
+  console.log('[voice-restore] day ' + dayNum + ': section=' + !!voiceSection + ' url=' + !!voiceUrl + ' transcript=' + !!voiceTranscript);
+  if (voiceSection && (voiceUrl || voiceTranscript)) {
+    // Hide all recording UI
+    var controls = voiceSection.querySelector('.voice-controls');
+    if (controls) controls.style.display = 'none';
+    var privacy = voiceSection.querySelector('.voice-privacy');
+    if (privacy) privacy.style.display = 'none';
+    var skipBtn = voiceSection.querySelector('.voice-skip');
+    if (skipBtn) skipBtn.style.display = 'none';
+    // Also hide the voice sub and heading if we want cleaner look
+    var result = document.getElementById('vresult-' + dayNum);
+    if (result) {
+      var playerHtml = voiceUrl ? '<div class="voice-player"><audio controls src="' + voiceUrl + '"></audio></div>' : '';
+      if (voiceTranscript) {
+        result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + voiceTranscript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+      } else if (voiceUrl) {
+        result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
       }
+      console.log('[voice-restore] day ' + dayNum + ': rendered player/transcript');
+    } else {
+      console.log('[voice-restore] day ' + dayNum + ': vresult element NOT FOUND');
     }
   }
 }
