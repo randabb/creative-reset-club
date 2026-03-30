@@ -57,6 +57,7 @@ export default function ExpansionRoom({
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [paths, setPaths] = useState<DrawPath[]>([]);
   const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [chatCollapsed, setChatCollapsed] = useState(false);
   const [nextShape, setNextShape] = useState<ShapeKind>("rect");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -634,10 +635,35 @@ export default function ExpansionRoom({
       </div>
 
       {/* CHAT PANEL */}
-      <div style={{ width: 320, height: "100vh", background: "#FAF7F0", borderLeft: "1px solid rgba(0,3,50,0.08)", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "20px 22px", background: "#000332" }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 4 }}>expansion room</p>
-          <p style={{ fontSize: 13, color: "rgba(244,242,238,0.5)", fontWeight: 300 }}>explore what came up</p>
+      {chatCollapsed ? (
+        <div
+          onClick={() => setChatCollapsed(false)}
+          style={{
+            width: 40, height: "100vh", background: "#000332",
+            borderLeft: "1px solid rgba(0,3,50,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", flexShrink: 0,
+          }}
+        >
+          <span style={{ color: "#FF9090", fontSize: 18 }}>✦</span>
+        </div>
+      ) : (
+      <div style={{ width: 320, height: "100vh", background: "#FAF7F0", borderLeft: "1px solid rgba(0,3,50,0.08)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ padding: "20px 22px", background: "#000332", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#FF9090", marginBottom: 4 }}>expansion room</p>
+            <p style={{ fontSize: 13, color: "rgba(244,242,238,0.5)", fontWeight: 300 }}>explore what came up</p>
+          </div>
+          <button
+            onClick={() => setChatCollapsed(true)}
+            style={{
+              background: "none", border: "none", color: "rgba(244,242,238,0.4)",
+              fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1,
+              fontWeight: 700,
+            }}
+          >
+            ›
+          </button>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
           {messages.map((msg, i) => (
@@ -674,6 +700,7 @@ export default function ExpansionRoom({
           <button onClick={handleSend} style={{ width: 40, height: 40, borderRadius: "50%", background: "#000332", border: "none", color: "#FAF7F0", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>→</button>
         </div>
       </div>
+      )}
     </div>
   );
 }
