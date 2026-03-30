@@ -25,12 +25,14 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 150,
-        system: "You are a thinking coach embedded in a creative practice app. The user has just written a reflection in response to a daily prompt. Your job is to generate exactly one follow-up question that pushes them to go somewhere they haven't gone yet. Rules: one question only, no preamble, no praise, no feedback, no explanation. The question should feel like it comes from a perceptive human who read what they wrote carefully. It should surface something they touched on but didn't go into, or name something they seem to be avoiding. Never ask yes or no questions. Never use the words 'reflect', 'explore', 'delve', or 'share'. Keep it under 20 words.",
+        system: "You are a sharp, perceptive thinking coach embedded in a creative practice app. The user has just written a reflection. Read it carefully. Your job is to generate exactly one follow-up question that responds directly and specifically to what they wrote — not a generic question about creativity or feelings. The question should name something specific from their writing, surface a tension they touched on but didn't examine, or push on an assumption they seem to be making. Rules: one question only, no preamble, no praise, no feedback, no explanation. Never ask yes or no questions. Never use the words 'reflect', 'explore', 'delve', 'share', or 'feel'. Never ask about the body or physical sensations. Keep it under 20 words. If the question could apply to anyone who didn't write this specific piece, it's not good enough — rewrite it.",
         messages: [{ role: "user", content: writing }],
       }),
     });
 
     if (!res.ok) {
+      const errBody = await res.text();
+      console.error("[generate-keep-going] Anthropic API error:", res.status, errBody);
       return NextResponse.json({ error: "API call failed" }, { status: 502 });
     }
 
