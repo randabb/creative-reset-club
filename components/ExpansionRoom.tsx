@@ -72,8 +72,8 @@ export default function ExpansionRoom({
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [canvasLoaded, setCanvasLoaded] = useState(false);
-  const [panX, setPanX] = useState(0);
-  const [panY, setPanY] = useState(0);
+  const [panX, setPanX] = useState(40);
+  const [panY, setPanY] = useState(40);
   const [zoom, setZoom] = useState(1);
   const [panning, setPanning] = useState(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number; px: number; py: number } | null>(null);
@@ -144,8 +144,8 @@ export default function ExpansionRoom({
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((z) => Math.min(3, Math.max(0.2, z * delta)));
+    const delta = e.deltaY > 0 ? 0.92 : 1.08;
+    setZoom((z) => Math.min(3, Math.max(0.3, z * delta)));
   }, []);
 
   useEffect(() => {
@@ -155,11 +155,11 @@ export default function ExpansionRoom({
     return () => vp.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  const zoomIn = () => setZoom((z) => Math.min(3, z * 1.2));
-  const zoomOut = () => setZoom((z) => Math.max(0.2, z / 1.2));
+  const zoomIn = () => setZoom((z) => Math.min(3, z * 1.15));
+  const zoomOut = () => setZoom((z) => Math.max(0.3, z / 1.15));
   const fitToScreen = () => {
     if (!viewportRef.current || elements.length === 0) {
-      setPanX(0); setPanY(0); setZoom(1);
+      setPanX(40); setPanY(40); setZoom(1);
       return;
     }
     const vp = viewportRef.current.getBoundingClientRect();
@@ -170,12 +170,13 @@ export default function ExpansionRoom({
       maxX = Math.max(maxX, el.x + el.w);
       maxY = Math.max(maxY, el.y + el.h);
     });
-    const cw = maxX - minX + 100;
-    const ch = maxY - minY + 100;
-    const newZoom = Math.min(1.5, Math.min(vp.width / cw, vp.height / ch));
-    setPanX(vp.width / 2 - (minX + cw / 2) * newZoom + 50 * newZoom);
-    setPanY(vp.height / 2 - (minY + ch / 2) * newZoom + 50 * newZoom);
-    setZoom(newZoom);
+    const pad = 60;
+    const cw = maxX - minX + pad * 2;
+    const ch = maxY - minY + pad * 2;
+    const newZoom = Math.min(1, Math.min((vp.width - 40) / cw, (vp.height - 40) / ch));
+    setPanX((vp.width - cw * newZoom) / 2 - minX * newZoom + pad * newZoom);
+    setPanY((vp.height - ch * newZoom) / 2 - minY * newZoom + pad * newZoom);
+    setZoom(Math.max(0.3, newZoom));
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -576,7 +577,7 @@ export default function ExpansionRoom({
             ref={canvasRef}
             onClick={handleCanvasClick}
             style={{
-              width: 3000, height: 2000, position: "absolute",
+              width: 8000, height: 6000, position: "absolute",
               transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
               transformOrigin: "0 0",
               background: "#ffffff",
@@ -585,7 +586,7 @@ export default function ExpansionRoom({
             }}
           >
           {/* Drawing layer */}
-          <svg style={{ position: "absolute", inset: 0, width: 3000, height: 2000, pointerEvents: "none", zIndex: 0 }}>
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}>
             {paths.map((p) => (
               <path key={p.id} d={pointsToPath(p.points)} fill="none" stroke="#000332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
             ))}
