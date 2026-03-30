@@ -547,7 +547,10 @@ function startWaveform(day) {
 
 function setVoiceStatus(day, text) {
   var result = document.getElementById('vresult-' + day);
-  if (result) result.innerHTML = '<div class="voice-status visible">' + text + '</div>';
+  if (!result) return;
+  // Don't overwrite if transcript or player already rendered
+  if (result.querySelector('.voice-transcript-card') || result.querySelector('.voice-player')) return;
+  result.innerHTML = '<div class="voice-status visible">' + text + '</div>';
 }
 
 function onRecordingDone(day) {
