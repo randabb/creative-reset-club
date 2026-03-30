@@ -211,6 +211,19 @@ export default function ProgramPage() {
           .pstep-done > .pstep-collapsed + .pstep-body { display:none; }
           .pstep-done.pstep-expanded > .pstep-collapsed + .pstep-body { display:block; }
           .section-label::after { display:none; }
+
+          /* Keep Going AI */
+          .kg-loading { display:flex; align-items:center; gap:10px; padding:20px 0; }
+          .kg-loading-dots { display:flex; gap:4px; }
+          .kg-loading-dot { width:5px; height:5px; border-radius:50%; background:var(--red); animation:kgPulse 1.4s ease infinite; }
+          .kg-loading-dot:nth-child(2) { animation-delay:.2s; }
+          .kg-loading-dot:nth-child(3) { animation-delay:.4s; }
+          @keyframes kgPulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+          .kg-loading-text { font-size:13px; color:var(--sand-mid); font-weight:300; }
+          .kg-ai-question { animation:pstepReveal 0.6s ease forwards; }
+          .kg-response-area { width:100%; min-height:120px; padding:16px 18px; border:1px solid rgba(0,3,50,0.1); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; margin-top:16px; }
+          .kg-response-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+          .kg-response-area:focus { border-color:rgba(0,3,50,0.25); }
           .pstep-body { padding-top:8px; }
           .pstep[data-step="1"] .pstep-body { padding-top:32px; }
           .pstep[data-step="1"] .section { margin-bottom:0; }
@@ -595,6 +608,65 @@ function toggleSidebarCollapse() {
   if (sb) sb.classList.toggle('collapsed');
 }
 
+// ── KEEP GOING AI ──
+var kgCache = {}; // dayNum -> { question, fallback }
+
+function generateKeepGoing(dayNum) {
+  if (kgCache[dayNum] && kgCache[dayNum].question) {
+    renderKeepGoingQuestion(dayNum, kgCache[dayNum].question);
+    return;
+  }
+  var ta = document.getElementById('write-' + dayNum);
+  var writing = ta ? ta.value : '';
+  var kgContainer = document.getElementById('kg-content-' + dayNum);
+  if (!kgContainer) return;
+
+  // Show loading
+  kgContainer.innerHTML = '<div class="kg-loading"><div class="kg-loading-dots"><div class="kg-loading-dot"></div><div class="kg-loading-dot"></div><div class="kg-loading-dot"></div></div><div class="kg-loading-text">thinking...</div></div>';
+
+  window.parent.postMessage({ type: 'generateKeepGoing', day: dayNum, writing: writing }, '*');
+}
+
+function renderKeepGoingQuestion(dayNum, question) {
+  var kgContainer = document.getElementById('kg-content-' + dayNum);
+  if (!kgContainer) return;
+  kgCache[dayNum] = kgCache[dayNum] || {};
+  kgCache[dayNum].question = question;
+
+  var savedResponse = localStorage.getItem('crc-kg-response-' + dayNum) || '';
+  kgContainer.innerHTML = '<div class="kg-ai-question"><div class="question-text">"' + question.replace(/"/g, '') + '"</div></div>' +
+    '<textarea class="kg-response-area" id="kg-response-' + dayNum + '" placeholder="write here if you want to. this is optional." oninput="saveKgResponse(' + dayNum + ')">' + savedResponse + '</textarea>';
+}
+
+function renderKeepGoingFallback(dayNum) {
+  var kgContainer = document.getElementById('kg-content-' + dayNum);
+  if (!kgContainer) return;
+  var fallback = kgCache[dayNum] && kgCache[dayNum].fallback ? kgCache[dayNum].fallback : '';
+  if (fallback) {
+    kgContainer.innerHTML = '<div class="question-text">"' + fallback + '"</div>';
+  }
+}
+
+function saveKgResponse(dayNum) {
+  var ta = document.getElementById('kg-response-' + dayNum);
+  if (ta) {
+    localStorage.setItem('crc-kg-response-' + dayNum, ta.value);
+    window.parent.postMessage({ type: 'saveKeepGoing', day: dayNum, response: ta.value, question: (kgCache[dayNum] && kgCache[dayNum].question) || '' }, '*');
+  }
+}
+
+// Listen for AI response from parent
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'keepGoingResult') {
+    var dayNum = event.data.dayNumber;
+    if (event.data.question) {
+      renderKeepGoingQuestion(dayNum, event.data.question);
+    } else {
+      renderKeepGoingFallback(dayNum);
+    }
+  }
+});
+
 // ── PROGRESSIVE STEPS ──
 var pstepState = {}; // dayNum -> current step index
 
@@ -654,14 +726,30 @@ function setupProgressiveSteps() {
     s2.appendChild(s2body);
     steps.push(s2);
 
-    // Step 3: Keep Going + Notice This
+    // Step 3: Keep Going (AI-generated) + Notice This
     var s3 = document.createElement('div');
     s3.className = 'pstep';
     s3.setAttribute('data-step','2');
     s3.setAttribute('data-label','keep going');
     var s3body = document.createElement('div');
     s3body.className = 'pstep-body';
-    if (keepGoing) s3body.appendChild(keepGoing);
+    // Store fallback text from static Keep Going and replace with dynamic container
+    var kgFallbackText = '';
+    if (keepGoing) {
+      var kgQ = keepGoing.querySelector('.question-text');
+      if (kgQ) kgFallbackText = kgQ.textContent.replace(/^"|"$/g, '');
+    }
+    kgCache[dayNum] = { question: null, fallback: kgFallbackText };
+    // Keep the section label from the original keepGoing
+    if (keepGoing) {
+      var kgLabel = keepGoing.querySelector('.section-label');
+      if (kgLabel) s3body.appendChild(kgLabel);
+    }
+    var kgContentDiv = document.createElement('div');
+    kgContentDiv.id = 'kg-content-' + dayNum;
+    // Show static fallback initially (will be replaced when AI fires)
+    if (kgFallbackText) kgContentDiv.innerHTML = '<div class="question-text">"' + kgFallbackText + '"</div>';
+    s3body.appendChild(kgContentDiv);
     if (noticeThis) s3body.appendChild(noticeThis);
     var s3btn = document.createElement('button');
     s3btn.className = 'pstep-continue';
@@ -739,12 +827,14 @@ function advanceStep(dayNum, fromIdx) {
   var nextIdx = fromIdx + 1;
   if (nextIdx >= steps.length) return;
 
-  // Save writing on step 2 continue
+  // Save writing on step 2 continue and trigger Keep Going AI
   if (fromIdx === 1) {
     var ta = document.getElementById('write-' + dayNum);
     if (ta) {
       window.parent.postMessage({ type: 'saveWriting', day: dayNum, text: ta.value }, '*');
     }
+    // Fire AI generation for Keep Going (nextIdx === 2)
+    generateKeepGoing(dayNum);
   }
 
   // Collapse current step
@@ -1118,6 +1208,38 @@ init = function() {
           program_id: slug,
           day_number: event.data.day,
           written_response: event.data.text,
+        }, { onConflict: "user_id,program_id,day_number" });
+      }
+
+      if (type === "generateKeepGoing") {
+        try {
+          const res = await fetch("/api/generate-keep-going", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ writing: event.data.writing }),
+          });
+          const result = await res.json();
+          iframeRef?.contentWindow?.postMessage({
+            type: "keepGoingResult",
+            dayNumber: event.data.day,
+            question: result.question || null,
+          }, "*");
+        } catch {
+          iframeRef?.contentWindow?.postMessage({
+            type: "keepGoingResult",
+            dayNumber: event.data.day,
+            question: null,
+          }, "*");
+        }
+      }
+
+      if (type === "saveKeepGoing") {
+        await supabase.from("day_submissions").upsert({
+          user_id: userId,
+          program_id: slug,
+          day_number: event.data.day,
+          keep_going_question: event.data.question,
+          keep_going_response: event.data.response,
         }, { onConflict: "user_id,program_id,day_number" });
       }
 
