@@ -55,6 +55,28 @@ export default function ProgramPage() {
         const res = await fetch(validPrograms[slug].file);
         let html = await res.text();
 
+        // Fix 0: Scope all localStorage keys by userId to prevent cross-user data bleed
+        const uid = user.id;
+        // Track-specific prefixes used in HTML files
+        html = html.replaceAll("'crc-ri'", `'crc-${uid}-ri'`);
+        html = html.replaceAll("'crc-ri-", `'crc-${uid}-ri-`);
+        html = html.replaceAll("`crc-ri-", `\`crc-${uid}-ri-`);
+        html = html.replaceAll("'crc-mif'", `'crc-${uid}-mif'`);
+        html = html.replaceAll("'crc-mif-", `'crc-${uid}-mif-`);
+        html = html.replaceAll("`crc-mif-", `\`crc-${uid}-mif-`);
+        html = html.replaceAll("'crc-ot'", `'crc-${uid}-ot'`);
+        html = html.replaceAll("'crc-ot-", `'crc-${uid}-ot-`);
+        html = html.replaceAll("`crc-ot-", `\`crc-${uid}-ot-`);
+        html = html.replaceAll("'crc-rf'", `'crc-${uid}-rf'`);
+        html = html.replaceAll("'crc-rf-", `'crc-${uid}-rf-`);
+        html = html.replaceAll("`crc-rf-", `\`crc-${uid}-rf-`);
+        html = html.replaceAll("'crc-miy'", `'crc-${uid}-miy'`);
+        html = html.replaceAll("'crc-miy-", `'crc-${uid}-miy-`);
+        html = html.replaceAll("`crc-miy-", `\`crc-${uid}-miy-`);
+        html = html.replaceAll("'crc-eth'", `'crc-${uid}-eth'`);
+        html = html.replaceAll("'crc-eth-", `'crc-${uid}-eth-`);
+        html = html.replaceAll("`crc-eth-", `\`crc-${uid}-eth-`);
+
         // Fix 1: Sidebar fully opaque background
         html = html.replace(
           '.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);',
@@ -262,14 +284,15 @@ export default function ProgramPage() {
 
         // Inject completion timestamps and locking logic before init()
         const lockScript = `
+var CRC_UID = '${user.id}';
 function getCompletionTimestamps() {
-  return JSON.parse(localStorage.getItem('crc-timestamps') || '{}');
+  return JSON.parse(localStorage.getItem('crc-' + CRC_UID + '-timestamps') || '{}');
 }
 function saveCompletionTimestamp(day) {
   const ts = getCompletionTimestamps();
   if (!ts[day]) {
     ts[day] = new Date().toISOString();
-    localStorage.setItem('crc-timestamps', JSON.stringify(ts));
+    localStorage.setItem('crc-' + CRC_UID + '-timestamps', JSON.stringify(ts));
   }
 }
 function isDayUnlocked(day) {
@@ -649,7 +672,7 @@ function renderKeepGoingQuestion(dayNum, question) {
   kgCache[dayNum] = kgCache[dayNum] || {};
   kgCache[dayNum].question = question;
 
-  var savedResponse = localStorage.getItem('crc-kg-response-' + dayNum) || '';
+  var savedResponse = localStorage.getItem('crc-' + CRC_UID + '-kg-response-' + dayNum) || '';
   kgContainer.innerHTML = '<div class="kg-ai-question"><div class="question-text">"' + question.replace(/"/g, '') + '"</div></div>' +
     '<textarea class="kg-response-area" id="kg-response-' + dayNum + '" placeholder="write here if you want to. this is optional." oninput="saveKgResponse(' + dayNum + ')">' + savedResponse + '</textarea>';
 }
@@ -666,7 +689,7 @@ function renderKeepGoingFallback(dayNum) {
 function saveKgResponse(dayNum) {
   var ta = document.getElementById('kg-response-' + dayNum);
   if (ta) {
-    localStorage.setItem('crc-kg-response-' + dayNum, ta.value);
+    localStorage.setItem('crc-' + CRC_UID + '-kg-response-' + dayNum, ta.value);
     window.parent.postMessage({ type: 'saveKeepGoing', day: dayNum, response: ta.value, question: (kgCache[dayNum] && kgCache[dayNum].question) || '' }, '*');
   }
 }
