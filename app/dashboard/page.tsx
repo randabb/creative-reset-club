@@ -202,7 +202,9 @@ export default function Dashboard() {
           .from("day_submissions")
           .select("day_number, submitted_at")
           .eq("user_id", user.id)
-          .eq("program_id", mp);
+          .eq("program_id", mp)
+          .gt("day_number", 0)
+          .not("submitted_at", "is", null);
 
         if (submissions && submissions.length > 0) {
           setCompletedDays(submissions.length);
