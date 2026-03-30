@@ -273,6 +273,21 @@ export default function ExpansionRoom({
     }, 600);
   };
 
+  const undoLastStroke = useCallback(() => {
+    setPaths((prev) => prev.length > 0 ? prev.slice(0, -1) : prev);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undoLastStroke();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [undoLastStroke]);
+
   const pointsToPath = (points: { x: number; y: number }[]) => {
     if (points.length < 2) return "";
     return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
@@ -354,6 +369,22 @@ export default function ExpansionRoom({
               {t.icon}
             </button>
           ))}
+          <div style={{ width: 1, height: 24, background: "#e2ddd8", margin: "0 4px" }} />
+          <button
+            onClick={undoLastStroke}
+            disabled={paths.length === 0}
+            title="Undo stroke (Cmd+Z)"
+            style={{
+              width: 36, height: 36, borderRadius: 8, border: "none",
+              background: "transparent",
+              color: paths.length > 0 ? "rgba(0,3,50,0.45)" : "rgba(0,3,50,0.15)",
+              fontSize: 16, cursor: paths.length > 0 ? "pointer" : "default",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "'Codec Pro',sans-serif",
+            }}
+          >
+            ↩
+          </button>
           {activeTool === "shape" && (
             <button
               onClick={() => setNextShape(nextShape === "rect" ? "circle" : "rect")}
