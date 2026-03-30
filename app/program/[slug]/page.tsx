@@ -61,11 +61,25 @@ export default function ProgramPage() {
         );
         html = html.replace(
           '<div class="sidebar-logo">creative reset club</div>',
-          `<div class="sidebar-logo">creative reset club</div>${homeLink}`
+          `<div class="sidebar-logo">creative reset club</div>${homeLink}<button class="sidebar-toggle" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()"><span>‹</span></button>`
         );
 
         // Fix 3: Day locking + Part 2 progressive reveal + Part 3 writing box + Part 5 celebration
         const injectedCSS = `
+          /* Sidebar collapse toggle */
+          .sidebar-toggle { position:absolute; top:14px; right:-14px; width:28px; height:28px; border-radius:50%; background:var(--ink); border:1.5px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.5); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:60; transition:transform 0.2s, right 0.2s; }
+          .sidebar-toggle:hover { color:var(--cream); border-color:rgba(255,255,255,0.25); }
+          .sidebar.collapsed { width:48px; padding:32px 8px; overflow:hidden; }
+          .sidebar.collapsed .sidebar-logo,
+          .sidebar.collapsed .sidebar-program,
+          .sidebar.collapsed #sidebarNav,
+          .sidebar.collapsed .sidebar-progress { display:none; }
+          .sidebar.collapsed .sidebar-toggle { right:-14px; }
+          .sidebar.collapsed .sidebar-toggle span { transform:rotate(180deg); }
+          .app .main { transition:margin-left 0.3s ease, max-width 0.3s ease; }
+          .sidebar.collapsed ~ .main { margin-left:48px; max-width:calc(100% - 48px); }
+          @media(max-width:768px) { .sidebar-toggle { display:none; } }
+
           .day-nav-item.locked { opacity:0.5; cursor:not-allowed; pointer-events:none; }
           .day-nav-item.locked .day-nav-num { opacity:0.4; }
           .day-nav-item.locked .day-nav-title::after { content:' 🔒'; }
@@ -553,6 +567,12 @@ function retryTranscription(day, voiceUrl) {
 function reRecord(day) {
   document.getElementById('vresult-' + day).innerHTML = '';
   document.getElementById('timer-' + day).textContent = '1:00';
+}
+
+// ── SIDEBAR COLLAPSE ──
+function toggleSidebarCollapse() {
+  var sb = document.getElementById('sidebar');
+  if (sb) sb.classList.toggle('collapsed');
 }
 
 // ── PROGRESSIVE STEPS ──
