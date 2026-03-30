@@ -111,7 +111,7 @@ export default function ProgramPage() {
           .sidebar-toggle span { display:block; transition:transform 0.3s; }
           .sidebar.collapsed { width:0; padding:0; overflow:hidden; min-width:0; }
           .sidebar.collapsed * { visibility:hidden; }
-          .sidebar.collapsed .sidebar-toggle { visibility:visible; position:fixed; top:28px; left:8px; right:auto; }
+          .sidebar.collapsed .sidebar-toggle { visibility:visible; position:fixed; top:28px; left:8px; right:auto; background:#FF9090; border-color:#FF9090; color:#fff; }
           .sidebar.collapsed .sidebar-toggle span { transform:rotate(180deg); }
           .app .main { transition:margin-left 0.3s ease, max-width 0.3s ease; }
           .sidebar.collapsed ~ .main { margin-left:40px; max-width:calc(100% - 40px); }
