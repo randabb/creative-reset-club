@@ -5,20 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>One Thing at a Time — Creative Reset Club</title>
 <style>
-@font-face { font-family: 'Codec Pro'; src: url('/fonts/codec-pro_regular.ttf') format('truetype'); font-weight: 400 700; font-style: normal; }
+@font-face {
+  font-family: 'Codec Pro';
+  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+}
 </style>
 <style>
-  :root { --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc; --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280; --ice: #e6f6ff; }
-  * { margin:0; padding:0; box-sizing:border-box; } html { scroll-behavior:smooth; }
+  :root {
+    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
+    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
+    --ice: #e6f6ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
   body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
   body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
   .app { display:flex; min-height:100vh; position:relative; z-index:1; }
   .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
   .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
   .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
-  .phase-group { margin-bottom:20px; } .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
+  .phase-group { margin-bottom:20px; }
+  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
   .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
-  .day-nav-item:hover { background:rgba(242,237,228,.06); } .day-nav-item.active { background:rgba(242,237,228,.1); }
+  .day-nav-item:hover { background:rgba(242,237,228,.06); }
+  .day-nav-item.active { background:rgba(242,237,228,.1); }
   .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
   .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
   .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
@@ -30,8 +42,10 @@
   .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
   .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
   .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
-  .day-view { display:none; animation:fadeIn .4s ease forwards; } .day-view.active { display:block; }
-  .journal-view { display:none; animation:fadeIn .4s ease forwards; } .journal-view.active { display:block; }
+  .day-view { display:none; animation:fadeIn .4s ease forwards; }
+  .day-view.active { display:block; }
+  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
+  .journal-view.active { display:block; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
   .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
@@ -41,14 +55,6 @@
   .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
   .day-completed-badge.show { display:flex; }
   .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
-  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
-  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
-  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
-  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
-  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
-  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
-  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
-  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
   .section { margin-bottom:32px; }
   .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
   .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
@@ -56,17 +62,15 @@
   .writing-prompts { margin-bottom:14px; }
   .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
   .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
-  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; } .writing-area:focus { border-color:var(--ink); } .writing-area.sufficient { border-color:#7A9E7E; }
+  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
+  .writing-area:focus { border-color:var(--ink); }
+  .writing-area.sufficient { border-color:#7A9E7E; }
   .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
   .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
-  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; } .char-fill.sufficient { background:#7A9E7E; }
-  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; } .char-num.sufficient { color:#7A9E7E; }
-  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
-  .followup-section.visible { display:block; }
-  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
-  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
-  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
-  .followup-textarea:focus { border-color:var(--ink); } .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
+  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
+  .char-fill.sufficient { background:#7A9E7E; }
+  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
+  .char-num.sufficient { color:#7A9E7E; }
   .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
   .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
   .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
@@ -75,11 +79,14 @@
   .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
   .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
-  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); } .btn-complete:disabled { background:var(--sand); cursor:default; }
+  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
+  .btn-complete:disabled { background:var(--sand); cursor:default; }
   .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
   .btn-next:hover { border-color:var(--ink); }
-  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; } .complete-note.error { color:var(--red); }
-  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); } .journal-entry:last-of-type { border-bottom:none; }
+  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
+  .complete-note.error { color:var(--red); }
+  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
+  .journal-entry:last-of-type { border-bottom:none; }
   .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
   .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
   .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
@@ -87,19 +94,23 @@
   .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
   .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
   .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
-  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; } .ai-title em { font-style:normal; }
+  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
+  .ai-title em { font-style:normal; }
   .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
   .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
   .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
   .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
   .loading-dots { display:flex; gap:4px; }
   .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
-  .loading-dot:nth-child(2) { animation-delay:.2s; } .loading-dot:nth-child(3) { animation-delay:.4s; }
+  .loading-dot:nth-child(2) { animation-delay:.2s; }
+  .loading-dot:nth-child(3) { animation-delay:.4s; }
   @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
   .reflection-output { animation:fadeIn .6s ease; }
   .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
   .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
-  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; } .warm-text p { margin-bottom:14px; } .warm-text p:last-child { margin-bottom:0; }
+  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
+  .warm-text p { margin-bottom:14px; }
+  .warm-text p:last-child { margin-bottom:0; }
   .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
   .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
   .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
@@ -108,11 +119,22 @@
   .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
   .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
   .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
+  .uts-section { margin-bottom:32px; }
+  .uts-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:16px 20px; background:rgba(0,3,50,0.03); border-radius:4px; border:1px solid rgba(0,3,50,0.06); list-style:none; }
+  .uts-toggle::-webkit-details-marker { display:none; }
+  .uts-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); }
+  .uts-icon { font-size:16px; color:var(--sand-mid); transition:transform 0.2s; }
+  details[open] .uts-icon { transform:rotate(45deg); }
+  .uts-body { padding:20px 20px 4px; font-size:14px; line-height:1.75; color:var(--ink-soft); font-weight:300; }
   .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
   .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
   @media(max-width:768px) {
-    .sidebar { transform:translateX(-100%); } .sidebar.open { transform:translateX(0); } .sidebar-overlay.show { display:block; }
-    .menu-toggle { display:flex; } .main { margin-left:0; padding:52px 18px 80px; max-width:100%; } .day-number-large { display:none; }
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.show { display:block; }
+    .menu-toggle { display:flex; }
+    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
+    .day-number-large { display:none; }
   }
 </style>
 </head>
@@ -137,148 +159,119 @@
 const MIN = 100;
 function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
 const program = [
-  { day:1, phase:1, phaseName:"Choose", title:"Name the Thing",
-    fw:{ name:"The ONE Thing", author:"Gary Keller — The ONE Thing",
-      body:"Keller's focusing question is deceptively simple: what is the one thing you can do, such that by doing it, everything else becomes easier or unnecessary? Most people can't answer this — not because they don't know, but because choosing one thing means accepting that everything else is not the thing. Naming it is the first and hardest act.",
-      benefit:"<strong>Cognitive benefit:</strong> Explicit goal identification activates the brain's reticular activating system — the neural filter that determines what you notice and what you ignore. Once a goal is named specifically, the brain begins unconsciously filtering information and opportunities through the lens of that goal." },
-    q:"Name the one thing you need to do — the single project, task, or creative work that matters most right now. Not three things. One.",
-    prompts:["What is the one thing that, if you finished it, would change the most about your creative or professional life?","Why this one? What makes it more important than everything else competing for your attention?","How long have you been carrying this one thing without finishing it?","What has prevented you from naming it clearly and committing to it before now?","Say it in one sentence: 'The one thing I need to do is...' Be specific. Not a category — the actual thing."],
-    fu:{ t:50, q:"What does it feel like to name just one thing — and to accept that everything else is not the priority?", prompts:["Is there relief in the narrowing, or anxiety?","What other things are you afraid of neglecting while you focus on this?","What would change if you gave this one thing your full creative attention for 14 days?"] },
-    ref:"Naming the thing is the hardest part. Not because you don't know what it is — you probably do. But because naming it means everything else has to wait. That's the price of focus. It's also the source of its power.",
-    action:{ i:"🎯", t:"Write your one thing on a card. Put it where you'll see it every morning. For the next 13 days, this is the only thing. Everything else is not-the-thing." }
+  { day:1, phase:1, phaseName:"Name the Fear", title:"The Thing You Keep Not Doing",
+    uts:"Fear in creative work rarely looks like fear. It looks like being busy, being not quite ready, having other priorities. It looks like reasonable caution and sensible sequencing. The work that matters most tends to get postponed with the most sophisticated justifications. That\u2019s how you know it matters.",
+    q:"Write about the thing you keep not doing. The one that keeps appearing on your list and keeps not getting started. Don\u2019t describe what it is \u2014 describe what happens every time you get close to it.",
+    prompts:["What do you do instead? Be specific.","What do you tell yourself about why now isn\u2019t the right time?","How long has it been waiting?"],
+    kg:"Write about what it would mean to actually start. Not finish \u2014 just start. What changes the moment you begin?",
+    notice:"Notice if the thing has been waiting longer than you realized. The length of the wait is usually proportional to how much it matters.",
+    action:{ i:"\ud83d\udccb", t:"Write the name of the thing at the top of today\u2019s entry. Just that. The rest of the page is for what comes next." }
   },
-  { day:2, phase:1, phaseName:"Choose", title:"Why This One",
-    fw:{ name:"Start With Why", author:"Simon Sinek — Start With Why",
-      body:"Sinek argues that the most motivated action comes from clarity about why something matters — not what it is or how to do it. When the one thing gets hard — and it will — the what and how won't sustain you. The why will. Today you dig into the real reason this particular thing matters more than all the others.",
-      benefit:"<strong>Cognitive benefit:</strong> Connecting a goal to deep personal meaning activates the brain's limbic system — the center of motivation and emotional memory. Research shows that people with clear, personally meaningful reasons for pursuing a goal persist through difficulty at significantly higher rates than those motivated by external rewards or obligation." },
-    q:"Why does this one thing matter to you — not strategically, not practically, but personally? What is the real reason?",
-    prompts:["What does finishing this one thing make possible that is currently impossible?","Who benefits when this is done — and why do you care about that?","What personal meaning does this project carry? Is it about proving something, expressing something, or building something?","If this one thing never gets done, what is the cost — to you, to your creative life, to the people you serve?","What is the deepest, most honest reason this matters? Not the elevator pitch — the real one."],
-    fu:{ t:50, q:"Is your why strong enough to carry you through the hardest day of this project — and how do you know?", prompts:["What has your why sustained you through in the past?","Is there a deeper why underneath the one you named — something you haven't admitted yet?","What would you need to believe about this project to stay committed when motivation disappears?"] },
-    ref:"The why is your anchor. When the work gets hard, boring, or terrifying, the why is what keeps you showing up. If the why is weak, the commitment will be too. If it's real, nothing can stop you.",
-    action:{ i:"💡", t:"Write your why in one sentence. Not the professional reason — the personal one. Put it next to your one-thing card. Read both every morning." }
+  { day:2, phase:1, phaseName:"Name the Fear", title:"What You\u2019re Actually Afraid Of",
+    uts:"Most creative fear isn\u2019t fear of failure. It\u2019s fear of being seen \u2014 of making something that reveals too much, or not enough, or the wrong things. Elizabeth Gilbert writes that the fear doesn\u2019t go away when you start creating. It comes with you. The question isn\u2019t how to eliminate it. It\u2019s how to stop letting it make your decisions.",
+    q:"Write about what you\u2019re actually afraid of. Not the surface reason \u2014 the real one. What is the worst realistic thing that could happen if you made this thing and put it into the world?",
+    prompts:["Say it plainly. No softening, no reframing.","How likely is that outcome actually? Be honest.","If that outcome happened, what would you do? Could you survive it?"],
+    kg:"Write about the cost of not making it. What are you giving up by keeping it safe and unstarted?",
+    notice:"Notice if the fear of making it is actually bigger than the fear of never making it. For most people, eventually, it isn\u2019t.",
+    action:{ i:"\ud83d\udd0d", t:"Write your fear in one sentence. As directly as possible. Then write one sentence about whether that fear is worth the cost of not starting." }
   },
-  { day:3, phase:1, phaseName:"Choose", title:"What You're Avoiding",
-    fw:{ name:"The War of Art", author:"Steven Pressfield — The War of Art",
-      body:"Pressfield names the force that keeps you from doing your most important work: Resistance. Resistance is strongest against the work that matters most. If you're avoiding something, that's usually a sign of its importance — not its unimportance. What you're avoiding about your one thing is data about where the real work lives.",
-      benefit:"<strong>Cognitive benefit:</strong> Naming avoidance patterns reduces their unconscious influence on behavior. Research on cognitive defusion shows that when you can say 'I am avoiding this because...' the avoidance loses approximately 30% of its behavioral power — because awareness disrupts the automatic avoidance loop." },
-    q:"What are you avoiding about your one thing — what specific part, aspect, or challenge do you keep not doing?",
-    prompts:["What part of this project have you been circling without engaging? The part you skip, defer, or work around?","What is it about that part that makes you avoid it — is it hard, boring, scary, or something else?","What do you do instead of the avoided part? What's your avoidance behavior?","Is the avoided part actually the most important part — the thing the whole project depends on?","What would happen if you did the avoided part first — before anything else?"],
-    fu:{ t:50, q:"What is the avoidance protecting you from — and is the protection worth the cost?", prompts:["If you did the hard thing, what would you have to face?","Is the avoidance about the work, or about what the work reveals about you?","What would change if you met the avoidance head-on tomorrow?"] },
-    ref:"The part you're avoiding is almost always the part that matters most. Resistance is a compass — it points toward the work that will change you. Today you named where the compass is pointing.",
-    action:{ i:"👁️", t:"Write down the specific thing you've been avoiding. Tomorrow, do that thing first. Not the easy parts. The avoided part. Ten minutes is enough to break the seal." }
+  { day:3, phase:1, phaseName:"Name the Fear", title:"The Story You\u2019re Telling",
+    uts:"Dan McAdams\u2019 research on narrative identity shows that we live inside the stories we tell about ourselves. Those stories are powerful \u2014 they shape what we attempt, what we avoid, what we believe is possible for us. A lot of creative fear is held in place not by actual danger but by a story about who we are and what people like us do or don\u2019t do.",
+    q:"Write about the story you\u2019re telling yourself about this thing. The narrative that explains why you haven\u2019t started, why it might not work, why it might not be for you.",
+    prompts:["Where did this story come from? Is it based on evidence or assumption?","Who told you this story first? Did you choose to believe it?","What would a different story about this look like?"],
+    kg:"Write the alternative story. The one where you make the thing and it\u2019s worth making. Be specific about what happens in that version.",
+    notice:"Notice which story feels more true. Then notice whether \u2018feeling true\u2019 and \u2018being true\u2019 are the same thing.",
+    action:{ i:"\ud83d\udcd6", t:"Write one sentence that starts with \u2018The story I\u2019ve been telling myself is...\u2019 Then write one sentence that starts with \u2018A truer story might be...\u2019" }
   },
-  { day:4, phase:1, phaseName:"Choose", title:"The Cost of Not Doing It",
-    fw:{ name:"Regret Minimization", author:"Jeff Bezos — Regret Minimization Framework",
-      body:"Bezos makes major decisions by imagining himself at 80, looking back. Would he regret not doing this? The regret minimization framework cuts through present-moment paralysis by connecting current inaction to future consequence. The cost of not doing your one thing is not just the project that doesn't exist — it's the version of you that doesn't emerge.",
-      benefit:"<strong>Cognitive benefit:</strong> Future-self projection activates the brain's prospective memory and long-term planning systems. Research shows that people who vividly imagine the consequences of inaction are significantly more likely to take action than those who focus only on the difficulty of the task at hand." },
-    q:"What is the real cost of not doing your one thing — not just the missed project, but the missed version of yourself?",
-    prompts:["If you're still avoiding this one thing a year from now, what has that cost you — in progress, in creative growth, in self-respect?","What version of yourself emerges if you do this thing — and what version persists if you don't?","What opportunities, relationships, or possibilities depend on this one thing getting done?","What is the emotional cost of carrying this undone thing — the weight of knowing you should be doing it and not doing it?","Imagine yourself at 80 looking back. Does not finishing this register as a regret?"],
-    fu:{ t:50, q:"Is the cost of not doing it actually worse than the difficulty of doing it?", prompts:["Have you been overestimating the difficulty and underestimating the cost of avoidance?","What would shift if you fully accepted both the difficulty and the cost?","What is the smallest way to begin reducing the cost, starting today?"] },
-    ref:"The cost of not doing it is usually higher than the cost of doing it. We just don't notice because the cost of inaction is spread across time — a little weight every day, compounding silently. Today you made it visible.",
-    action:{ i:"⚖️", t:"Write two sentences: 'If I do this thing, in one year I will be...' and 'If I don't do this thing, in one year I will be...' Let the gap between them motivate you." }
+  { day:4, phase:2, phaseName:"Understand What\u2019s Underneath", title:"What Fear Has Already Cost You",
+    uts:"Fear has a cost that rarely gets accounted for. We calculate the risk of moving forward but not the ongoing cost of staying still. The energy spent managing the avoided thing, the background hum of knowing it\u2019s waiting, the slow erosion of confidence that comes from repeatedly choosing not to start. These costs are real even when they\u2019re invisible.",
+    q:"Write about what not starting this thing has already cost you. Not what it might cost in the future. What it has cost so far.",
+    prompts:["Time, energy, confidence, opportunity. Be specific.","What have you not done because this thing was taking up background space?","What has the waiting cost you that you haven\u2019t fully acknowledged?"],
+    kg:"Write about what another year of not starting would cost. Project it forward honestly.",
+    notice:"Notice if the cost of not starting is actually higher than the cost of starting and failing. For most people, eventually, it is.",
+    action:{ i:"\ud83d\udcb8", t:"Write one thing fear has already taken from you. Just one. Name it directly." }
   },
-  { day:5, phase:2, phaseName:"Commit", title:"The First Hour",
-    fw:{ name:"Eat That Frog", author:"Brian Tracy — Eat That Frog",
-      body:"Tracy's principle is simple: do the hardest, most important thing first — before email, before meetings, before the world's demands enter your day. The first hour belongs to your one thing. Not because the first hour is magic, but because it's the hour before everything else can derail you. Protect it, and the one thing gets done.",
-      benefit:"<strong>Cognitive benefit:</strong> Morning cognitive resources are highest — willpower, focus, and decision-making capacity are all at peak levels before the demands of the day deplete them. Research shows that people who work on their most important task first produce higher-quality output and complete projects faster than those who defer important work." },
-    q:"Give the first hour of your day to your one thing — before anything else gets your attention. What happened?",
-    prompts:["What did you work on during your first hour? What specific part of your one thing did you advance?","What did you have to say no to in order to protect the first hour — email, phone, other people's needs?","How did working on the one thing first change the quality of your attention compared to fitting it in later?","What resistance showed up when you sat down to do the work? How did you move through it?","What exists now that didn't exist an hour ago?"],
-    fu:{ t:50, q:"What would change about your relationship to your one thing if the first hour was non-negotiable, every day?", prompts:["How many first hours have you given to other people's priorities instead of your own?","What would 14 consecutive first hours of focused work produce?","What is the hardest part about protecting the first hour — and is it actually as hard as you imagine?"] },
-    ref:"The first hour is yours. Not email's, not your team's, not the world's — yours. What you put in that hour determines what gets done. Today you put the right thing in it.",
-    action:{ i:"🌅", t:"Block your first hour tomorrow for the one thing. Treat it like an unmovable meeting. Everything else waits until hour two." }
+  { day:5, phase:2, phaseName:"Understand What\u2019s Underneath", title:"The Permission Question",
+    uts:"A lot of creative fear is really a permission problem. Waiting for someone to tell you it\u2019s okay to make the thing, to take up that space, to call yourself someone who does this. Austin Kleon writes that you don\u2019t need permission to make things. But most of us were taught at some point that we did. That lesson is worth unlearning.",
+    q:"Write about whose permission you\u2019ve been waiting for. To start, to make this thing, to call yourself someone who does this kind of work.",
+    prompts:["Is it a specific person? An institution? An imagined audience?","What would they have to say for you to feel permitted?","What\u2019s the likelihood they will ever actually say it?"],
+    kg:"Write the permission statement you\u2019ve been waiting to receive. Write it to yourself, from yourself. Mean it.",
+    notice:"Notice if writing your own permission felt uncomfortable. That discomfort is worth sitting with. It usually points to something real.",
+    action:{ i:"\ud83d\udd11", t:"Write one sentence that starts with \u2018I give myself permission to...\u2019 Finish it with the thing you\u2019ve been waiting to be allowed to do." }
   },
-  { day:6, phase:2, phaseName:"Commit", title:"Remove the Escape Hatches",
-    fw:{ name:"Commitment Devices", author:"Behavioral Economics — Ulysses Contracts",
-      body:"Odysseus had himself tied to the mast so he couldn't follow the Sirens' song. He didn't trust his future willpower — he designed his environment to make the right choice inevitable. Escape hatches are the things you leave open that allow you to abandon your one thing when it gets hard: other projects, easier tasks, distractions that feel productive.",
-      benefit:"<strong>Cognitive benefit:</strong> Removing options reduces decision fatigue and eliminates the cognitive cost of resisting temptation. Research shows that people who pre-commit by removing alternatives show up to 200% more consistently than those who rely on willpower alone." },
-    q:"What escape hatches have you left open — and what would it take to close them?",
-    prompts:["What do you flee to when your one thing gets hard? Other projects, busywork, social media, research?","What feels productive but is actually an escape from the real work?","What would you need to remove, hide, or block to make the one thing the only available option during your work time?","What commitments or obligations are you keeping alive that give you permission to not focus?","What would your work environment look like if there was literally no escape from the one thing?"],
-    fu:{ t:50, q:"What are you afraid will happen if you close every escape hatch — if the one thing is truly the only option?", prompts:["Is the fear about being trapped, or about having to face the work with nowhere to hide?","What if the escape hatches are the reason you've never finished?","What would closing them make possible?"] },
-    ref:"Escape hatches feel like freedom. They're actually the mechanism that keeps you stuck. Every open option is a temptation away from the one thing. Close them. Not forever — for the duration of the work.",
-    action:{ i:"🚪", t:"Close one escape hatch today. Literally — delete a bookmarked distraction, pause a side project, tell someone you're unavailable. Make the one thing harder to avoid." }
+  { day:6, phase:2, phaseName:"Understand What\u2019s Underneath", title:"Who You\u2019re Making It For",
+    uts:"Fear of judgment is often fear of a specific imagined audience. Not the people who would actually receive the work, but a composite critic assembled from past experiences, internalized voices, and worst-case projections. Getting clear on who you\u2019re actually making this for \u2014 and who you\u2019re not making it for \u2014 can dissolve a surprising amount of the fear.",
+    q:"Write about who you imagine judging this thing. Not who you\u2019re making it for \u2014 who you imagine criticizing it, dismissing it, or finding it insufficient.",
+    prompts:["Put faces on the imagined critics. Who are they specifically?","Why does their opinion carry so much weight for you?","Are these the people you\u2019re actually making this for?"],
+    kg:"Write about who you are actually making this for. One specific person whose life would be different if this thing existed. Write to them directly.",
+    notice:"Notice if the imagined critics and the intended audience are different people. They usually are. Make it for the right ones.",
+    action:{ i:"\ud83c\udfaf", t:"Write one sentence about who this is for. Keep it on the page. Refer back to it when the imagined critics get loud." }
   },
-  { day:7, phase:2, phaseName:"Commit", title:"The Daily Non-Negotiable",
-    fw:{ name:"The Compound Effect", author:"Darren Hardy — The Compound Effect",
-      body:"Hardy's central thesis is that small, consistent actions compound into massive results over time. Not dramatic sprints. Not all-night sessions. Daily, non-negotiable actions that are small enough to do on your worst day and consistent enough to produce compound returns. The daily non-negotiable is the minimum action you commit to, every day, no exceptions.",
-      benefit:"<strong>Cognitive benefit:</strong> Daily consistency builds automaticity — the brain's capacity to perform a behavior without conscious effort. Research shows that habits formed through daily repetition become automatic in an average of 66 days, after which the behavior requires minimal willpower to maintain." },
-    q:"What is your daily non-negotiable — the minimum action on your one thing that you will do every single day, no matter what?",
-    prompts:["What is the smallest meaningful action on your one thing that you could do every day, even on your worst day?","Is it time-based (30 minutes) or output-based (500 words, one sketch, one component)?","What happens if you miss a day — what is your recovery plan? Not if, when.","How does this non-negotiable fit into your daily routine — when does it happen and what triggers it?","What is the compound result of doing this non-negotiable every day for 30 days? 90 days? A year?"],
-    fu:{ t:50, q:"What is the difference between a non-negotiable and a goal — and which one actually produces results?", prompts:["Have your previous creative goals failed because they were aspirational rather than behavioral?","What makes a non-negotiable enforceable — what consequence or accountability supports it?","What would your creative life look like if you'd had a daily non-negotiable for the past year?"] },
-    ref:"A non-negotiable is not a goal. It's a behavior — a thing you do, not a thing you wish for. Goals live in the future. Non-negotiables live in today. Today is the only day you can actually work in.",
-    action:{ i:"📌", t:"Write your daily non-negotiable. Post it visibly. Do it today. Do it tomorrow. The streak starts now." }
+  { day:7, phase:2, phaseName:"Understand What\u2019s Underneath", title:"The Minimum Viable Start",
+    uts:"The threshold for beginning is almost always lower than fear makes it feel. What looks like a large, risky, all-or-nothing move is usually a series of small, recoverable steps. The minimum viable start isn\u2019t the minimum viable product. It\u2019s the smallest action that makes the thing more real than it was before you took it.",
+    q:"Write about the minimum viable start for this thing. Not the first chapter, not the full plan. The single smallest action that would make it more real.",
+    prompts:["What could you do in the next 30 minutes that counts as having started?","What would exist after that action that doesn\u2019t exist now?","What would you have to believe to take that action today?"],
+    kg:"Write about what the second step would be. Just the second one. You don\u2019t need the whole staircase. Just the next step.",
+    notice:"Notice if the minimum viable start feels more possible than the full thing. It should. That\u2019s the point.",
+    action:{ i:"\ud83d\udc63", t:"Take the minimum viable start today. Right now if you can. Write one sentence about what you did." }
   },
-  { day:8, phase:2, phaseName:"Commit", title:"When It Gets Hard",
-    fw:{ name:"The Dip", author:"Seth Godin — The Dip",
-      body:"Godin writes about the Dip — the long, grinding stretch between the excitement of starting and the reward of finishing. The Dip is where most people quit. Not because the work is impossible — because it's no longer exciting and not yet finished. Knowing the Dip is coming, and having a plan for it, is the difference between people who finish and people who don't.",
-      benefit:"<strong>Cognitive benefit:</strong> Pre-planning for difficulty — a technique called implementation intention — activates the brain's if-then planning circuits. Research by Peter Gollwitzer shows that people who create specific plans for anticipated obstacles are 2-3x more likely to persist through them than those who encounter the same obstacles without a plan." },
-    q:"When your one thing gets hard — and it will — what will you do? Design your plan for the Dip before you're in it.",
-    prompts:["What does the Dip look like for this specific project — where will the work stop being exciting and start being grinding?","What have you done in past Dips — quit, pushed through, pivoted? What worked and what didn't?","What specific actions will you take when you hit the Dip? Write if-then plans: 'If I feel like quitting, I will...'","Who can you call, message, or meet with when you're in the Dip — who will remind you why you started?","What will you tell yourself in the Dip that you can only write now, while you still remember why this matters?"],
-    fu:{ t:50, q:"What is the difference between a Dip worth pushing through and a dead end worth quitting — and how will you tell them apart?", prompts:["What signals would tell you this is a Dip (temporary difficulty) versus a dead end (wrong direction)?","How will you check — what data or feedback will you look at?","Who can give you an honest outside perspective if you can't tell the difference from inside?"] },
-    ref:"The Dip is not a sign that you chose wrong. It's a sign that you're in the middle — the hardest, least glamorous, most important part. Having a plan for it doesn't make it easy. It makes it survivable.",
-    action:{ i:"🏔️", t:"Write a letter to your future self in the Dip. Tell them why this matters, what you were feeling when you started, and what you want them to do instead of quitting. Seal it. Open it when the Dip arrives." }
+  { day:8, phase:3, phaseName:"Take the First Steps Anyway", title:"Move Before You\u2019re Ready",
+    uts:"Readiness is a feeling, not a state. It can be manufactured by circumstance but it cannot be manufactured by waiting. The people who make things consistently are not the ones who feel ready before they start. They\u2019re the ones who have learned that the feeling of readiness comes after the starting, not before it.",
+    q:"Write about what \u2018ready\u2019 would actually look like for this thing. Be specific. What would you need to know, have, feel, or have done?",
+    prompts:["Is that readiness actually achievable? Or does the bar keep moving?","What\u2019s the earliest you could realistically feel ready by your own definition?","What would happen if you started before you felt ready?"],
+    kg:"Write about a time you did something before you felt ready and it worked out. What did that experience teach you?",
+    notice:"Notice if readiness has been a moving target. If it has, it\u2019s not a preparation problem. It\u2019s a fear problem.",
+    action:{ i:"\ud83d\ude80", t:"Do one thing today on this project that you don\u2019t feel ready to do. Small is fine. Just move before the feeling says you can." }
   },
-  { day:9, phase:3, phaseName:"Protect", title:"Protect the Work",
-    fw:{ name:"Deep Work", author:"Cal Newport — Deep Work",
-      body:"Newport argues that deep, focused work is the most valuable and rarest skill in the modern economy. It is also the most fragile — destroyed by interruption, notification, and the constant pull of shallow demands. Protecting your one thing means building a wall around it — not because you're antisocial, but because the work requires unbroken attention to reach its potential.",
-      benefit:"<strong>Cognitive benefit:</strong> Each interruption costs 23 minutes of refocusing time (University of California research). Protecting a one-hour deep work block from just three interruptions recovers over an hour of effective cognitive work — essentially doubling your productive output without adding time." },
-    q:"How will you protect your one thing from the interruptions, demands, and distractions that want your attention — and are you willing to pay the social cost?",
-    prompts:["What are the three biggest threats to your focused work time — specific people, platforms, or situations?","What boundaries do you need to set to protect the work — and with whom?","What is the social cost of protecting your focus time — and is it worth paying?","What physical or digital changes to your environment would make deep focus the default?","What does your ideal protected work session look like — where, when, how long, and what's absent?"],
-    fu:{ t:50, q:"What are you afraid of losing if you protect your work time aggressively — and is the fear justified?", prompts:["Will people actually be upset, or are you imagining their reaction?","What has being constantly available cost your creative output?","What would change if you were unreachable for two hours every day?"] },
-    ref:"Protecting your work is not selfish. It is the necessary condition for the work to exist. Every interruption you allow is a choice to prioritize something else over your one thing. Start choosing differently.",
-    action:{ i:"🛡️", t:"Tomorrow, protect your work time completely — phone off, notifications disabled, door closed (or equivalent). Tell the people who need to know: 'I'm unavailable for [time]. I'll be back at [time].' Hold the line." }
+  { day:9, phase:3, phaseName:"Take the First Steps Anyway", title:"Let It Be Imperfect",
+    uts:"The first version of anything is allowed to be bad. Not just allowed \u2014 it\u2019s expected. The first draft, the first attempt, the first iteration exists to be learned from, not to be the final word. Treating the first version as if it has to be the last version is one of the most reliable ways to never make anything.",
+    q:"Make something today on this project that you\u2019re willing to let be imperfect. A draft, a rough version, a starting point. Give yourself explicit permission to make it badly.",
+    prompts:["What would the bad version look like? Make that one.","What would you have to let go of to make something imperfect on purpose?","What might the bad version teach you that the perfect version couldn\u2019t?"],
+    kg:"Write about what you made. What surprised you about it? What did it reveal?",
+    notice:"Notice if the imperfect version has more life in it than you expected. First drafts often do.",
+    action:{ i:"\ud83c\udfa8", t:"Save what you made today. Don\u2019t delete it. It\u2019s the beginning of the thing. Beginnings deserve to be kept." }
   },
-  { day:10, phase:3, phaseName:"Protect", title:"Say No to Everything Else",
-    fw:{ name:"Essentialism", author:"Greg McKeown — Essentialism",
-      body:"McKeown writes that if you don't prioritize your life, someone else will. Saying no is not a negative act — it is the most positive thing you can do for your one thing. Every yes to something else is a no to the thing that matters most. For the duration of this commitment, everything that is not the one thing is a no.",
-      benefit:"<strong>Cognitive benefit:</strong> Saying no reduces cognitive load by eliminating the mental maintenance costs of additional commitments. Research shows that each active commitment occupies working memory even when you're not actively working on it — so fewer commitments means more cognitive resources for the commitments you keep." },
-    q:"What do you need to say no to — right now, this week — to protect your one thing? Name the specific requests, opportunities, and obligations.",
-    prompts:["What has someone recently asked you to do that you should say no to — because saying yes would take from your one thing?","What opportunities are you keeping alive that are draining attention from the one thing?","What obligations are you fulfilling out of guilt or habit that don't actually require your participation?","What would a week of saying no to everything except the one thing look like?","What is the hardest no you need to say — and what makes it hard?"],
-    fu:{ t:50, q:"What identity are you protecting by saying yes to everything — and is that identity serving your creative goals?", prompts:["Are you a people-pleaser? A helper? Someone who can't let others down?","What would happen if you were temporarily unavailable for everything except the one thing?","Is saying yes to everything actually helping anyone — or is it spreading you so thin that nothing gets your best?"] },
-    ref:"Saying no is the price of saying yes to the one thing. It is not comfortable. It is not popular. But it is necessary — because your attention is finite, and everything that gets a share of it takes that share from somewhere else.",
-    action:{ i:"🚫", t:"Say one no today that you would normally say yes to. A meeting, a request, an invitation, a task. Say it clearly and without excessive apology. Feel the discomfort. Notice the space it creates." }
+  { day:10, phase:3, phaseName:"Take the First Steps Anyway", title:"One Thing at a Time",
+    uts:"Fear expands to fill the available mental space. When you think about the whole thing, all at once, it becomes overwhelming. The antidote isn\u2019t motivation or confidence. It\u2019s narrowing the field of view. One thing. Right now. That\u2019s all that exists.",
+    q:"Write about what the one thing is today. Not the project. The one specific action within the project that you\u2019re going to do today.",
+    prompts:["It should be small enough to complete in one sitting.","It should be clear enough that you know when it\u2019s done.","Nothing else counts today. Just this one thing."],
+    kg:"Write about what happens after you do the one thing. What becomes possible? What opens up?",
+    notice:"Notice if narrowing to one thing reduced the fear. It usually does. Fear needs scale to survive.",
+    action:{ i:"1\ufe0f\u20e3", t:"Do the one thing. Then write one word about how it felt to finish it." }
   },
-  { day:11, phase:3, phaseName:"Protect", title:"The Midpoint Check",
-    fw:{ name:"After Action Review", author:"US Army — After Action Review",
-      body:"The After Action Review asks: what was supposed to happen, what actually happened, why was there a difference, and what will we do differently? At the midpoint of your 14-day commitment, this structured reflection reveals whether your approach is working, where it's breaking down, and what needs to adjust for the second half.",
-      benefit:"<strong>Cognitive benefit:</strong> Structured mid-process reflection activates learning circuits while the experience is still active — producing more actionable insights than end-of-process reflection alone. Research shows that teams and individuals who conduct midpoint reviews complete projects more successfully than those who only reflect at the end." },
-    q:"At the midpoint — what has worked, what hasn't, and what needs to change for the second half of this commitment?",
-    prompts:["What progress have you made on your one thing in the past ten days? Be specific.","What approach has worked best — what conditions, habits, or strategies have been most effective?","What hasn't worked — where have you struggled, slipped, or failed to protect the one thing?","What is the biggest obstacle you've encountered — and is it the one you expected?","What needs to change in the next four days to finish strong?"],
-    fu:{ t:50, q:"Are you closer to done than you expected, or further away — and what does the gap tell you?", prompts:["Did you overestimate or underestimate the work required?","What have you learned about your one thing that you couldn't have known before starting?","What would you tell Day 1 you about what this process actually requires?"] },
-    ref:"The midpoint is where commitment meets reality. The plan you started with is now informed by experience. Adjust it. Not abandon it — adjust it. The second half is for finishing, not for starting over.",
-    action:{ i:"📊", t:"Write three adjustments for the second half: one thing to keep doing, one thing to stop doing, and one thing to start doing. Apply them tomorrow." }
+  { day:11, phase:4, phaseName:"Build the Habit of Moving Despite Fear", title:"The Fear Debrief",
+    uts:"Fear doesn\u2019t disappear when you start moving. But it changes. It becomes more specific, more workable, less like a wall and more like a series of smaller obstacles. Debriefing the fear after you\u2019ve moved through it is a way of building the evidence that movement is possible. You\u2019re teaching yourself, through experience, that the fear was survivable.",
+    q:"Write about how the fear has changed since Day 1. Not whether it\u2019s gone \u2014 how it\u2019s different.",
+    prompts:["What were you most afraid of at the beginning? Is that still the biggest fear?","What fears turned out to be smaller than you thought?","What new fears have appeared as you\u2019ve moved forward?"],
+    kg:"Write about what you\u2019ve learned about how your fear works. Its patterns, its triggers, its relationship to the work that matters most to you.",
+    notice:"Notice that you\u2019re still here. You moved despite the fear. That\u2019s the most important thing that happened in these two weeks.",
+    action:{ i:"\ud83d\udcdd", t:"Write one thing the fear was wrong about. Just one. That\u2019s evidence. Keep it." }
   },
-  { day:12, phase:4, phaseName:"Finish", title:"Push Through",
-    fw:{ name:"Grit", author:"Angela Duckworth — Grit",
-      body:"Duckworth's research on grit — the combination of passion and perseverance — shows that talent is less predictive of achievement than the willingness to keep going when it's hard. The last stretch of any creative project is where grit matters most. Not because the work is harder objectively — but because the psychological resistance is highest near completion.",
-      benefit:"<strong>Cognitive benefit:</strong> Deliberate perseverance through difficulty strengthens the prefrontal cortex's capacity for self-regulation and builds what researchers call 'learned industriousness' — the conditioned association between effort and reward that makes future effort feel more natural and less aversive." },
-    q:"This is the push. What remains, what's hard about it, and what will it take to push through to the other side?",
-    prompts:["What specific tasks remain between where you are and done? List them all.","Which of these tasks are you most likely to avoid or procrastinate on? Why?","What would pushing through look like — what pace, what schedule, what daily commitment?","What support do you need for the final push — accountability, encouragement, practical help?","What will you tell yourself when the resistance is strongest — what mantra, truth, or reminder will keep you going?"],
-    fu:{ t:50, q:"What is the resistance trying to protect you from at this stage — and is the protection real or imagined?", prompts:["Is the resistance about the work being hard, or about what finishing means?","What changes about your life and identity when this one thing is done?","What becomes possible on the other side of done?"] },
-    ref:"The last stretch is not about inspiration. It's about grit — the decision to keep going because you decided to, not because you feel like it. You decided on Day 1. The decision still stands. Push.",
-    action:{ i:"💪", t:"Write a completion plan: what you'll do each of the remaining days to finish. Dates, tasks, times. Make it specific. Then follow it like a professional." }
+  { day:12, phase:4, phaseName:"Build the Habit of Moving Despite Fear", title:"What Courage Actually Looks Like",
+    uts:"Courage in creative work doesn\u2019t look like fearlessness. It looks like showing up on the days when it would be easier not to. It looks like sending the thing before it feels ready. It looks like continuing after the first bad response. It\u2019s not dramatic. It\u2019s quiet and repetitive and usually invisible to everyone but you.",
+    q:"Write about a moment in the last two weeks where you were afraid and moved anyway. It doesn\u2019t have to be dramatic. Just real.",
+    prompts:["What did you do?","What did it feel like before, during, and after?","What did that moment cost you? What did it give you?"],
+    kg:"Write about what it would look like to make that kind of courage a habit. Not an occasional act. A way of working.",
+    notice:"Notice that courage, practiced, becomes less effortful. Not because the fear disappears. Because the relationship to it changes.",
+    action:{ i:"\ud83d\udcaa", t:"Write one sentence about what your version of creative courage looks like. Keep it. Read it on the days when it doesn\u2019t come easily." }
   },
-  { day:13, phase:4, phaseName:"Finish", title:"The Home Stretch",
-    fw:{ name:"The Goal Gradient Effect", author:"Clark Hull — Goal Gradient Hypothesis",
-      body:"Hull's research showed that rats in a maze run faster as they approach the goal. Humans do the same — we work harder, with more focus and energy, the closer we get to completion. The home stretch is where this effect kicks in. You can feel the pull of completion. Don't resist it — lean into it. The finish line is generating its own gravity.",
-      benefit:"<strong>Cognitive benefit:</strong> The goal gradient effect produces increased dopamine release as completion approaches, creating a natural acceleration of effort and focus. Research confirms that people in the final 10-20% of a project experience measurable increases in motivation and productivity — but only if they can clearly see the finish line." },
-    q:"You're in the home stretch. What needs to happen today and tomorrow to cross the finish line — and can you feel the pull of completion?",
-    prompts:["What remains? Be precise — not 'a few things,' the actual list.","Which of these are essential for done, and which are perfectionism in disguise?","Can you feel the project pulling you toward completion — the increasing momentum of being almost there?","What would it feel like to wake up tomorrow with this one thing finished?","What is the specific moment when this project becomes done — what does 'finished' actually look like?"],
-    fu:{ t:50, q:"What are you tempted to add, improve, or change at the last minute — and is any of it actually necessary?", prompts:["Is this perfectionism or genuine quality improvement?","What would you lose if you shipped it as is, right now?","What would you gain by shipping it as is, right now?"] },
-    ref:"The home stretch tempts you to keep perfecting. Resist. Done is better than perfect, and a finished thing that exists is infinitely more valuable than a perfect thing that doesn't. Cross the line.",
-    action:{ i:"🏃", t:"Set your finish time — the specific hour tomorrow when this thing will be done. Not 'end of day.' A specific time. Then do everything necessary to meet it." }
+  { day:13, phase:4, phaseName:"Build the Habit of Moving Despite Fear", title:"The Ongoing Practice",
+    uts:"The work of moving despite fear is never finished. New projects bring new fears. New stakes bring new resistance. The practice isn\u2019t about reaching a state where fear no longer shows up. It\u2019s about building a reliable relationship with the fear so that it no longer gets to make the decisions.",
+    q:"Write about what you want your relationship with fear to look like going forward. Not the absence of fear. The presence of it alongside movement.",
+    prompts:["What would it look like to treat fear as information rather than instruction?","What practices or habits would help you move more consistently despite it?","What do you want to be true about how you work a year from now?"],
+    kg:"Write about what you\u2019re committing to. Not the project. The practice. The way you\u2019re going to keep showing up.",
+    notice:"Notice if the commitment feels different from the ones you\u2019ve made before. It should. You have evidence now that you didn\u2019t have before.",
+    action:{ i:"\ud83d\udd04", t:"Write your practice commitment in two sentences. What you\u2019re going to do and how often. That\u2019s enough." }
   },
-  { day:14, phase:4, phaseName:"Finish", title:"What You Built",
-    fw:{ name:"The Practice", author:"Seth Godin — The Practice",
-      body:"Godin writes that creative work is a practice — not a talent, not a gift, not a lightning strike. A practice. You chose one thing, committed to it, protected it, pushed through the hard parts, and finished. That is the practice. Not the outcome — the process of choosing, committing, and finishing. Everything you made in this program is evidence that you can do it again.",
-      benefit:"<strong>Cognitive benefit:</strong> Completing a significant creative commitment builds self-efficacy — the belief in your own ability to accomplish future goals. Research shows that self-efficacy is the single strongest predictor of future creative achievement — more predictive than talent, resources, or opportunity." },
-    q:"After fourteen days of choosing, committing, protecting, and finishing — what did you build? Not just the project. What did you build in yourself?",
-    prompts:["What exists now that didn't exist on Day 1? Describe the thing you made, built, or finished.","What did you learn about yourself as someone who finishes things?","What was harder than you expected? What was easier?","What would you do differently next time — and what will you carry forward exactly as is?","What do you want to remember about this experience when the next one thing needs your attention?"],
-    fu:{ t:50, q:"What would you tell someone who is where you were on Day 1 — scattered, unable to focus, carrying too many things?", prompts:["What do you know now about focus that you needed to hear then?","What was the hardest moment — and what got you through it?","What is one sentence that captures what you learned about doing one thing at a time?"] },
-    ref:"You built something. Not just the project — you built the proof that you can choose one thing, commit to it, protect it, and finish it. That proof is the most valuable thing you made in fourteen days. Carry it forward.",
-    action:{ i:"🏆", t:"Write one sentence: 'I chose [the thing], I committed, and I finished.' Keep it. Read it before you start the next one. You are someone who finishes. That's new. That's yours." }
+  { day:14, phase:5, phaseName:"The Step", title:"One Thing at a Time",
+    uts:"You started this track with something important that fear had been keeping still. You\u2019ve spent two weeks naming the fear, understanding it, moving anyway, and building the habit of continuing. The thing hasn\u2019t changed. You have. That\u2019s what this was for.",
+    q:"Write about where you started and where you are now. Not in terms of the project. In terms of your relationship to starting.",
+    prompts:["What do you know about your fear now that you didn\u2019t know at Day 1?","What was the step that mattered most?","What do you want to remember when the fear comes back?"],
+    kg:"Write your declaration. What you\u2019re making, why it matters, and that you\u2019re going to keep going \u2014 one thing at a time.",
+    notice:"Notice what\u2019s different. The fear is probably still there. But you\u2019re moving anyway. That\u2019s the whole thing.",
+    action:{ i:"\u26a1", t:"Write three words that describe how you want to work from here. Then write the next one thing you\u2019re going to do on this project." }
   }
 ];
-
 
 const completed = new Set(JSON.parse(localStorage.getItem('crc-ot') || '[]'));
 
@@ -294,7 +287,7 @@ function buildSidebar() {
   program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
   let html = '';
   Object.entries(phases).forEach(([ph, days]) => {
-    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} \u2014 ${days[0].phaseName}</div>`;
     days.forEach(d => {
       html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
         <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
@@ -303,51 +296,49 @@ function buildSidebar() {
   });
   html += `<div class="phase-group"><div class="phase-label">Review</div>
     <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
-      <div class="day-nav-num" style="font-size:13px">📖</div>
+      <div class="day-nav-num" style="font-size:13px">\ud83d\udcd6</div>
       <div class="day-nav-title">Full Journal + AI Reflection</div>
     </button></div>`;
   document.getElementById('sidebarNav').innerHTML = html;
 }
 
 function buildDay(d) {
-  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
+  const sv = getSaved(d.day,'main');
   const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
   const done = completed.has(d.day);
   return `<div class="day-view" id="day-${d.day}">
     <div class="day-header">
       <div class="day-meta">
-        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
+        <div class="day-eyebrow">Day ${d.day} \u00b7 Phase ${d.phase}: ${d.phaseName}</div>
         <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
         <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
       </div>
       <div class="day-number-large">${d.day}</div>
     </div>
-    <div class="framework-card">
-      <div class="framework-eyebrow">framework</div>
-      <div class="framework-name">${d.fw.name}</div>
-      <div class="framework-author">${d.fw.author}</div>
-      <div class="framework-body">${d.fw.body}</div>
-      <div class="framework-benefit">${d.fw.benefit}</div>
-    </div>
+    <details class="uts-section">
+      <summary class="uts-toggle">
+        <span class="uts-label">under the surface</span>
+        <span class="uts-icon">+</span>
+      </summary>
+      <div class="uts-body">${d.uts}</div>
+    </details>
     <div class="section">
-      <div class="section-label">today's question</div>
-      <div class="question-text">"${d.q}"</div>
+      <div class="section-label">start here</div>
+      <div class="question-text">\u201c${d.q}\u201d</div>
       <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
-      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
+      <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides \u2014 not limits." oninput="onWrite(${d.day})">${sv}</textarea>
       <div class="char-counter">
         <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
-        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
-      </div>
-      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
-        <div class="followup-label">going deeper</div>
-        <div class="followup-question">"${d.fu.q}"</div>
-        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
-        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
+        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'\u2713 ready':`${wc} / ${MIN} words`}</div>
       </div>
     </div>
     <div class="section">
-      <div class="section-label">reflection</div>
-      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
+      <div class="section-label">keep going</div>
+      <div class="question-text">\u201c${d.kg}\u201d</div>
+    </div>
+    <div class="section">
+      <div class="section-label">notice this</div>
+      <div class="reflection-box"><div class="reflection-prompt">${d.notice}</div></div>
     </div>
     <div class="section">
       <div class="section-label">micro-action</div>
@@ -357,8 +348,8 @@ function buildDay(d) {
       </div>
     </div>
     <div class="complete-row">
-      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
-      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
+      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete \u2713':'Mark Day Complete'}</button>
+      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} \u2192</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal \u2192</button>`}
       ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
     </div>
   </div>`;
@@ -367,55 +358,165 @@ function buildDay(d) {
 function buildJournal() {
   return `<div class="journal-view" id="journal-view">
     <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
-    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>One Thing</em></h1>
+    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Starting</em></h1>
     <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
     <div id="j-entries"></div>
     <div class="ai-section">
       <div class="ai-eyebrow">AI Reflection</div>
       <h2 class="ai-title">What your writing <em>reveals</em></h2>
-      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
+      <p class="ai-sub">A warm mirror of what you said \u2014 then 2\u20133 patterns surfaced from everything you worked through across 14 days.</p>
       <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
     </div>
   </div>`;
 }
 
-function showDay(n) { document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active')); document.getElementById('day-'+n)?.classList.add('active'); document.getElementById('nav-'+n)?.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); closeSidebar(); }
+function showDay(n) {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('day-'+n)?.classList.add('active');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
 
-function showJournal() { document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active')); document.getElementById('journal-view').classList.add('active'); document.getElementById('nav-journal')?.classList.add('active'); populateJournal(); window.scrollTo({top:0,behavior:'smooth'}); closeSidebar(); }
+function showJournal() {
+  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('journal-view').classList.add('active');
+  document.getElementById('nav-journal')?.classList.add('active');
+  populateJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeSidebar();
+}
 
 function populateJournal() {
   document.getElementById('j-entries').innerHTML = program.map(d=>{
-    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
+    const m=getSaved(d.day,'main');
     return `<div class="journal-entry">
-      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
+      <div class="journal-day-label">Day ${d.day} \u00b7 ${d.phaseName}</div>
       <div class="journal-day-title">${d.title}</div>
-      <div class="journal-question">"${d.q}"</div>
+      <div class="journal-question">\u201c${d.q}\u201d</div>
       ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
-      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
     </div>`;
   }).join('');
 }
 
-function onWrite(n) { const v=document.getElementById('write-'+n)?.value||''; save(n,'main',v); const wc=wordCount(v),pct=Math.min(100,(wc/MIN)*100),suf=wc>=MIN; const fill=document.getElementById('fill-'+n),ctr=document.getElementById('ctr-'+n),ta=document.getElementById('write-'+n); if(fill){fill.style.width=pct+'%';fill.className='char-fill'+(suf?' sufficient':'');} if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`;ctr.className='char-num'+(suf?' sufficient':'');} if(ta)ta.className='writing-area'+(suf?' sufficient':''); if(wordCount(v)>=program[n-1].fu.t)document.getElementById('fu-'+n)?.classList.add('visible'); const note=document.getElementById('note-'+n); if(note)note.style.display=suf?'none':'block'; }
+function onWrite(n) {
+  const v = document.getElementById('write-'+n)?.value||'';
+  save(n,'main',v);
+  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'\u2713 ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
+  const note=document.getElementById('note-'+n);
+  if(note) note.style.display=suf?'none':'block';
+}
 
-function completeDay(n) { const v=getSaved(n,'main'); if(wordCount(v)<MIN){const note=document.getElementById('note-'+n);if(note){note.className='complete-note error';note.textContent=`Please write at least ${MIN} words first.`;}return;} completed.add(n); localStorage.setItem('crc-ot',JSON.stringify([...completed])); const btn=document.getElementById('cbtn-'+n); if(btn){btn.textContent='Day Complete ✓';btn.disabled=true;} document.getElementById('badge-'+n)?.classList.add('show'); const nav=document.getElementById('nav-'+n); if(nav)nav.classList.add('completed'); const nn=nav?.querySelector('.day-nav-num'); if(nn){nn.style.background='#C84B2F';nn.style.color='white';} updateProgress(); if(n<14)setTimeout(()=>showDay(n+1),500); else setTimeout(()=>showJournal(),500); }
+function completeDay(n) {
+  const v=getSaved(n,'main');
+  if(wordCount(v)<MIN){
+    const note=document.getElementById('note-'+n);
+    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
+    return;
+  }
+  completed.add(n);
+  localStorage.setItem('crc-ot',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);
+  if(btn){btn.textContent='Day Complete \u2713'; btn.disabled=true;}
+  document.getElementById('badge-'+n)?.classList.add('show');
+  const nav=document.getElementById('nav-'+n);
+  if(nav) nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');
+  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
+  updateProgress();
+  window.parent.postMessage({ type:'dayComplete', day:n }, '*');
+  if(n<14) setTimeout(()=>showDay(n+1),500);
+  else setTimeout(()=>showJournal(),500);
+}
 
-function updateProgress() { const pct=(completed.size/14)*100; document.getElementById('progressFill').style.width=pct+'%'; document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`; }
+function updateProgress() {
+  const pct=(completed.size/14)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
+}
 
 async function generateReflection() {
   const el=document.getElementById('ai-state');
-  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
-  const writing=program.map(d=>{const m=getSaved(d.day,'main'),f=getSaved(d.day,'fu');if(!m&&!f)return null;return`DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`; }).filter(Boolean).join('\n\n---\n\n');
-  if(!writing.trim()){el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;return;}
-  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "One Thing at a Time" — a program helping scattered creatives choose one thing, commit to it fully, protect it, and finish it, grounded in Gary Keller, Steven Pressfield, Seth Godin, Cal Newport, and Angela Duckworth.\n\nHere is everything they wrote:\n\n${writing}\n\nRespond in exactly this format:\n\nWARM MIRROR\n[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet — just mirror.]\n\nPATTERN 1\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm — not generic.]\n\nPATTERN 2\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote.]\n\nPATTERN 3\n[SHORT SPECIFIC TITLE IN CAPS]\n[One paragraph describing this pattern, grounded in specific things they wrote.]\n\nCLOSING\n[One sentence. True and forward-facing. Something they can carry.]\n\nTone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
+  el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days\u2026</span></div>`;
+  const writing = program.map(d=>{
+    const m=getSaved(d.day,'main');
+    if(!m) return null;
+    return `DAY ${d.day} \u2014 ${d.title}\nQ: \u201c${d.q}\u201d\nA: ${m}`;
+  }).filter(Boolean).join('\n\n---\n\n');
+  if(!writing.trim()){
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
+    return;
+  }
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "One Thing at a Time" \u2014 a program helping people move past creative fear, stop waiting to feel ready, and start making the thing that matters most to them.
+
+Here is everything they wrote:
+
+${writing}
+
+Respond in exactly this format:
+
+WARM MIRROR
+[3-4 paragraphs reflecting back what they said warmly and without judgment. Use their own language. Show them you heard them. Speak directly to them as "you". Make them feel genuinely seen. Do not interpret yet \u2014 just mirror.]
+
+PATTERN 1
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote. Honest and warm \u2014 not generic.]
+
+PATTERN 2
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+PATTERN 3
+[SHORT SPECIFIC TITLE IN CAPS]
+[One paragraph describing this pattern, grounded in specific things they wrote.]
+
+CLOSING
+[One sentence. True and forward-facing. Something they can carry.]
+
+Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
   try {
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
-    const data=await res.json(); const text=data.content?.map(b=>b.text||'').join('')||''; if(!text)throw new Error();
-    const warmMatch=text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i); const warm=warmMatch?warmMatch[1].trim():'';
-    const patterns=[]; const patternRe=/PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi; let pm; while((pm=patternRe.exec(text))!==null){patterns.push({title:pm[1].trim(),body:pm[2].trim()});}
-    const closingMatch=text.match(/CLOSING\s*([\s\S]*?)$/i); const closing=closingMatch?closingMatch[1].trim():'';
-    el.innerHTML=`<div class="reflection-output"><div class="warm-block"><div class="warm-label">what I heard</div><div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div></div><div class="patterns-label">patterns across 14 days</div>${(patterns.length?patterns:[{title:'THE POWER OF CHOOSING ONE',body:'Across your writing, a transformation: from scattered energy across many things to focused commitment on one. The choosing itself was the breakthrough.'},{title:'PROTECTING WHAT MATTERS',body:'You discovered that the one thing doesn\'t survive on its own — it requires active protection from everything else competing for your attention. Building those walls was the hardest and most important work.'},{title:'YOU ARE SOMEONE WHO FINISHES',body:'The most significant shift wasn\'t in the project. It was in your identity. You are now someone with evidence that they can choose, commit, and finish. That changes everything.'}]).slice(0,3).map((p,i)=>`<div class="pattern-card"><div class="pattern-num">${i+1}</div><div class="pattern-title">${p.title}</div><div class="pattern-body">${p.body}</div></div>`).join('')}${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}</div>`;
-  } catch(e) { el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p><button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`; }
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('')||'';
+    if(!text) throw new Error();
+    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
+    const warm = warmMatch ? warmMatch[1].trim() : '';
+    const patterns = [];
+    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
+    let pm;
+    while((pm=patternRe.exec(text))!==null) {
+      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
+    }
+    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
+    const closing = closingMatch ? closingMatch[1].trim() : '';
+    el.innerHTML = `<div class="reflection-output">
+      <div class="warm-block">
+        <div class="warm-label">what I heard</div>
+        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+      </div>
+      <div class="patterns-label">patterns across 14 days</div>
+      ${(patterns.length?patterns:[{title:'THE FEAR HAD A NAME',body:'Across your writing, what started as a vague resistance became something specific and workable. Naming the fear was the first act of moving past it.'},{title:'YOU MOVED BEFORE YOU WERE READY',body:'Again and again, you chose to start before the conditions felt right. That pattern \u2014 moving despite uncertainty \u2014 became your most reliable creative tool.'},{title:'ONE THING WAS ALWAYS ENOUGH',body:'When the full scope felt overwhelming, narrowing to one thing made it possible. Not because the fear disappeared, but because it had less space to operate in.'}]).slice(0,3).map((p,i)=>`
+        <div class="pattern-card">
+          <div class="pattern-num">${i+1}</div>
+          <div class="pattern-title">${p.title}</div>
+          <div class="pattern-body">${p.body}</div>
+        </div>`).join('')}
+      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
+    </div>`;
+  } catch(e) {
+    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
+      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
+  }
 }
 
 function save(day,key,val){ localStorage.setItem(`crc-ot-${day}-${key}`,val); }
