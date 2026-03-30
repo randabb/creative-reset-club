@@ -156,9 +156,14 @@ export default function ProgramPage() {
           /* Settle In */
           .settle-wrap { background:#FAF7F0; padding:72px 24px 64px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; margin-bottom:32px; border-bottom:1px solid rgba(0,3,50,0.06); }
           .settle-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:12px; font-weight:500; }
-          .settle-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:8px; }
-          .settle-title { font-family:'Codec Pro',sans-serif; font-size:clamp(22px,3.5vw,32px); line-height:1.12; font-weight:400; color:#000332; margin-bottom:32px; }
-          .settle-title em { font-style:normal; color:#FF9090; }
+          .day-header-fixed { margin-bottom:0; }
+          .settle-collapsed-header { display:none; padding:16px 0; border-bottom:1px solid rgba(0,3,50,0.06); cursor:pointer; margin-bottom:24px; }
+          .settle-collapsed-header.show { display:flex; align-items:center; justify-content:space-between; }
+          .settle-collapsed-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:rgba(0,3,50,0.3); font-weight:500; }
+          .settle-collapsed-chevron { font-size:12px; color:rgba(0,3,50,0.25); transition:transform 0.2s; }
+          .settle-collapsed-header.expanded .settle-collapsed-chevron { transform:rotate(180deg); }
+          .settle-wrap.settled-done { display:none; }
+          .settle-wrap.settled-done.settled-expanded { display:flex; }
           .settle-content { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:180px; gap:16px; }
           .settle-text { font-family:'Codec Pro',sans-serif; font-size:17px; color:#000332; opacity:.6; font-weight:300; line-height:1.7; }
           .settle-text-small { font-family:'Codec Pro',sans-serif; font-size:13px; color:#000332; opacity:.35; font-weight:300; line-height:1.7; }
@@ -960,35 +965,62 @@ function setupSettleIn() {
     var dayNum = parseInt(dayView.id.replace('day-',''));
     if (isNaN(dayNum)) return;
     var exIdx = getSettleExercise(dayNum);
-    // Extract day header info for settle screen
+
+    // Extract day header — it stays above everything, never collapses
     var dayHeader = dayView.querySelector('.day-header');
-    var eyebrowEl = dayHeader ? dayHeader.querySelector('.day-eyebrow') : null;
-    var titleEl = dayHeader ? dayHeader.querySelector('.day-title') : null;
-    var eyebrowText = eyebrowEl ? eyebrowEl.textContent : '';
-    var titleHTML = titleEl ? titleEl.innerHTML : '';
+    if (dayHeader) {
+      dayHeader.classList.add('day-header-fixed');
+      dayView.removeChild(dayHeader);
+    }
+
+    // Build settle wrap
     var wrap = document.createElement('div');
     wrap.className = 'settle-wrap';
     wrap.id = 'settle-' + dayNum;
     wrap.innerHTML = '<div class="settle-label">settle in</div>' +
       '<div class="settle-content" id="settle-content-' + dayNum + '">' + buildSettleHTML(exIdx) + '</div>' +
       '<button class="settle-continue" id="settle-btn-' + dayNum + '">continue</button>';
-    // Hide existing day content
+
+    // Build collapsed header for after continue
+    var collapsedHeader = document.createElement('div');
+    collapsedHeader.className = 'settle-collapsed-header';
+    collapsedHeader.id = 'settle-collapsed-' + dayNum;
+    collapsedHeader.innerHTML = '<span class="settle-collapsed-label">settle in ✓</span><span class="settle-collapsed-chevron">↓</span>';
+
+    // Wrap remaining children into content div
     var children = Array.from(dayView.children);
     var contentWrap = document.createElement('div');
     contentWrap.id = 'day-content-' + dayNum;
     contentWrap.style.display = 'none';
     children.forEach(function(ch) { contentWrap.appendChild(ch); });
+
+    // Assemble: header → settle → collapsed header → content
+    if (dayHeader) dayView.appendChild(dayHeader);
     dayView.appendChild(wrap);
+    dayView.appendChild(collapsedHeader);
     dayView.appendChild(contentWrap);
-    // Button handler
+
+    // Continue button: collapse settle, show content
     document.getElementById('settle-btn-' + dayNum).onclick = function() {
       stopSettleAnimation(exIdx);
-      this.style.display = 'none';
+      wrap.classList.add('settled-done');
+      collapsedHeader.classList.add('show');
       var cw = document.getElementById('day-content-' + dayNum);
       cw.style.display = 'block';
-      // Activate first progressive step
       var firstStep = cw.querySelector('.pstep');
       if (firstStep) firstStep.classList.add('pstep-active');
+    };
+
+    // Collapsed header toggle: re-expand/collapse settle
+    collapsedHeader.onclick = function() {
+      var isExpanded = wrap.classList.contains('settled-expanded');
+      if (isExpanded) {
+        wrap.classList.remove('settled-expanded');
+        collapsedHeader.classList.remove('expanded');
+      } else {
+        wrap.classList.add('settled-expanded');
+        collapsedHeader.classList.add('expanded');
+      }
     };
   });
 }
@@ -1003,9 +1035,13 @@ function wrapShowDayForSettle() {
     var settleWrap = document.getElementById('settle-' + n);
     var contentWrap = document.getElementById('day-content-' + n);
     var btn = document.getElementById('settle-btn-' + n);
+    var collapsedH = document.getElementById('settle-collapsed-' + n);
     if (settleWrap && contentWrap && btn) {
       contentWrap.style.display = 'none';
       btn.style.display = '';
+      // Reset settle state
+      settleWrap.classList.remove('settled-done', 'settled-expanded');
+      if (collapsedH) { collapsedH.classList.remove('show', 'expanded'); }
       // Reset progressive steps for this day
       showStepsForDay(n);
       // Restart animation
