@@ -266,10 +266,9 @@ export default function ProgramPage() {
             <div class="celebration-symbol">✦</div>
             <div class="celebration-heading" id="celebrationHeading">Day done.</div>
             <div class="celebration-sub" id="celebrationSub"></div>
-            <div class="celebration-note">your next day unlocks tomorrow.</div>
             <div class="celebration-btns">
               <a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" ontouchend="window.top.location.href='/dashboard';return false;" class="celebration-btn-outline" style="cursor:pointer;touch-action:manipulation;">back to dashboard</a>
-              <button class="celebration-btn-filled" id="celebrationNextBtn" onclick="closeCelebration()">next day →</button>
+              <a href="/expansion-room" onclick="window.top.location.href='/expansion-room';return false;" ontouchend="window.top.location.href='/expansion-room';return false;" class="celebration-btn-filled" id="celebrationExpBtn" style="cursor:pointer;touch-action:manipulation;background:#FF9090;color:#fff;">open expansion room →</a>
             </div>
           </div>
           <button class="menu-toggle"`
@@ -336,26 +335,14 @@ function showCelebration(n) {
   const overlay = document.getElementById('celebrationOverlay');
   const heading = document.getElementById('celebrationHeading');
   const sub = document.getElementById('celebrationSub');
-  const nextBtn = document.getElementById('celebrationNextBtn');
   if (!overlay) return;
   heading.textContent = 'Day ' + n + ' done.';
+  var nextDay = n < 14 ? ' Day ' + (n + 1) + ' unlocks tomorrow.' : '';
   const messages = {
-    1: "You just cleared the mental backlog. That's the hardest part — and you did it. See you tomorrow.",
+    1: "You just cleared the mental backlog. That's the hardest part — and you did it." + nextDay,
     14: "You showed up for 14 days. That matters more than you think."
   };
-  sub.textContent = messages[n] || "Another day of honest thinking. That compounds. See you tomorrow.";
-  if (n < 14 && isDayUnlocked(n + 1)) {
-    nextBtn.className = 'celebration-btn-filled';
-    nextBtn.onclick = function() { closeCelebration(); showDay(n + 1); };
-  } else if (n < 14) {
-    nextBtn.className = 'celebration-btn-filled disabled';
-    nextBtn.textContent = 'Day ' + (n+1) + ' unlocks tomorrow';
-    nextBtn.onclick = null;
-  } else {
-    nextBtn.textContent = 'see your full journal →';
-    nextBtn.className = 'celebration-btn-filled';
-    nextBtn.onclick = function() { closeCelebration(); showJournal(); };
-  }
+  sub.textContent = messages[n] || "Another day of honest thinking. That compounds." + nextDay;
   overlay.classList.add('show');
 }
 function closeCelebration() {
