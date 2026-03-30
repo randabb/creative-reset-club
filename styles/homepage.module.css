@@ -187,12 +187,12 @@
 .nodeBody:hover .nodeAnim{transform:scale(1.14);}
 .nodeBody:hover .nodeLabel{opacity:.9;}
 
-.n1{animation:o1 30s linear infinite}
-.n2{animation:o2 19s linear infinite}
-.n3{animation:o3 38s linear infinite}
-.n4{animation:o4 15s linear infinite}
+.n1{animation:o1 36s linear infinite}
+.n2{animation:o2 24s linear infinite}
+.n3{animation:o3 36s linear infinite}
+.n4{animation:o4 18s linear infinite}
 .n5{animation:o5 24s linear infinite}
-.n6{animation:o6 33s linear infinite}
+.n6{animation:o6 36s linear infinite}
 
 .ethHeadWrap{position:relative;width:54px;height:58px}
 .ethSkull{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:42px;height:44px;border:2px solid rgba(184,168,232,0.5);border-radius:50% 50% 48% 48%/56% 56% 44% 44%}
@@ -501,29 +501,32 @@
   0%{transform:scale(1);opacity:.7}
   100%{transform:scale(1.6);opacity:0}
 }
+/* outer orbit — 3 nodes, 120° apart, same speed */
 @keyframes o1 {
-  from{transform:rotate(258deg) translateX(198px) rotate(-258deg)}
-  to{transform:rotate(618deg) translateX(198px) rotate(-618deg)}
-}
-@keyframes o2 {
-  from{transform:rotate(20deg) translateX(132px) rotate(-20deg)}
-  to{transform:rotate(380deg) translateX(132px) rotate(-380deg)}
+  from{transform:rotate(0deg) translateX(198px) rotate(0deg)}
+  to{transform:rotate(360deg) translateX(198px) rotate(-360deg)}
 }
 @keyframes o3 {
-  from{transform:rotate(118deg) translateX(198px) rotate(-118deg)}
-  to{transform:rotate(478deg) translateX(198px) rotate(-478deg)}
-}
-@keyframes o4 {
-  from{transform:rotate(195deg) translateX(74px) rotate(-195deg)}
-  to{transform:rotate(555deg) translateX(74px) rotate(-555deg)}
-}
-@keyframes o5 {
-  from{transform:rotate(182deg) translateX(132px) rotate(-182deg)}
-  to{transform:rotate(542deg) translateX(132px) rotate(-542deg)}
+  from{transform:rotate(120deg) translateX(198px) rotate(-120deg)}
+  to{transform:rotate(480deg) translateX(198px) rotate(-480deg)}
 }
 @keyframes o6 {
-  from{transform:rotate(305deg) translateX(198px) rotate(-305deg)}
-  to{transform:rotate(665deg) translateX(198px) rotate(-665deg)}
+  from{transform:rotate(240deg) translateX(198px) rotate(-240deg)}
+  to{transform:rotate(600deg) translateX(198px) rotate(-600deg)}
+}
+/* middle orbit — 2 nodes, 180° apart, same speed, reverse */
+@keyframes o2 {
+  from{transform:rotate(0deg) translateX(132px) rotate(0deg)}
+  to{transform:rotate(-360deg) translateX(132px) rotate(360deg)}
+}
+@keyframes o5 {
+  from{transform:rotate(180deg) translateX(132px) rotate(-180deg)}
+  to{transform:rotate(-180deg) translateX(132px) rotate(180deg)}
+}
+/* inner orbit — 1 node alone */
+@keyframes o4 {
+  from{transform:rotate(0deg) translateX(74px) rotate(0deg)}
+  to{transform:rotate(360deg) translateX(74px) rotate(-360deg)}
 }
 @keyframes puff-rise {
   0%{transform:translateY(0) scale(1);opacity:0}
