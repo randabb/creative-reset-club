@@ -176,6 +176,7 @@ export default function ProgramPage() {
           .pstep-collapsed.expanded .pstep-collapsed-chevron { transform:rotate(180deg); }
           .pstep-done > .pstep-collapsed + .pstep-body { display:none; }
           .pstep-done.pstep-expanded > .pstep-collapsed + .pstep-body { display:block; }
+          .section-label::after { display:none; }
           .pstep-body { padding-top:8px; }
           .pstep[data-step="1"] .pstep-body { padding-top:32px; }
           .pstep[data-step="1"] .section { margin-bottom:0; }
