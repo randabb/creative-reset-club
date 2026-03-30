@@ -706,7 +706,7 @@
     text-align: center;
   }
   .heroHeadline {
-    font-size: clamp(24px, 6.4vw, 34px);
+    font-size: clamp(26px, 6.9vw, 36px);
     margin-bottom: 12px;
   }
   .brDesktop { display: none; }
