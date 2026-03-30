@@ -17,9 +17,11 @@ export default function ProgramPage() {
   const router = useRouter();
   const slug = params.slug as string;
 
-  const [status, setStatus] = useState<"loading" | "authorized" | "not-found">("loading");
+  const [status, setStatus] = useState<"loading" | "accountability" | "authorized" | "not-found">("loading");
   const [htmlContent, setHtmlContent] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [accountabilityName, setAccountabilityName] = useState("");
+  const [accountabilityChecked, setAccountabilityChecked] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -34,6 +36,20 @@ export default function ProgramPage() {
         return;
       }
       setUserId(user.id);
+
+      // Check if accountability screen has been shown for this track
+      const { data: accRecord } = await supabase
+        .from("day_submissions")
+        .select("submitted_at")
+        .eq("user_id", user.id)
+        .eq("program_id", slug)
+        .eq("day_number", 0)
+        .maybeSingle();
+
+      if (!accRecord) {
+        setStatus("accountability");
+        return;
+      }
 
       try {
         const res = await fetch(validPrograms[slug].file);
@@ -1216,6 +1232,150 @@ init = function() {
         <p style={{ fontFamily: "'Codec Pro',sans-serif", color: "rgba(0,3,50,0.4)", fontSize: 14 }}>
           loading...
         </p>
+      </div>
+    );
+  }
+
+  const dismissAccountability = async () => {
+    if (!userId) return;
+    // Save accountability_shown flag as day_number 0
+    await supabase.from("day_submissions").upsert({
+      user_id: userId,
+      program_id: slug,
+      day_number: 0,
+      submitted_at: new Date().toISOString(),
+    }, { onConflict: "user_id,program_id,day_number" });
+    // Save name if entered
+    if (accountabilityName.trim()) {
+      await supabase.from("profiles")
+        .update({ accountability_name: accountabilityName.trim() })
+        .eq("id", userId);
+    }
+    // Reload page — checkAccess will now find the record and go to authorized
+    window.location.reload();
+  };
+
+  const handleAccountabilityShare = () => {
+    const shareText = "I'm starting a 14-day creative thinking practice. Thought you should know.";
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else {
+      window.location.href = `mailto:?subject=${encodeURIComponent("doing something for my thinking")}&body=${encodeURIComponent(shareText)}`;
+    }
+  };
+
+  if (status === "accountability") {
+    return (
+      <div style={{
+        minHeight: "100vh", background: "#FAF7F0",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "40px 24px",
+        animation: "accFadeIn 0.5s ease forwards",
+      }}>
+        <style>{`@keyframes accFadeIn { from { opacity:0 } to { opacity:1 } }`}</style>
+        <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
+          <p style={{
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 11, fontWeight: 600,
+            letterSpacing: "0.14em", textTransform: "uppercase",
+            color: "#FF9090", marginBottom: 16,
+          }}>14 DAYS</p>
+          <h1 style={{
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 42, fontWeight: 700,
+            color: "#000332", letterSpacing: "-0.02em", lineHeight: 1.1,
+            marginBottom: 16,
+          }}>tell one person you&rsquo;re doing this.</h1>
+          <p style={{
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 17, fontWeight: 400,
+            color: "#000332", opacity: 0.72, lineHeight: 1.65,
+            maxWidth: 400, margin: "0 auto",
+          }}>The research on accountability is pretty clear: saying it out loud to someone changes your follow-through. This is that step.</p>
+
+          <div style={{
+            height: 1, background: "rgba(0,3,50,0.1)",
+            margin: "32px 0",
+          }} />
+
+          <p style={{
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 11, fontWeight: 500,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "#000332", opacity: 0.5, marginBottom: 14,
+          }}>WHO COMES TO MIND?</p>
+
+          <input
+            type="text"
+            value={accountabilityName}
+            onChange={(e) => setAccountabilityName(e.target.value)}
+            placeholder={'a name, or just "someone I know"'}
+            style={{
+              width: "100%", padding: "16px 20px",
+              border: "1.5px solid rgba(0,3,50,0.18)",
+              borderRadius: 10, background: "#FAF7F0",
+              fontFamily: "'Codec Pro',sans-serif", fontSize: 16,
+              color: "#000332", outline: "none",
+            }}
+          />
+
+          <p style={{
+            fontFamily: "'Codec Pro',sans-serif", fontSize: 13,
+            fontStyle: "italic", color: "#000332", opacity: 0.45,
+            marginTop: 12, lineHeight: 1.6,
+          }}>&ldquo;hey, I&rsquo;m doing a 14-day creative thinking thing. just wanted to say it out loud to someone.&rdquo;</p>
+
+          <button
+            onClick={() => {
+              setAccountabilityChecked(!accountabilityChecked);
+              if (!accountabilityChecked) handleAccountabilityShare();
+            }}
+            style={{
+              width: "100%", marginTop: 20,
+              padding: "16px 20px",
+              background: accountabilityChecked ? "#000332" : "#FAF7F0",
+              border: "1.5px solid rgba(0,3,50,0.18)",
+              borderRadius: 12, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 14,
+              textAlign: "left",
+            }}
+          >
+            <div style={{
+              width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+              border: accountabilityChecked ? "none" : "1.5px solid rgba(0,3,50,0.2)",
+              background: accountabilityChecked ? "#FF9090" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: 14,
+            }}>{accountabilityChecked ? "✓" : ""}</div>
+            <div>
+              <div style={{
+                fontFamily: "'Codec Pro',sans-serif", fontSize: 15, fontWeight: 400,
+                color: accountabilityChecked ? "#FAF7F0" : "#000332",
+              }}>I&rsquo;ll tell someone today</div>
+              <div style={{
+                fontFamily: "'Codec Pro',sans-serif", fontSize: 12, fontWeight: 300,
+                color: accountabilityChecked ? "rgba(250,247,240,0.55)" : "rgba(0,3,50,0.45)",
+                marginTop: 2,
+              }}>tap to send a note, or just commit to saying it</div>
+            </div>
+          </button>
+
+          <button
+            onClick={dismissAccountability}
+            style={{
+              width: "100%", marginTop: 20,
+              padding: 17, borderRadius: 100,
+              background: "#000332", color: "#FAF7F0",
+              border: "none", fontFamily: "'Codec Pro',sans-serif",
+              fontSize: 16, fontWeight: 500, cursor: "pointer",
+            }}
+          >start day 1</button>
+
+          <button
+            onClick={dismissAccountability}
+            style={{
+              marginTop: 14, background: "none", border: "none",
+              fontFamily: "'Codec Pro',sans-serif", fontSize: 14,
+              color: "rgba(0,3,50,0.6)", cursor: "pointer",
+            }}
+          >skip for now</button>
+        </div>
       </div>
     );
   }
