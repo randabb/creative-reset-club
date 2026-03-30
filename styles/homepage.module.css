@@ -683,13 +683,13 @@
     padding: 72px 0 0;
     justify-content: center;
     align-items: center;
-    overflow: visible;
+    overflow: hidden;
   }
   .orbitalSystem {
     width: 420px; height: 420px;
     transform: scale(calc(min(85vw, 320px) / 420));
     transform-origin: center center;
-    margin: -60px auto -68px;
+    margin: -60px auto -44px;
   }
 
   .heroLeft {
