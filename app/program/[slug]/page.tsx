@@ -664,9 +664,9 @@ window.addEventListener('message', function(event) {
     if (event.data.writtenResponse) {
       savedWrittenResponses[dayNum] = event.data.writtenResponse;
     }
-    if (event.data.keepGoingResponse) {
-      savedKeepGoingResponses[dayNum] = event.data.keepGoingResponse;
-    }
+    // KG responses loaded from localStorage (not in Supabase table yet)
+    var kgFromLS = localStorage.getItem('crc-' + CRC_UID + '-kg-response-' + dayNum);
+    if (kgFromLS) savedKeepGoingResponses[dayNum] = kgFromLS;
     // Apply full read-only state if this is a completed day
     if (completedDaysFromDB.has(dayNum)) {
       applyReadOnlyToCompletedDay(dayNum);
@@ -1463,13 +1463,10 @@ init = function() {
       }
 
       if (type === "saveKeepGoing") {
-        await supabase.from("day_submissions").upsert({
-          user_id: userId,
-          program_id: slug,
-          day_number: event.data.day,
-          keep_going_question: event.data.question,
-          keep_going_response: event.data.response,
-        }, { onConflict: "user_id,program_id,day_number" });
+        // Note: keep_going_question and keep_going_response columns
+        // do not exist in day_submissions yet. KG responses are stored
+        // in localStorage only for now.
+        console.log("[saveKeepGoing] day", event.data.day, "— KG columns not in table, skipping Supabase save");
       }
 
       if (type === "fetchCompletedDays") {
@@ -1487,13 +1484,14 @@ init = function() {
       }
 
       if (type === "fetchVoiceUrl") {
-        const { data: sub } = await supabase
+        const { data: sub, error: fetchErr } = await supabase
           .from("day_submissions")
-          .select("voice_note_url, voice_note_transcript, written_response, keep_going_response")
+          .select("voice_note_url, voice_note_transcript, written_response")
           .eq("user_id", userId)
           .eq("program_id", slug)
           .eq("day_number", event.data.day)
           .maybeSingle();
+        console.log("[fetchVoiceUrl] day", event.data.day, "sub:", sub, "error:", fetchErr);
         let signedUrl = null;
         if (sub?.voice_note_url) {
           const match = sub.voice_note_url.match(/voice-notes\/(.+)$/);
@@ -1510,7 +1508,6 @@ init = function() {
           url: signedUrl,
           transcript: sub?.voice_note_transcript || null,
           writtenResponse: sub?.written_response || null,
-          keepGoingResponse: sub?.keep_going_response || null,
         }, "*");
       }
 
