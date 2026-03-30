@@ -949,7 +949,11 @@ function setupSettleIn() {
     document.getElementById('settle-btn-' + dayNum).onclick = function() {
       stopSettleAnimation(exIdx);
       this.style.display = 'none';
-      document.getElementById('day-content-' + dayNum).style.display = 'block';
+      var cw = document.getElementById('day-content-' + dayNum);
+      cw.style.display = 'block';
+      // Activate first progressive step
+      var firstStep = cw.querySelector('.pstep');
+      if (firstStep) firstStep.classList.add('pstep-active');
     };
   });
 }
