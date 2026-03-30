@@ -489,23 +489,19 @@ export default function Dashboard() {
               onClick={async () => {
                 if (!user) return;
                 if (!confirm("This will permanently delete all your track progress, writing, and voice notes. Are you sure?")) return;
-                // Clear localStorage keys for this user
+                // Clear all crc- localStorage keys (both uid-scoped and legacy)
                 const keysToRemove: string[] = [];
                 for (let i = 0; i < localStorage.length; i++) {
                   const key = localStorage.key(i);
-                  if (key && key.startsWith("crc-" + user.id)) keysToRemove.push(key);
+                  if (key && key.startsWith("crc-")) keysToRemove.push(key);
                 }
                 keysToRemove.forEach(k => localStorage.removeItem(k));
-                // Also clear any legacy non-uid-scoped keys
-                const legacyPrefixes = ["crc-ri", "crc-mif", "crc-ot", "crc-rf", "crc-miy", "crc-eth", "crc-timestamps", "crc-kg-response"];
-                const legacyKeys: string[] = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                  const key = localStorage.key(i);
-                  if (key && legacyPrefixes.some(p => key.startsWith(p))) legacyKeys.push(key);
-                }
-                legacyKeys.forEach(k => localStorage.removeItem(k));
-                // Delete all day_submissions for this user
-                await supabase.from("day_submissions").delete().eq("user_id", user.id);
+                // Delete all day_submissions via server route (bypasses RLS)
+                await fetch("/api/clear-data", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ userId: user.id }),
+                });
                 alert("All data cleared. Reloading...");
                 window.location.reload();
               }}
