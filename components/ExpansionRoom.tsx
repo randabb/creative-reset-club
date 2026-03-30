@@ -84,11 +84,14 @@ export default function ExpansionRoom({
 
     if (activeTool === "sticky") {
       addElement({ id: crypto.randomUUID(), type: "sticky", x: x - 90, y: y - 70, w: 180, h: 140, color: nextStickyColor(), text: "" });
+      setActiveTool("select");
     } else if (activeTool === "text") {
       addElement({ id: crypto.randomUUID(), type: "text", x: x - 60, y: y - 12, w: 200, h: 32, text: "" });
+      setActiveTool("select");
     } else if (activeTool === "shape") {
       addElement({ id: crypto.randomUUID(), type: "shape", x: x - 40, y: y - 40, w: 80, h: 80, shapeKind: nextShape, color: "#000332" });
       setNextShape(nextShape === "rect" ? "circle" : "rect");
+      setActiveTool("select");
     }
   };
 
@@ -136,6 +139,7 @@ export default function ExpansionRoom({
   const handleMouseUp = () => {
     if (drawing && currentPath.length > 1) {
       setPaths((prev) => [...prev, { id: crypto.randomUUID(), points: currentPath }]);
+      setActiveTool("select");
     }
     setDrawing(false);
     setCurrentPath([]);
@@ -290,7 +294,7 @@ export default function ExpansionRoom({
           {tools.map((t) => (
             <button
               key={t.id}
-              onClick={() => setActiveTool(t.id)}
+              onClick={() => setActiveTool(activeTool === t.id && t.id !== "select" ? "select" : t.id)}
               style={{
                 width: 36, height: 36, borderRadius: 8, border: "none",
                 background: activeTool === t.id ? "rgba(255,144,144,0.12)" : "transparent",
