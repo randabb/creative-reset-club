@@ -188,13 +188,6 @@ export default function ProgramPage() {
           .voice-playback-collapsed audio { width:100%; height:32px; border-radius:6px; }
 
           /* Voice consent modal */
-          .voice-consent-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; display:flex; align-items:center; justify-content:center; padding:24px; }
-          .voice-consent-card { background:var(--cream); border-radius:20px; padding:36px 40px; max-width:440px; width:100%; }
-          .voice-consent-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-weight:700; color:var(--ink); margin-bottom:12px; }
-          .voice-consent-body { font-size:14px; color:var(--ink-soft); line-height:1.7; margin-bottom:24px; font-weight:300; }
-          .voice-consent-btns { display:flex; gap:10px; flex-wrap:wrap; }
-          .voice-consent-accept { padding:12px 24px; border-radius:100px; border:none; background:var(--ink); color:var(--cream); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
-          .voice-consent-skip { padding:12px 24px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
 
           /* Settle In */
           .settle-wrap { background:#FAF7F0; padding:72px 24px 64px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; margin-bottom:32px; border-bottom:1px solid rgba(0,3,50,0.06); }
@@ -420,7 +413,6 @@ function setupWritingEncouragement() {
 
 // Override init to add progressive reveal + writing encouragement
 // Part 6: Voice recording
-var voiceConsent = null; // null = unknown, true = yes, false = skip
 
 function setupVoiceSections() {
   document.querySelectorAll('.day-view').forEach(function(dayView) {
@@ -453,9 +445,6 @@ function setupVoiceSections() {
     else if (sections.length === 1) sections[0].after(section);
     else dayView.appendChild(section);
   });
-  if (voiceConsent === false) {
-    document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
-  }
 }
 
 var recorders = {};
@@ -465,47 +454,12 @@ var recIntervals = {};
 var voiceUrlCache = {};
 
 function toggleRecording(day) {
-  if (voiceConsent === null) {
-    showVoiceConsent(day);
-    return;
-  }
-  if (voiceConsent === false) return;
   if (recorders[day] && recorders[day].state === 'recording') {
     stopRecording(day);
   } else {
     startRecording(day);
   }
 }
-
-function showVoiceConsent(pendingDay) {
-  var modal = document.createElement('div');
-  modal.className = 'voice-consent-modal';
-  modal.id = 'voiceConsentModal';
-  modal.innerHTML = '<div class="voice-consent-card">' +
-    '<div class="voice-consent-title">Before you record</div>' +
-    '<div class="voice-consent-body">Your voice note will be saved privately to your account. It may be used in anonymised form to improve Creative Reset Club. You can delete your recordings at any time from your profile.</div>' +
-    '<div class="voice-consent-btns">' +
-      '<button class="voice-consent-accept" onclick="acceptVoiceConsent(' + pendingDay + ')">Got it, let\\'s go</button>' +
-      '<button class="voice-consent-skip" onclick="declineVoiceConsent()">Skip voice notes</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(modal);
-}
-
-function acceptVoiceConsent(pendingDay) {
-  voiceConsent = true;
-  document.getElementById('voiceConsentModal')?.remove();
-  window.parent.postMessage({ type: 'saveVoiceConsent', consent: true }, '*');
-  startRecording(pendingDay);
-}
-
-function declineVoiceConsent() {
-  voiceConsent = false;
-  document.getElementById('voiceConsentModal')?.remove();
-  window.parent.postMessage({ type: 'saveVoiceConsent', consent: false }, '*');
-  document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
-}
-
 
 async function startRecording(day) {
   try {
@@ -593,15 +547,6 @@ function onRecordingDone(day) {
 }
 
 window.addEventListener('message', function(event) {
-  if (event.data?.type === 'voiceConsentStatus') {
-    voiceConsent = event.data.consent;
-    if (voiceConsent === false) {
-      document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
-    }
-  }
-  if (event.data?.type === 'voiceConsentSaved') {
-    voiceConsent = event.data.consent;
-  }
   if (event.data?.type === 'voiceProgress') {
     setVoiceStatus(event.data.dayNumber, event.data.status);
   }
@@ -1234,8 +1179,7 @@ init = function() {
   wrapShowDayForSettle();
   // Start settle animation for day 1
   startSettleAnimation(getSettleExercise(1));
-  // Check voice consent and fetch existing voice URLs
-  window.parent.postMessage({ type: 'checkVoiceConsent' }, '*');
+  // Fetch existing voice URLs
   for (var d = 1; d <= 14; d++) {
     window.parent.postMessage({ type: 'fetchVoiceUrl', day: d }, '*');
   }
@@ -1341,28 +1285,6 @@ init = function() {
         }, "*");
       }
 
-      if (type === "checkVoiceConsent") {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("voice_consent")
-          .eq("id", userId)
-          .single();
-        iframeRef?.contentWindow?.postMessage({
-          type: "voiceConsentStatus",
-          consent: profile?.voice_consent,
-        }, "*");
-      }
-
-      if (type === "saveVoiceConsent") {
-        await supabase
-          .from("profiles")
-          .update({ voice_consent: event.data.consent })
-          .eq("id", userId);
-        iframeRef?.contentWindow?.postMessage({
-          type: "voiceConsentSaved",
-          consent: event.data.consent,
-        }, "*");
-      }
 
       if (type === "uploadVoiceNote") {
         const { dayNumber, audioBase64 } = event.data;
