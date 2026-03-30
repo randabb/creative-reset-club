@@ -42,7 +42,7 @@ export default function Homepage() {
         <div className={styles.heroLeft}>
           <h1 className={styles.heroHeadline}>
             your daily<br className={styles.brDesktop} />{" "}practice<br />
-            for creative<br className={styles.brDesktop} />{" "}thinking,<br />
+            for <em>creative<br className={styles.brDesktop} />{" "}thinking,</em><br />
             <span className={styles.hlCoral}>in the age of AI.</span>
           </h1>
           <p className={styles.heroSub}>
