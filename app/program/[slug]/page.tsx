@@ -4,12 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 const validPrograms: Record<string, { title: string; file: string }> = {
-  // Legacy tracks
-  fear: { title: "Fear to First Move", file: "/programs/fear.html" },
-  ai: { title: "Think Before You Build", file: "/programs/ai.html" },
-  overwhelmed: { title: "From Many to One", file: "/programs/overwhelmed.html" },
-  blank: { title: "Back to the Well", file: "/programs/blank.html" },
-  // New tracks
   empty_the_head: { title: "Empty the Head", file: "/programs/empty_the_head.html" },
   make_it_yours: { title: "Make It Yours", file: "/programs/make_it_yours.html" },
   reignite: { title: "Reignite", file: "/programs/reignite.html" },

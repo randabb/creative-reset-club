@@ -3,28 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 const programs: Record<string, { title: string; subtitle: string; description: string }> = {
-  // Legacy tracks
-  fear: {
-    title: "Fear to First Move",
-    subtitle: "14 days · Phase 1: Name It",
-    description: "You already know what you want. This track helps you move toward it.",
-  },
-  ai: {
-    title: "Think Before You Build",
-    subtitle: "14 days · Phase 1: Excavate",
-    description: "Your best thinking, before AI gets to it.",
-  },
-  overwhelmed: {
-    title: "From Many to One",
-    subtitle: "14 days · Phase 1: Empty the Head",
-    description: "Too many directions. This track helps you choose one and mean it.",
-  },
-  blank: {
-    title: "Back to the Well",
-    subtitle: "14 days · Phase 1: Diagnose",
-    description: "The creativity didn't leave. This track helps you find it again.",
-  },
-  // New tracks
   empty_the_head: {
     title: "Empty the Head",
     subtitle: "14 days · Phase 1: Clear",
@@ -58,70 +36,6 @@ const programs: Record<string, { title: string; subtitle: string; description: s
 };
 
 const dailyPrompts: Record<string, string[]> = {
-  fear: [
-    "Tell me about the thing you keep not starting.",
-    "How long have you been sitting with this without fully committing — and what has that time actually looked like?",
-    "What are you actually afraid will happen if you fully commit to this?",
-    "What are you protecting yourself from by not committing to this?",
-    "Look at the fear you named this week. What evidence actually supports it — and what evidence from your own history contradicts it?",
-    "Write your absolute worst case scenario in full, specific detail — and then examine it honestly.",
-    "Looking at everything you've written this week — what thinking pattern has been running most of your fear?",
-    "What would you make or build today if you knew with absolute certainty that no one would ever see it?",
-    "What happened when you sat with your work or idea for twenty minutes with no agenda — not planning, not producing, just being present with it?",
-    "Describe your artist's date — where you went, what you noticed, and what it stirred in you.",
-    "What is the smallest, most real public move you could make today related to your work or idea — and what happens when you actually do it?",
-    "Looking back at yesterday's move — what did reality actually deliver, and what does that tell you?",
-    "What did a slightly bigger version of your move look like — and what did doing it teach you about yourself as a creative and builder?",
-    "Write your declaration. What are you making or building, why does it matter to you, and what are you committing to from here?",
-  ],
-  ai: [
-    "Write everything you know, think, feel, and half-believe about the thing you've been making or building — without stopping, without editing, without looking anything up.",
-    "What is the core of what you're making or solving — described entirely in your own words, from your own understanding, without looking anything up?",
-    "Describe the person you're making or building this for — in vivid, specific, human detail — entirely from what you already know or have observed.",
-    "What do you bring to this work that no one else brings — and where did it come from?",
-    "What job is someone actually hiring your work to do — and what does that reveal about what you're really making?",
-    "What are you assuming to be true about your work or idea that you have never actually verified?",
-    "Apply a constraint to your work or idea and follow where it leads: what if you could only share this with the first 100 people through one person you already know and trust?",
-    "Write your positioning statement from scratch — who it's for, what already exists, what makes yours different, and why that difference matters.",
-    "Write every reason someone might say no to your work, your offer, or your idea — and then examine each one honestly.",
-    "Write the origin story of your work or idea — why this found you, what it felt like, and why you can't leave it alone.",
-    "Write a one-page portrait of the person you're making for — everything you know about who they are, what they want, what they fear, and what would make them trust you.",
-    "What exists in your field or market right now, what does it do well, where does it consistently fall short — and where does your work live in relation to all of that?",
-    "Write the one-page context document that captures everything you've developed across this track — your thinking about your work, distilled.",
-    "Use AI today — with everything you've developed as context — and document what's different about the experience.",
-  ],
-  overwhelmed: [
-    "Write down every idea, direction, project, and creative possibility that is currently competing for your attention — every single one, without filtering.",
-    "For each idea on your list — where did it actually come from? Which ones are genuinely yours, and which ones were handed to you?",
-    "For every idea or creative project you've already started, explored, or abandoned — what happened, and what did the stopping tell you?",
-    "What are you actually afraid of losing if you commit to one idea or creative direction and let the others go?",
-    "For each idea on your list — what happens in your body and your thinking when you imagine actually working on it every day?",
-    "Which idea on your list is most aligned with who you actually are — not who you're trying to be, or who others expect you to be?",
-    "If you could only pursue five creative or business directions for the rest of your working life — what would they be? And then: if you could only pursue one?",
-    "For the idea or ideas that survived your filters — does it solve a real problem or serve a real need that real people are actively experiencing?",
-    "Describe the specific person your surviving idea or creative work is for — in enough detail that someone who read this could recognise them.",
-    "What would you actually have to give up, endure, and commit to if you chose this idea fully — and are you genuinely willing?",
-    "Write a letter to the creative ideas and directions you're letting go — what they meant to you, why you're releasing them, and what you want them to know.",
-    "Write your commitment statement — what you're choosing, why you're choosing it, what you're giving up, and what you're committing to do.",
-    "What is the first real, concrete move that makes your creative choice a fact rather than a thought — and what happened when you made it?",
-    "Write your declaration — what you chose, what it cost you, what you learned, and who you are in relation to this idea now.",
-  ],
-  blank: [
-    "When did your creative energy go quiet — and what was happening in your life and your work when it did?",
-    "What have you been outputting — creating, producing, performing, managing, delivering — without adequately refilling?",
-    "What have you been avoiding making or building — and what does that avoidance protect you from?",
-    "What does the creative blank actually feel like in your body — and where do you feel it when you sit down to make something?",
-    "Describe your attention walk — where you went, what you noticed, and what it was like to pay attention deliberately.",
-    "Describe your artist's date — where you went, what you experienced, and what it did to your creative temperature.",
-    "Write down everything beautiful you encountered today in your world — in as much sensory detail as you can.",
-    "Make something terrible today — in any medium, any form — and write about what it was like to make without trying to make it good.",
-    "Make something in a creative medium you've never used before — and write about what being a complete beginner felt like.",
-    "Make something in ten minutes using only what is physically in front of you right now — no AI, no references, no looking anything up — and write about what came out.",
-    "Write badly for fifteen minutes — whatever comes, without stopping, without editing, without rereading, without wondering if AI could do it better — and then write about what came out.",
-    "What is the smallest possible version of the creative work or project you've been avoiding — and what happened when you actually did it?",
-    "Show one small thing you've made during this track to one person — a creative peer, a trusted friend — and write about what it felt like to show it.",
-    "Write your recommitment — what you're returning to as a creative or builder, what you understand now that you didn't when you started, and how you'll keep the well from going empty again.",
-  ],
   empty_the_head: [
     "Write down everything that's currently living in your head. Every task, worry, idea, obligation, and half-thought. Don't organize. Just dump.",
     "Look at your list. What's actually urgent and what just feels urgent? Mark the difference.",
