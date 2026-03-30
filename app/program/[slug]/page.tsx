@@ -943,9 +943,9 @@ function setupSettleIn() {
     var wrap = document.createElement('div');
     wrap.className = 'settle-wrap';
     wrap.id = 'settle-' + dayNum;
-    wrap.innerHTML = '<div class="settle-label">settle in</div>' +
-      '<div class="settle-eyebrow">' + eyebrowText + '</div>' +
+    wrap.innerHTML = '<div class="settle-eyebrow">' + eyebrowText + '</div>' +
       '<div class="settle-title">' + titleHTML + '</div>' +
+      '<div class="settle-label">settle in</div>' +
       '<div class="settle-content" id="settle-content-' + dayNum + '">' + buildSettleHTML(exIdx) + '</div>' +
       '<button class="settle-continue" id="settle-btn-' + dayNum + '">continue</button>';
     // Hide existing day content
