@@ -130,12 +130,27 @@ export async function POST(req: Request) {
           transcript = whisperData.text || "";
           console.log("Voice API: Transcription success, length:", transcript.length);
 
-          await supabase
+          const { error: transcriptError, count: transcriptCount } = await supabase
             .from("day_submissions")
             .update({ voice_note_transcript: transcript })
             .eq("user_id", userId)
             .eq("program_id", programId)
             .eq("day_number", parseInt(dayNumber));
+          console.log("Voice API: Transcript save result — error:", transcriptError, "count:", transcriptCount);
+          if (transcriptError) {
+            console.error("Voice API: Failed to save transcript:", transcriptError);
+            // Fallback: try upsert instead
+            const { error: upsertErr } = await supabase
+              .from("day_submissions")
+              .upsert({
+                user_id: userId,
+                program_id: programId,
+                day_number: parseInt(dayNumber),
+                voice_note_transcript: transcript,
+              }, { onConflict: "user_id,program_id,day_number" });
+            if (upsertErr) console.error("Voice API: Upsert fallback also failed:", upsertErr);
+            else console.log("Voice API: Transcript saved via upsert fallback");
+          }
         } else if (whisperRes.status === 429) {
           console.error("Voice API: Whisper rate limited (429)");
           return NextResponse.json({
