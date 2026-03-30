@@ -161,6 +161,23 @@ export default function ProgramPage() {
           @keyframes settleSlowBlink { 0%,100% { opacity:1; } 50% { opacity:.08; } }
           @keyframes settleRipple { 0% { width:10px; height:10px; opacity:.6; } 100% { width:120px; height:120px; opacity:0; } }
           @keyframes settleChordRing { 0% { width:14px; height:14px; opacity:.5; } 100% { width:100px; height:100px; opacity:0; } }
+
+          /* Progressive Steps */
+          .pstep { display:none; }
+          .pstep.pstep-active { display:block; animation:pstepReveal 0.6s ease forwards; }
+          .pstep.pstep-done { display:block; }
+          @keyframes pstepReveal { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+          .pstep-collapsed { padding:14px 0; border-bottom:1px solid rgba(0,3,50,0.06); cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+          .pstep-collapsed-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:rgba(0,3,50,0.3); font-weight:500; }
+          .pstep-collapsed-chevron { font-size:12px; color:rgba(0,3,50,0.25); transition:transform 0.2s; }
+          .pstep-collapsed.expanded .pstep-collapsed-chevron { transform:rotate(180deg); }
+          .pstep-done > .pstep-collapsed + .pstep-body { display:none; }
+          .pstep-done.pstep-expanded > .pstep-collapsed + .pstep-body { display:block; }
+          .pstep-body { /* wraps the original content */ }
+          .pstep-continue { display:inline-block; margin-top:20px; background:#000332; color:#FAF7F0; border:none; padding:13px 28px; border-radius:100px; font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; letter-spacing:.02em; transition:opacity .2s; }
+          .pstep-continue:hover { opacity:.8; }
+          .pstep-continue:disabled { opacity:.35; cursor:not-allowed; }
+          .pstep-voice-done { font-size:12px; color:rgba(0,3,50,0.35); font-weight:300; margin-top:8px; }
         `;
         html = html.replace('</style>\n</head>', `${injectedCSS}</style>\n</head>`);
         html = html.replace('</style></head>', `${injectedCSS}</style></head>`);
@@ -528,6 +545,214 @@ function reRecord(day) {
   document.getElementById('timer-' + day).textContent = '1:00';
 }
 
+// ── PROGRESSIVE STEPS ──
+var pstepState = {}; // dayNum -> current step index
+
+function setupProgressiveSteps() {
+  document.querySelectorAll('.day-view').forEach(function(dayView) {
+    var dayNum = parseInt(dayView.id.replace('day-',''));
+    if (isNaN(dayNum)) return;
+    var contentWrap = document.getElementById('day-content-' + dayNum);
+    if (!contentWrap) return;
+
+    // Gather elements in order
+    var header = contentWrap.querySelector('.day-header');
+    var uts = contentWrap.querySelector('.uts-section');
+    var sections = contentWrap.querySelectorAll('.section');
+    var voice = contentWrap.querySelector('.voice-section');
+    var completeRow = contentWrap.querySelector('.complete-row');
+
+    // sections[0]=start here, sections[1]=keep going, sections[2]=notice this, sections[3]=micro-action
+    var startHere = sections[0] || null;
+    var keepGoing = sections[1] || null;
+    var noticeThis = sections[2] || null;
+    var microAction = sections[3] || null;
+
+    // Build 5 step wrappers
+    var steps = [];
+
+    // Step 1: Under the Surface (header + uts)
+    var s1 = document.createElement('div');
+    s1.className = 'pstep';
+    s1.setAttribute('data-step','0');
+    s1.setAttribute('data-label','under the surface');
+    var s1body = document.createElement('div');
+    s1body.className = 'pstep-body';
+    if (header) s1body.appendChild(header);
+    if (uts) { uts.setAttribute('open',''); s1body.appendChild(uts); }
+    var s1btn = document.createElement('button');
+    s1btn.className = 'pstep-continue';
+    s1btn.textContent = 'continue';
+    s1body.appendChild(s1btn);
+    s1.appendChild(s1body);
+    steps.push(s1);
+
+    // Step 2: Start Here (writing)
+    var s2 = document.createElement('div');
+    s2.className = 'pstep';
+    s2.setAttribute('data-step','1');
+    s2.setAttribute('data-label','start here');
+    var s2body = document.createElement('div');
+    s2body.className = 'pstep-body';
+    if (startHere) s2body.appendChild(startHere);
+    var s2btn = document.createElement('button');
+    s2btn.className = 'pstep-continue';
+    s2btn.id = 'pstep-write-btn-' + dayNum;
+    s2btn.textContent = 'continue';
+    s2btn.disabled = true;
+    s2body.appendChild(s2btn);
+    s2.appendChild(s2body);
+    steps.push(s2);
+
+    // Step 3: Voice Reflection
+    var s3 = document.createElement('div');
+    s3.className = 'pstep';
+    s3.setAttribute('data-step','2');
+    s3.setAttribute('data-label','voice reflection');
+    var s3body = document.createElement('div');
+    s3body.className = 'pstep-body';
+    if (voice) s3body.appendChild(voice);
+    var s3btn = document.createElement('button');
+    s3btn.className = 'pstep-continue';
+    s3btn.id = 'pstep-voice-btn-' + dayNum;
+    s3btn.textContent = 'continue';
+    s3body.appendChild(s3btn);
+    s3.appendChild(s3body);
+    steps.push(s3);
+
+    // Step 4: Keep Going + Notice This
+    var s4 = document.createElement('div');
+    s4.className = 'pstep';
+    s4.setAttribute('data-step','3');
+    s4.setAttribute('data-label','keep going');
+    var s4body = document.createElement('div');
+    s4body.className = 'pstep-body';
+    if (keepGoing) s4body.appendChild(keepGoing);
+    if (noticeThis) s4body.appendChild(noticeThis);
+    var s4btn = document.createElement('button');
+    s4btn.className = 'pstep-continue';
+    s4btn.textContent = 'continue';
+    s4body.appendChild(s4btn);
+    s4.appendChild(s4body);
+    steps.push(s4);
+
+    // Step 5: Micro Action + Complete
+    var s5 = document.createElement('div');
+    s5.className = 'pstep';
+    s5.setAttribute('data-step','4');
+    s5.setAttribute('data-label','micro-action');
+    var s5body = document.createElement('div');
+    s5body.className = 'pstep-body';
+    if (microAction) s5body.appendChild(microAction);
+    if (completeRow) s5body.appendChild(completeRow);
+    s5.appendChild(s5body);
+    steps.push(s5);
+
+    // Clear content wrap and add steps
+    contentWrap.innerHTML = '';
+    steps.forEach(function(step) { contentWrap.appendChild(step); });
+
+    // Init state
+    pstepState[dayNum] = 0;
+
+    // Wire continue buttons
+    steps.forEach(function(step, idx) {
+      var btn = step.querySelector('.pstep-continue');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          advanceStep(dayNum, idx);
+        });
+      }
+    });
+
+    // Wire writing check for step 2
+    wireWriteCheck(dayNum);
+  });
+}
+
+function wireWriteCheck(dayNum) {
+  var ta = document.getElementById('write-' + dayNum);
+  var btn = document.getElementById('pstep-write-btn-' + dayNum);
+  if (!ta || !btn) return;
+  function check() {
+    var wc = wordCount(ta.value || '');
+    btn.disabled = wc < MIN;
+  }
+  ta.addEventListener('input', check);
+  check(); // initial state
+}
+
+function advanceStep(dayNum, fromIdx) {
+  var contentWrap = document.getElementById('day-content-' + dayNum);
+  if (!contentWrap) return;
+  var steps = contentWrap.querySelectorAll('.pstep');
+  var nextIdx = fromIdx + 1;
+  if (nextIdx >= steps.length) return;
+
+  // Save writing on step 2 continue
+  if (fromIdx === 1) {
+    var ta = document.getElementById('write-' + dayNum);
+    if (ta) {
+      window.parent.postMessage({ type: 'saveWriting', day: dayNum, text: ta.value }, '*');
+    }
+  }
+
+  // Collapse current step
+  collapseStep(steps[fromIdx]);
+
+  // Show next step
+  steps[nextIdx].classList.add('pstep-active');
+  pstepState[dayNum] = nextIdx;
+
+  // Scroll to new step
+  setTimeout(function() {
+    steps[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function collapseStep(stepEl) {
+  stepEl.classList.remove('pstep-active');
+  stepEl.classList.add('pstep-done');
+  var label = stepEl.getAttribute('data-label') || '';
+
+  // Add collapsed header if not already present
+  if (!stepEl.querySelector('.pstep-collapsed')) {
+    var collapsed = document.createElement('div');
+    collapsed.className = 'pstep-collapsed';
+    collapsed.innerHTML = '<span class="pstep-collapsed-label">' + label + '</span><span class="pstep-collapsed-chevron">↓</span>';
+    stepEl.insertBefore(collapsed, stepEl.firstChild);
+    collapsed.addEventListener('click', function() {
+      stepEl.classList.toggle('pstep-expanded');
+      collapsed.classList.toggle('expanded');
+    });
+  }
+
+  // Hide the continue button in collapsed state
+  var btn = stepEl.querySelector('.pstep-continue');
+  if (btn) btn.style.display = 'none';
+}
+
+function showStepsForDay(dayNum) {
+  var contentWrap = document.getElementById('day-content-' + dayNum);
+  if (!contentWrap) return;
+  var steps = contentWrap.querySelectorAll('.pstep');
+
+  // Reset all steps
+  steps.forEach(function(step) {
+    step.classList.remove('pstep-active', 'pstep-done', 'pstep-expanded');
+    step.style.display = '';
+    var collapsed = step.querySelector('.pstep-collapsed');
+    if (collapsed) collapsed.remove();
+    var btn = step.querySelector('.pstep-continue');
+    if (btn) btn.style.display = '';
+  });
+
+  // Show step 1
+  pstepState[dayNum] = 0;
+  if (steps[0]) steps[0].classList.add('pstep-active');
+  wireWriteCheck(dayNum);
+}
+
 // ── SETTLE IN ──
 var settleAudioCtx = null;
 var settleAudioNodes = [];
@@ -742,6 +967,8 @@ function wrapShowDayForSettle() {
     if (settleWrap && contentWrap && btn) {
       contentWrap.style.display = 'none';
       btn.style.display = '';
+      // Reset progressive steps for this day
+      showStepsForDay(n);
       // Restart animation
       var exIdx = getSettleExercise(n);
       var sc = document.getElementById('settle-content-' + n);
@@ -757,6 +984,7 @@ init = function() {
   setupProgressiveReveal();
   setupWritingEncouragement();
   setupVoiceSections();
+  setupProgressiveSteps();
   setupSettleIn();
   wrapShowDayForSettle();
   // Start settle animation for day 1
@@ -790,6 +1018,15 @@ init = function() {
           program_id: slug,
           day_number: event.data.day,
           submitted_at: new Date().toISOString(),
+        }, { onConflict: "user_id,program_id,day_number" });
+      }
+
+      if (type === "saveWriting") {
+        await supabase.from("day_submissions").upsert({
+          user_id: userId,
+          program_id: slug,
+          day_number: event.data.day,
+          written_response: event.data.text,
         }, { onConflict: "user_id,program_id,day_number" });
       }
 
