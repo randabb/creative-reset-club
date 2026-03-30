@@ -4,7 +4,7 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { transcript, direction, thread } = await req.json();
+    const { transcript, direction, thread, allTranscripts, canvasContext } = await req.json();
 
     if (!transcript) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
@@ -13,6 +13,32 @@ export async function POST(req: Request) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+    }
+
+    // Build synthesis context from all transcripts
+    let transcriptContext = "";
+    if (allTranscripts && Array.isArray(allTranscripts) && allTranscripts.length > 0) {
+      transcriptContext = allTranscripts
+        .map((t: { day_number: number; voice_note_transcript: string }) => `Day ${t.day_number}: ${t.voice_note_transcript}`)
+        .join("\n\n");
+    } else {
+      transcriptContext = `Day 1: ${transcript}`;
+    }
+
+    // Extract text content from canvas elements
+    let canvasTextContent = "";
+    if (canvasContext?.elements && Array.isArray(canvasContext.elements)) {
+      const texts = canvasContext.elements
+        .filter((el: { type: string; text?: string; theme?: string; insight?: string }) =>
+          (el.type === "sticky" || el.type === "text") && el.text?.trim()
+        )
+        .map((el: { type: string; text?: string }) => `- ${el.text?.trim()}`);
+      const cards = canvasContext.elements
+        .filter((el: { type: string; theme?: string }) => el.type === "action-card" && el.theme)
+        .map((el: { theme?: string; insight?: string }) => `- [action card] ${el.theme}: ${el.insight || ""}`);
+      canvasTextContent = [...texts, ...cards].join("\n") || "Canvas is empty.";
+    } else {
+      canvasTextContent = "Canvas is empty.";
     }
 
     const userMessage = `Transcript: ${transcript}\n\nThread to focus on: ${thread || direction || "what they discovered"}`;
@@ -28,6 +54,14 @@ export async function POST(req: Request) {
         model: "claude-sonnet-4-20250514",
         max_tokens: 500,
         system: `You are a creative thinking coach helping someone work through a personal discovery they made during a reflection exercise.
+
+The user has been on a 14-day creative reset track. Here is what they've discovered across their voice reflections so far:
+${transcriptContext}
+
+Here is what they currently have on their expansion room canvas:
+${canvasTextContent}
+
+Use this context to make your response feel continuous and aware — reference patterns across days if relevant, and build on what they've already placed on the canvas rather than repeating it.
 
 Your job is to generate exactly 3 action items that are:
 1. Directly grounded in the specific words and ideas from their transcript — reference what they actually said

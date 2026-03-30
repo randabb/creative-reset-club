@@ -45,10 +45,14 @@ export default function ExpansionRoom({
   initialDiscovery,
   sourceSubmissionId,
   userId,
+  allTranscripts,
+  canvasContext,
 }: {
   initialDiscovery: string;
   sourceSubmissionId: string;
   userId: string;
+  allTranscripts: { day_number: number; voice_note_transcript: string }[];
+  canvasContext: unknown;
 }) {
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [paths, setPaths] = useState<DrawPath[]>([]);
@@ -274,7 +278,7 @@ export default function ExpansionRoom({
       const res = await fetch("/api/expansion/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: initialDiscovery, direction: "turn it into actions", thread }),
+        body: JSON.stringify({ transcript: initialDiscovery, direction: "turn it into actions", thread, allTranscripts, canvasContext: { elements, paths } }),
       });
       const result = await res.json();
       if (result.actions && Array.isArray(result.actions)) {

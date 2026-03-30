@@ -11,6 +11,8 @@ export default function ExpansionRoomPage() {
   const [transcript, setTranscript] = useState("");
   const [submissionId, setSubmissionId] = useState("");
   const [userId, setUserId] = useState("");
+  const [allTranscripts, setAllTranscripts] = useState<{ day_number: number; voice_note_transcript: string }[]>([]);
+  const [canvasContext, setCanvasContext] = useState<unknown>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -44,9 +46,27 @@ export default function ExpansionRoomPage() {
         return;
       }
 
+      // Fetch all voice transcripts for this track
+      const { data: allSubs } = await supabase
+        .from("day_submissions")
+        .select("day_number, voice_note_transcript")
+        .eq("user_id", user.id)
+        .eq("program_id", profile.matched_program)
+        .not("voice_note_transcript", "is", null)
+        .order("day_number", { ascending: true });
+
+      // Fetch canvas context
+      const { data: canvas } = await supabase
+        .from("expansion_canvas")
+        .select("canvas_data")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
       setTranscript(sub.voice_note_transcript);
       setSubmissionId(sub.id);
       setUserId(user.id);
+      setAllTranscripts(allSubs?.filter((s) => s.voice_note_transcript) as { day_number: number; voice_note_transcript: string }[] || []);
+      setCanvasContext(canvas?.canvas_data || null);
       setStatus("ready");
     };
 
@@ -70,5 +90,5 @@ export default function ExpansionRoomPage() {
     );
   }
 
-  return <ExpansionRoom initialDiscovery={transcript} sourceSubmissionId={submissionId} userId={userId} />;
+  return <ExpansionRoom initialDiscovery={transcript} sourceSubmissionId={submissionId} userId={userId} allTranscripts={allTranscripts} canvasContext={canvasContext} />;
 }
