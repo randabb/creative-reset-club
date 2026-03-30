@@ -5,145 +5,102 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Refill — Creative Reset Club</title>
 <style>
-@font-face {
-  font-family: 'Codec Pro';
-  src: url('/fonts/codec-pro_regular.ttf') format('truetype');
-  font-weight: 400 700;
-  font-style: normal;
-}
+@font-face { font-family:'Codec Pro'; src:url('/fonts/codec-pro_regular.ttf') format('truetype'); font-weight:400 700; font-style:normal; }
 </style>
 <style>
-  :root {
-    --cream: #f4f2ee; --cream-dark: #e8e4dc; --ink: #000332; --ink-soft: #000332cc;
-    --red: #ff9090; --red-soft: #ffd0d0; --sand: #000332; --sand-mid: #00033280;
-    --ice: #e6f6ff;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { background:var(--cream); color:var(--ink); font-family:'Codec Pro',sans-serif; min-height:100vh; overflow-x:hidden; }
-  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
-  .app { display:flex; min-height:100vh; position:relative; z-index:1; }
-  .sidebar { width:268px; min-height:100vh; background:var(--ink); padding:32px 22px; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; display:flex; flex-direction:column; z-index:50; transition:transform .3s ease; }
-  .sidebar-logo { font-size:11px; letter-spacing:.12em; text-transform:lowercase; color:rgba(255,255,255,0.35); margin-bottom:4px; }
-  .sidebar-program { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); line-height:1.2; margin-bottom:32px; font-style:normal; }
-  .phase-group { margin-bottom:20px; }
-  .phase-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:7px; padding-left:4px; }
-  .day-nav-item { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:3px; cursor:pointer; transition:all .2s; border:none; background:none; width:100%; text-align:left; }
-  .day-nav-item:hover { background:rgba(242,237,228,.06); }
-  .day-nav-item.active { background:rgba(242,237,228,.1); }
-  .day-nav-num { width:23px; height:23px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.55); font-weight:500; flex-shrink:0; transition:all .2s; }
-  .day-nav-item.active .day-nav-num { background:var(--cream); color:var(--ink); }
-  .day-nav-item.completed .day-nav-num { background:var(--red)!important; color:white!important; }
-  .day-nav-title { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.3; font-weight:300; }
-  .day-nav-item.active .day-nav-title { color:var(--cream); font-weight:400; }
-  .sidebar-progress { margin-top:auto; padding-top:20px; border-top:1px solid rgba(242,237,228,.1); }
-  .progress-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:7px; }
-  .progress-track { height:3px; background:rgba(242,237,228,.1); border-radius:2px; overflow:hidden; }
-  .progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .5s ease; }
-  .progress-count { font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; }
-  .main { margin-left:268px; flex:1; padding:52px 60px 100px; max-width:calc(100% - 268px); }
-  .day-view { display:none; animation:fadeIn .4s ease forwards; }
-  .day-view.active { display:block; }
-  .journal-view { display:none; animation:fadeIn .4s ease forwards; }
-  .journal-view.active { display:block; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .day-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; }
-  .day-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:10px; }
-  .day-title { font-family:'Codec Pro',sans-serif; font-size:clamp(28px,4vw,46px); line-height:1.08; font-weight:400; color:var(--ink); margin-bottom:8px; }
-  .day-title em { font-style:normal; color:var(--red); }
-  .day-number-large { font-family:'Codec Pro',sans-serif; font-size:100px; line-height:1; color:var(--cream-dark); font-style:normal; user-select:none; margin-left:16px; margin-top:-4px; flex-shrink:0; }
-  .day-completed-badge { display:none; align-items:center; gap:7px; font-size:12px; color:var(--red); }
-  .day-completed-badge.show { display:flex; }
-  .day-completed-badge::before { content:'✓'; width:17px; height:17px; background:var(--red); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
-  .framework-card { background:var(--ink); color:var(--cream); border-radius:4px; padding:26px 30px; margin-bottom:32px; position:relative; overflow:hidden; }
-  .framework-card::before { content:''; position:absolute; top:0; right:0; width:70px; height:70px; background:rgba(200,75,47,.15); border-radius:50%; transform:translate(18px,-18px); }
-  .framework-eyebrow { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--red); margin-bottom:7px; }
-  .framework-name { font-family:'Codec Pro',sans-serif; font-size:19px; color:var(--cream); margin-bottom:2px; font-style:normal; }
-  .framework-author { font-size:12px; color:var(--sand-mid); margin-bottom:12px; }
-  .framework-body { font-size:14px; line-height:1.75; color:rgba(242,237,228,.75); font-weight:300; }
-  .framework-benefit { margin-top:12px; padding-top:12px; border-top:1px solid rgba(244,242,238,.15); font-size:12px; color:rgba(244,242,238,0.65); line-height:1.65; }
-  .framework-benefit strong { color:#f4f2ee; font-weight:700; }
-  .section { margin-bottom:32px; }
-  .section-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
-  .section-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
-  .question-text { font-family:'Codec Pro',sans-serif; font-size:clamp(17px,2.5vw,25px); line-height:1.45; color:var(--ink); margin-bottom:10px; font-style:normal; }
-  .writing-prompts { margin-bottom:14px; }
-  .writing-prompt { font-size:13px; color:var(--ink-soft); line-height:1.65; padding:5px 0 5px 14px; border-left:2px solid var(--sand); margin-bottom:7px; font-weight:300; }
-  .writing-area { width:100%; min-height:260px; padding:20px 22px; border:1.5px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:15px; line-height:1.85; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
-  .writing-area::placeholder { color:var(--sand-mid); font-style:normal; font-size:14px; }
-  .writing-area:focus { border-color:var(--ink); }
-  .writing-area.sufficient { border-color:#7A9E7E; }
-  .char-counter { display:flex; align-items:center; gap:10px; margin-top:8px; }
-  .char-bar { flex:1; height:2px; background:var(--sand); border-radius:2px; overflow:hidden; }
-  .char-fill { height:100%; background:var(--sand-mid); border-radius:2px; transition:width .3s ease, background .3s ease; }
-  .char-fill.sufficient { background:#7A9E7E; }
-  .char-num { font-size:11px; color:var(--sand-mid); white-space:nowrap; }
-  .char-num.sufficient { color:#7A9E7E; }
-  .followup-section { display:none; margin-top:22px; padding:22px; border:1px solid var(--red-soft); border-radius:3px; background:rgba(200,75,47,.025); animation:fadeIn .4s ease; }
-  .followup-section.visible { display:block; }
-  .followup-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:9px; }
-  .followup-question { font-family:'Codec Pro',sans-serif; font-size:18px; font-style:normal; color:var(--ink); margin-bottom:10px; line-height:1.4; }
-  .followup-textarea { width:100%; min-height:160px; padding:16px 20px; border:1px solid var(--sand); border-radius:3px; background:transparent; font-family:'Codec Pro',sans-serif; font-size:14px; line-height:1.8; color:var(--ink); resize:vertical; outline:none; transition:border-color .2s; }
-  .followup-textarea:focus { border-color:var(--ink); }
-  .followup-textarea::placeholder { color:var(--sand-mid); font-style:normal; font-size:13px; }
-  .reflection-box { background:var(--cream-dark); border-radius:3px; padding:20px 24px; }
-  .reflection-prompt { font-size:14px; line-height:1.75; color:var(--ink-soft); font-style:normal; }
-  .action-card { border:1.5px solid var(--ink); border-radius:3px; padding:20px 24px; display:flex; gap:16px; align-items:flex-start; }
-  .action-icon { width:32px; height:32px; border-radius:50%; background:var(--ink); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
-  .action-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:4px; }
-  .action-text { font-size:14px; line-height:1.65; color:var(--ink); }
-  .complete-row { margin-top:32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .btn-complete { background:var(--ink); color:var(--cream); border:none; padding:14px 34px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
-  .btn-complete:hover:not(:disabled) { background:var(--red); transform:translateY(-1px); }
-  .btn-complete:disabled { background:var(--sand); cursor:default; }
-  .btn-next { background:transparent; color:var(--ink); border:1.5px solid var(--sand); padding:13px 26px; font-family:'Codec Pro',sans-serif; font-size:14px; border-radius:2px; cursor:pointer; transition:all .2s; }
-  .btn-next:hover { border-color:var(--ink); }
-  .complete-note { font-size:12px; color:var(--sand-mid); width:100%; }
-  .complete-note.error { color:var(--red); }
-  .journal-entry { margin-bottom:44px; padding-bottom:44px; border-bottom:1px solid var(--sand); }
-  .journal-entry:last-of-type { border-bottom:none; }
-  .journal-day-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:6px; }
-  .journal-day-title { font-family:'Codec Pro',sans-serif; font-size:22px; font-style:normal; color:var(--ink); margin-bottom:12px; }
-  .journal-question { font-size:13px; color:var(--sand-mid); margin-bottom:8px; font-style:normal; }
-  .journal-answer { font-size:15px; line-height:1.85; color:var(--ink-soft); white-space:pre-wrap; }
-  .journal-empty { font-size:14px; color:var(--sand); font-style:normal; }
-  .ai-section { margin-top:56px; padding-top:44px; border-top:2px solid var(--ink); }
-  .ai-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
-  .ai-title { font-family:'Codec Pro',sans-serif; font-size:30px; font-weight:400; color:var(--ink); margin-bottom:6px; }
-  .ai-title em { font-style:normal; }
-  .ai-sub { font-size:14px; color:var(--sand-mid); margin-bottom:32px; line-height:1.6; }
-  .btn-generate { background:var(--ink); color:var(--cream); border:none; padding:15px 38px; font-family:'Codec Pro',sans-serif; font-size:14px; font-weight:500; letter-spacing:.06em; border-radius:2px; cursor:pointer; transition:all .2s; }
-  .btn-generate:hover { background:var(--red); transform:translateY(-1px); }
-  .loading-box { display:flex; align-items:center; gap:12px; padding:28px; background:var(--ink); border-radius:4px; color:var(--cream); }
-  .loading-dots { display:flex; gap:4px; }
-  .loading-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1.4s ease infinite; }
-  .loading-dot:nth-child(2) { animation-delay:.2s; }
-  .loading-dot:nth-child(3) { animation-delay:.4s; }
-  @keyframes pulse { 0%,80%,100% { opacity:.3; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
-  .reflection-output { animation:fadeIn .6s ease; }
-  .warm-block { background:var(--ink); color:var(--cream); border-radius:4px; padding:32px; margin-bottom:24px; }
-  .warm-label { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; }
-  .warm-text { font-size:15px; line-height:1.85; color:rgba(242,237,228,.88); font-weight:300; }
-  .warm-text p { margin-bottom:14px; }
-  .warm-text p:last-child { margin-bottom:0; }
-  .patterns-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--sand-mid); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
-  .patterns-label::after { content:''; flex:1; height:1px; background:var(--sand); opacity:.4; }
-  .pattern-card { border:1.5px solid var(--sand); border-radius:3px; padding:22px 26px; margin-bottom:10px; }
-  .pattern-num { font-family:'Codec Pro',sans-serif; font-size:28px; font-style:normal; color:var(--red); line-height:1; margin-bottom:6px; }
-  .pattern-title { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:7px; }
-  .pattern-body { font-size:14px; line-height:1.75; color:var(--ink-soft); }
-  .closing-block { padding:24px; background:var(--cream-dark); border-radius:3px; margin-top:10px; }
-  .closing-text { font-family:'Codec Pro',sans-serif; font-size:19px; font-style:normal; line-height:1.55; color:var(--ink); }
-  .menu-toggle { display:none; position:fixed; top:14px; left:14px; z-index:200; background:var(--ink); color:var(--cream); border:none; width:38px; height:38px; border-radius:3px; font-size:17px; cursor:pointer; align-items:center; justify-content:center; }
-  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
-  @media(max-width:768px) {
-    .sidebar { transform:translateX(-100%); }
-    .sidebar.open { transform:translateX(0); }
-    .sidebar-overlay.show { display:block; }
-    .menu-toggle { display:flex; }
-    .main { margin-left:0; padding:52px 18px 80px; max-width:100%; }
-    .day-number-large { display:none; }
-  }
+  :root { --cream:#f4f2ee;--cream-dark:#e8e4dc;--ink:#000332;--ink-soft:#000332cc;--red:#ff9090;--red-soft:#ffd0d0;--sand:#000332;--sand-mid:#00033280;--ice:#e6f6ff; }
+  *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+  body{background:var(--cream);color:var(--ink);font-family:'Codec Pro',sans-serif;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+  .app{display:flex;min-height:100vh;position:relative;z-index:1}
+  .sidebar{width:268px;min-height:100vh;background:var(--ink);padding:32px 22px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;display:flex;flex-direction:column;z-index:50;transition:transform .3s ease}
+  .sidebar-logo{font-size:11px;letter-spacing:.12em;text-transform:lowercase;color:rgba(255,255,255,0.35);margin-bottom:4px}
+  .sidebar-program{font-family:'Codec Pro',sans-serif;font-size:19px;color:var(--cream);line-height:1.2;margin-bottom:32px;font-style:normal}
+  .phase-group{margin-bottom:20px}.phase-label{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:7px;padding-left:4px}
+  .day-nav-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:3px;cursor:pointer;transition:all .2s;border:none;background:none;width:100%;text-align:left}
+  .day-nav-item:hover{background:rgba(242,237,228,.06)}.day-nav-item.active{background:rgba(242,237,228,.1)}
+  .day-nav-num{width:23px;height:23px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.55);font-weight:500;flex-shrink:0;transition:all .2s}
+  .day-nav-item.active .day-nav-num{background:var(--cream);color:var(--ink)}.day-nav-item.completed .day-nav-num{background:var(--red)!important;color:white!important}
+  .day-nav-title{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.3;font-weight:300}.day-nav-item.active .day-nav-title{color:var(--cream);font-weight:400}
+  .sidebar-progress{margin-top:auto;padding-top:20px;border-top:1px solid rgba(242,237,228,.1)}
+  .progress-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:7px}
+  .progress-track{height:3px;background:rgba(242,237,228,.1);border-radius:2px;overflow:hidden}.progress-fill{height:100%;background:var(--red);border-radius:2px;transition:width .5s ease}
+  .progress-count{font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px}
+  .main{margin-left:268px;flex:1;padding:52px 60px 100px;max-width:calc(100% - 268px)}
+  .day-view{display:none;animation:fadeIn .4s ease forwards}.day-view.active{display:block}
+  .journal-view{display:none;animation:fadeIn .4s ease forwards}.journal-view.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .day-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px}
+  .day-eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:10px}
+  .day-title{font-family:'Codec Pro',sans-serif;font-size:clamp(28px,4vw,46px);line-height:1.08;font-weight:400;color:var(--ink);margin-bottom:8px}
+  .day-title em{font-style:normal;color:var(--red)}
+  .day-number-large{font-family:'Codec Pro',sans-serif;font-size:100px;line-height:1;color:var(--cream-dark);font-style:normal;user-select:none;margin-left:16px;margin-top:-4px;flex-shrink:0}
+  .day-completed-badge{display:none;align-items:center;gap:7px;font-size:12px;color:var(--red)}
+  .day-completed-badge.show{display:flex}
+  .day-completed-badge::before{content:'✓';width:17px;height:17px;background:var(--red);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px}
+  .section{margin-bottom:32px}
+  .section-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--sand);opacity:.4}
+  .question-text{font-family:'Codec Pro',sans-serif;font-size:clamp(17px,2.5vw,25px);line-height:1.45;color:var(--ink);margin-bottom:10px;font-style:normal}
+  .writing-prompts{margin-bottom:14px}
+  .writing-prompt{font-size:13px;color:var(--ink-soft);line-height:1.65;padding:5px 0 5px 14px;border-left:2px solid var(--sand);margin-bottom:7px;font-weight:300}
+  .writing-area{width:100%;min-height:260px;padding:20px 22px;border:1.5px solid var(--sand);border-radius:3px;background:transparent;font-family:'Codec Pro',sans-serif;font-size:15px;line-height:1.85;color:var(--ink);resize:vertical;outline:none;transition:border-color .2s}
+  .writing-area::placeholder{color:var(--sand-mid);font-style:normal;font-size:14px}
+  .writing-area:focus{border-color:var(--ink)}.writing-area.sufficient{border-color:#7A9E7E}
+  .char-counter{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .char-bar{flex:1;height:2px;background:var(--sand);border-radius:2px;overflow:hidden}
+  .char-fill{height:100%;background:var(--sand-mid);border-radius:2px;transition:width .3s ease,background .3s ease}.char-fill.sufficient{background:#7A9E7E}
+  .char-num{font-size:11px;color:var(--sand-mid);white-space:nowrap}.char-num.sufficient{color:#7A9E7E}
+  .reflection-box{background:var(--cream-dark);border-radius:3px;padding:20px 24px}
+  .reflection-prompt{font-size:14px;line-height:1.75;color:var(--ink-soft);font-style:normal}
+  .action-card{border:1.5px solid var(--ink);border-radius:3px;padding:20px 24px;display:flex;gap:16px;align-items:flex-start}
+  .action-icon{width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .action-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:4px}
+  .action-text{font-size:14px;line-height:1.65;color:var(--ink)}
+  .complete-row{margin-top:32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn-complete{background:var(--ink);color:var(--cream);border:none;padding:14px 34px;font-family:'Codec Pro',sans-serif;font-size:14px;font-weight:500;letter-spacing:.06em;border-radius:2px;cursor:pointer;transition:all .2s}
+  .btn-complete:hover:not(:disabled){background:var(--red);transform:translateY(-1px)}.btn-complete:disabled{background:var(--sand);cursor:default}
+  .btn-next{background:transparent;color:var(--ink);border:1.5px solid var(--sand);padding:13px 26px;font-family:'Codec Pro',sans-serif;font-size:14px;border-radius:2px;cursor:pointer;transition:all .2s}
+  .btn-next:hover{border-color:var(--ink)}
+  .complete-note{font-size:12px;color:var(--sand-mid);width:100%}.complete-note.error{color:var(--red)}
+  .journal-entry{margin-bottom:44px;padding-bottom:44px;border-bottom:1px solid var(--sand)}.journal-entry:last-of-type{border-bottom:none}
+  .journal-day-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:6px}
+  .journal-day-title{font-family:'Codec Pro',sans-serif;font-size:22px;font-style:normal;color:var(--ink);margin-bottom:12px}
+  .journal-question{font-size:13px;color:var(--sand-mid);margin-bottom:8px;font-style:normal}
+  .journal-answer{font-size:15px;line-height:1.85;color:var(--ink-soft);white-space:pre-wrap}
+  .journal-empty{font-size:14px;color:var(--sand);font-style:normal}
+  .ai-section{margin-top:56px;padding-top:44px;border-top:2px solid var(--ink)}
+  .ai-eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:10px}
+  .ai-title{font-family:'Codec Pro',sans-serif;font-size:30px;font-weight:400;color:var(--ink);margin-bottom:6px}.ai-title em{font-style:normal}
+  .ai-sub{font-size:14px;color:var(--sand-mid);margin-bottom:32px;line-height:1.6}
+  .btn-generate{background:var(--ink);color:var(--cream);border:none;padding:15px 38px;font-family:'Codec Pro',sans-serif;font-size:14px;font-weight:500;letter-spacing:.06em;border-radius:2px;cursor:pointer;transition:all .2s}
+  .btn-generate:hover{background:var(--red);transform:translateY(-1px)}
+  .loading-box{display:flex;align-items:center;gap:12px;padding:28px;background:var(--ink);border-radius:4px;color:var(--cream)}
+  .loading-dots{display:flex;gap:4px}.loading-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.4s ease infinite}
+  .loading-dot:nth-child(2){animation-delay:.2s}.loading-dot:nth-child(3){animation-delay:.4s}
+  @keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+  .reflection-output{animation:fadeIn .6s ease}
+  .warm-block{background:var(--ink);color:var(--cream);border-radius:4px;padding:32px;margin-bottom:24px}
+  .warm-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:14px}
+  .warm-text{font-size:15px;line-height:1.85;color:rgba(242,237,228,.88);font-weight:300}.warm-text p{margin-bottom:14px}.warm-text p:last-child{margin-bottom:0}
+  .patterns-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-mid);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .patterns-label::after{content:'';flex:1;height:1px;background:var(--sand);opacity:.4}
+  .pattern-card{border:1.5px solid var(--sand);border-radius:3px;padding:22px 26px;margin-bottom:10px}
+  .pattern-num{font-family:'Codec Pro',sans-serif;font-size:28px;font-style:normal;color:var(--red);line-height:1;margin-bottom:6px}
+  .pattern-title{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:7px}
+  .pattern-body{font-size:14px;line-height:1.75;color:var(--ink-soft)}
+  .closing-block{padding:24px;background:var(--cream-dark);border-radius:3px;margin-top:10px}
+  .closing-text{font-family:'Codec Pro',sans-serif;font-size:19px;font-style:normal;line-height:1.55;color:var(--ink)}
+  .uts-section{margin-bottom:32px}
+  .uts-toggle{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:16px 20px;background:rgba(0,3,50,0.03);border-radius:4px;border:1px solid rgba(0,3,50,0.06);list-style:none}
+  .uts-toggle::-webkit-details-marker{display:none}
+  .uts-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-mid)}
+  .uts-icon{font-size:16px;color:var(--sand-mid);transition:transform 0.2s}
+  details[open] .uts-icon{transform:rotate(45deg)}
+  .uts-body{padding:20px 20px 4px;font-size:14px;line-height:1.75;color:var(--ink-soft);font-weight:300}
+  .menu-toggle{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--ink);color:var(--cream);border:none;width:38px;height:38px;border-radius:3px;font-size:17px;cursor:pointer;align-items:center;justify-content:center}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+  @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sidebar-overlay.show{display:block}.menu-toggle{display:flex}.main{margin-left:0;padding:52px 18px 80px;max-width:100%}.day-number-large{display:none}}
 </style>
 </head>
 <body>
@@ -164,339 +121,195 @@
 </div>
 
 <script>
-const MIN = 100;
-function wordCount(str){ return str.trim().split(/\s+/).filter(w=>w.length>0).length; }
-const program = [
-  { day:1, phase:1, phaseName:"Diagnose", title:"The Depletion Map",
-    fw:{ name:"The Stress-Recovery Model", author:"Jim Loehr — The Power of Full Engagement",
-      body:"Loehr's research with elite athletes revealed that peak performance requires oscillation between stress and recovery. Creative professionals apply stress constantly but rarely recover. The depletion map is a diagnostic tool: where exactly has your energy gone, and what has been taking more than it gives?",
-      benefit:"<strong>Cognitive benefit:</strong> Mapping energy expenditure activates metacognitive awareness of resource allocation. Research shows that people who explicitly track where their energy goes are significantly better at identifying unsustainable patterns and making corrections before reaching complete burnout." },
-    q:"Map every area of your life where energy is going out — and honestly assess how much is coming back in.",
-    prompts:["List every major demand on your energy: work, relationships, responsibilities, creative obligations, emotional labour.","For each one, rate how much energy it takes (1-10) and how much it gives back (1-10). Be honest about the ratios.","Which areas have the worst ratio — high cost, low return?","Are there areas where you're giving energy that no one asked for — where you've volunteered for depletion?","What does the overall map reveal about the sustainability of your current life?"],
-    fu:{ t:50, q:"When you look at the full map, is the depletion the result of too many demands, or too little recovery?", prompts:["Have you been treating this as a willpower problem when it's actually a structural problem?","What would a sustainable version of your energy map look like?","What would need to change first — the demands or the recovery?"] },
-    ref:"Depletion is not a character flaw. It's a math problem — more going out than coming in. Today you mapped the math. The numbers don't lie, even when your work ethic tells you to push through.",
-    action:{ i:"🗺️", t:"Circle the three biggest energy drains on your map. For each one, write: 'Is this necessary?' and 'Is this mine to carry?' Not all demands are yours." }
+const MIN=100;
+function wordCount(str){return str.trim().split(/\s+/).filter(w=>w.length>0).length;}
+const program=[
+  {day:1,phase:1,phaseName:"Acknowledge the Depletion",title:"Admit the Empty",
+    uts:"Depletion in creative work is often the last thing to get acknowledged. You keep producing, keep showing up, keep delivering. But something about it has gone thin. Energy that used to feel natural now requires effort. The ideas that used to come now have to be forced. Most people push through this for a long time before they name it. You're naming it now.",
+    q:"Write about what empty feels like for you. Not the dramatic version. The actual everyday version. What does a depleted creative day look like?",
+    prompts:["What's the first sign that the well is running low?","What do you produce when you're depleted compared to when you're full?","How long have you been running on empty?"],
+    kg:"Write about the last time the well felt full. What was different? What were you doing, taking in, making time for?",
+    notice:"Notice if admitting the depletion feels like relief or defeat. Relief means you've been holding this for a while. Both are worth paying attention to.",
+    action:{i:"💧",t:"Write one word that describes how your creative energy feels right now. Just one. That's the starting point."}
   },
-  { day:2, phase:1, phaseName:"Diagnose", title:"Where It Went",
-    fw:{ name:"Burnout Research", author:"Christina Maslach — The Burnout Inventory",
-      body:"Maslach's research identifies three dimensions of burnout: exhaustion (depleted energy), cynicism (detachment from work), and reduced efficacy (feeling like nothing you do matters). Understanding which dimension you're experiencing most helps you target the recovery. Exhaustion needs rest. Cynicism needs meaning. Reduced efficacy needs small wins.",
-      benefit:"<strong>Cognitive benefit:</strong> Differentiating burnout dimensions activates more precise self-diagnosis. Research shows that people who can identify their specific burnout pattern recover faster and more completely than those who treat all depletion the same way — because each dimension requires a different intervention." },
-    q:"Which kind of depletion are you experiencing — exhaustion, cynicism, reduced efficacy, or some combination? Where specifically did your energy go?",
-    prompts:["Are you physically and emotionally exhausted — running on fumes, unable to rest even when you have time?","Have you become cynical or detached from work that used to matter to you — going through the motions without caring?","Do you feel like nothing you do makes a difference — like your efforts don't lead to meaningful results?","When did each of these start? Can you trace them to specific events, periods, or patterns?","Which dimension is strongest right now — and which one concerns you most?"],
-    fu:{ t:50, q:"What were you telling yourself about your depletion before you named it — and was that story accurate?", prompts:["Were you blaming yourself — laziness, weakness, not being tough enough?","Were you minimising it — 'everyone's tired,' 'it's just a busy period'?","What changes when you name it accurately instead of performing through it?"] },
-    ref:"Depletion has a shape. Once you know the shape, you can stop applying the wrong remedy. Rest won't fix a meaning deficit. Purpose won't fix exhaustion. Today you named the shape.",
-    action:{ i:"📍", t:"Write one sentence: 'I am depleted because...' Finish it honestly. Not 'I'm tired.' The real because. Say it plainly." }
+  {day:2,phase:1,phaseName:"Acknowledge the Depletion",title:"What You've Been Giving",
+    uts:"Depletion has a cause. It's not random and it's not a character flaw. It's the result of sustained output without sufficient input, of giving without replenishing, of staying in execution mode long past the point where the reserves ran out. Understanding what you've been giving, and how much, is the first step toward understanding what you need.",
+    q:"Write about what you've been giving. The output, the energy, the presence, the care. What has been leaving you and going into the work or the people around you?",
+    prompts:["Be specific and honest. Not complaining, just accounting.","What has required the most of you recently?","What have you been giving that hasn't been replenished?"],
+    kg:"Write about the ratio. How much has been going out compared to how much has been coming in? What does that imbalance feel like in your body and in your work?",
+    notice:"Notice if you've been treating depletion as a virtue. Busyness and output as proof of worth. That's worth examining.",
+    action:{i:"📊",t:"Write one thing you've been giving that has cost more than you realized. Just one. Name it without judgment."}
   },
-  { day:3, phase:1, phaseName:"Diagnose", title:"What Drains You",
-    fw:{ name:"Energy Vampires", author:"Judith Orloff — The Empath's Survival Guide",
-      body:"Orloff identifies specific categories of energy drains: people who take more than they give, environments that deplete, obligations that serve no one, and internal patterns — perfectionism, people-pleasing, over-functioning — that burn fuel without producing heat. The drains are often invisible because they've been normalised. Naming them is the first step to stopping them.",
-      benefit:"<strong>Cognitive benefit:</strong> Identifying specific energy drains activates the brain's boundary-setting circuits — the prefrontal systems responsible for saying no, setting limits, and prioritising self-preservation. These circuits atrophy in people who chronically over-give, and naming drains begins to reactivate them." },
-    q:"Name everything that drains you — people, patterns, environments, obligations, and internal habits that consistently take more than they give.",
-    prompts:["Which people in your life consistently leave you feeling depleted after interactions?","Which environments drain you — physical spaces, digital spaces, social contexts?","Which obligations are you fulfilling that serve no real purpose — that you keep doing out of habit, guilt, or fear of judgment?","What internal patterns drain you — perfectionism, saying yes to everything, taking responsibility for others' emotions, comparison?","What do you keep doing despite knowing it drains you — and why do you keep doing it?"],
-    fu:{ t:50, q:"Which drain is the most insidious — the one you've normalised so completely that you almost didn't list it?", prompts:["How long has this drain been operating?","What would change if you eliminated it entirely?","What has stopped you from addressing it?"] },
-    ref:"Not all drains are removable. But most of them are either reducible or negotiable. Today you named them. That alone changes your relationship to them — because invisible drains take more than visible ones.",
-    action:{ i:"🔌", t:"Pick the one drain that is most within your control to reduce or eliminate. Write a specific action you can take this week to address it. Not 'think about it' — do something." }
+  {day:3,phase:1,phaseName:"Acknowledge the Depletion",title:"What You've Stopped Taking In",
+    uts:"Rick Rubin describes creativity as rooted in noticing and receiving. The creative person as someone who is deeply attentive to the world, taking things in, letting them accumulate and combine. When we stop taking things in — not just consuming but genuinely receiving — the well stops refilling. It's not enough to rest. You have to actively restore.",
+    q:"Write about what you've stopped taking in. The things that used to feed you creatively that have quietly disappeared from your life.",
+    prompts:["What used to inspire you that you haven't made time for recently?","What experiences, people, or inputs used to make you feel alive and creative?","When did you last do something purely for the pleasure of receiving it?"],
+    kg:"Write about why those things disappeared. Was it time? Energy? Guilt about not being productive? Or did you just stop noticing you'd let them go?",
+    notice:"Notice if there's a pattern to what you've let go. Often it's the things that feel most like play, most like pure pleasure, most like they can't be justified. Those are usually the things most worth protecting.",
+    action:{i:"🌿",t:"Write the name of one thing you used to do that fed you. One thing you've let go. You don't have to do it today. Just remember it exists."}
   },
-  { day:4, phase:1, phaseName:"Diagnose", title:"The Empty Tank",
-    fw:{ name:"Acceptance and Commitment Therapy", author:"Steven Hayes — ACT",
-      body:"Hayes's ACT framework teaches that struggling against difficult feelings makes them worse. When the tank is empty, the instinct is to push harder — to override the depletion with willpower. But acceptance of where you actually are, right now, is the foundation for genuine recovery. You cannot refill what you won't acknowledge is empty.",
-      benefit:"<strong>Cognitive benefit:</strong> Psychological acceptance — acknowledging reality without resistance — reduces the cognitive burden of suppression. Research shows that people who accept their current state of depletion, rather than fighting it, begin recovering faster — because they stop wasting energy on denial and performance." },
-    q:"How empty is your tank right now — honestly, without minimising or dramatising? What does it actually feel like to be this depleted?",
-    prompts:["If your energy were a tank, what percentage full is it right now? Not what you project — what's actually there.","What does depletion feel like in your body — where do you carry it?","What are you still performing — what energy are you spending on appearing fine that you could redirect?","What have you lost access to because of the depletion — creativity, patience, presence, joy?","What would it mean to fully accept that you are this depleted — without shame, without fixing, just acknowledging it?"],
-    fu:{ t:50, q:"What is the cost of continuing to perform fullness when you are actually empty?", prompts:["Who are you performing for — and do they actually need the performance?","What would happen if you told the truth about how depleted you are?","What would you do differently starting tomorrow if you accepted where you are right now?"] },
-    ref:"Acceptance is not resignation. It's the starting point. You cannot refill a tank you pretend is already full. Today you told the truth about the level. Now recovery can begin.",
-    action:{ i:"🪫", t:"Tell one person the truth about how depleted you are. Not as a complaint — as information. 'I want you to know I'm running on empty right now.' See what shifts." }
+  {day:4,phase:2,phaseName:"Stop the Drain",title:"What's Draining You",
+    uts:"Restoration is harder when the drain is still open. Before the well can refill, it helps to understand what's been emptying it. Not everything that drains you is avoidable. But some of it is. And even the unavoidable drains become more manageable when you can see them clearly.",
+    q:"Write about what's been draining you. Not the obvious big things. The quiet, persistent ones that take a little energy every day without announcing themselves.",
+    prompts:["What do you do regularly that leaves you feeling less than when you started?","What obligations, habits, or inputs consistently cost more than they give back?","What are you tolerating that you haven't fully acknowledged?"],
+    kg:"Pick the drain that costs the most. Write about what it would take to reduce it, remove it, or at least see it clearly enough to stop pretending it isn't there.",
+    notice:"Notice if any of the drains are things you've chosen. Not all drains are imposed from outside. Sometimes we build them ourselves.",
+    action:{i:"🔌",t:"Write one drain you could reduce this week. Not eliminate. Just reduce. One small change in the direction of less."}
   },
-  { day:5, phase:2, phaseName:"Rest", title:"Do Nothing Practice",
-    fw:{ name:"Niksen", author:"Olga Mecking — Niksen: The Dutch Art of Doing Nothing",
-      body:"Niksen is the Dutch practice of deliberately doing nothing — not meditating, not mindfulness, not relaxing with a purpose. Literally nothing. No input, no output, no productivity. For depleted people, doing nothing feels almost impossible — because the nervous system has been calibrated for constant output. The practice is learning to tolerate stillness.",
-      benefit:"<strong>Cognitive benefit:</strong> Doing nothing activates the brain's default mode network in its pure form — enabling deep processing, memory consolidation, and creative incubation that active rest (reading, walking, podcasts) does not provide. Research shows that unstructured idleness produces unique cognitive benefits that no other activity can replicate." },
-    q:"Spend 20 minutes today doing genuinely nothing — no phone, no book, no podcast, no meditation app. Then write about what happened.",
-    prompts:["What did you do during the 20 minutes of nothing? Describe the experience.","What happened in the first five minutes? Was there restlessness, anxiety, guilt?","What happened after ten minutes? Did anything shift?","What thoughts or feelings surfaced that wouldn't have appeared if you were busy?","What does your reaction to doing nothing reveal about your relationship to productivity and rest?"],
-    fu:{ t:50, q:"What is the hardest part about doing nothing — and what does that difficulty tell you about your depletion?", prompts:["Is the difficulty about boredom, guilt, anxiety, or something else?","When was the last time you did nothing without feeling like you should be doing something?","What would change if you could tolerate doing nothing for 20 minutes every day?"] },
-    ref:"If doing nothing for 20 minutes was difficult, that's not a sign of failure — it's a sign of how deeply the need for constant output has been wired. Rest is a skill. Today was practice.",
-    action:{ i:"🫧", t:"Schedule 20 minutes of nothing again tomorrow. Same rules — no input, no output. Sit with whatever arises. The discomfort is the medicine working." }
+  {day:5,phase:2,phaseName:"Stop the Drain",title:"The Permission to Rest",
+    uts:"Rest is not the absence of work. It's a different kind of work. The brain consolidates, integrates, and generates during rest in ways it cannot during active production. The research on default mode network activity shows that some of our most creative thinking happens when we're not trying to think. The problem is that most people never give themselves permission to stop.",
+    q:"Write about your relationship with rest. Not sleep, but genuine stopping. Permission to do nothing productive.",
+    prompts:["What do you feel when you're not being productive? Name the feeling honestly.","Where did your relationship with rest come from? Who modeled it for you?","When was the last time you rested without guilt?"],
+    kg:"Write about what guilt-free rest would look like for you. Not a fantasy — a realistic version. What would you do? How long? What would you have to let go of to allow it?",
+    notice:"Notice if rest feels like a reward you haven't earned yet. That feeling is worth examining. The well doesn't wait until you deserve to refill it.",
+    action:{i:"🛋️",t:"Take 20 minutes today to do nothing productive. No phone, no content, no planning. Just exist. Write one sentence afterward about what that was like."}
   },
-  { day:6, phase:2, phaseName:"Rest", title:"The Input Day",
-    fw:{ name:"Creative Input", author:"Austin Kleon — Steal Like an Artist",
-      body:"Kleon writes that creative output requires creative input — but depleted people have typically been running on output mode for so long that the input has dried up. The input day is a day of pure reception: reading, looking, listening, experiencing — with zero obligation to produce anything from it. You are filling the well, not drawing from it.",
-      benefit:"<strong>Cognitive benefit:</strong> Receiving without producing activates the brain's reward and learning circuits without engaging the output-stress pathways. Research shows that periods of pure input — consuming art, nature, music, conversation — rebuild the neural resources that output depletes." },
-    q:"Spend today taking in — reading, looking, listening, experiencing — with absolutely no obligation to create, respond, or produce. Then write about what you took in.",
-    prompts:["What did you choose to take in today? Art, music, nature, books, film, conversation, food?","How did it feel to receive without the pressure to produce or respond?","What did you take in that surprised you — something you wouldn't have encountered if you were busy producing?","Did anything you experienced today spark something — a thought, a feeling, an association — that you want to remember?","What is the difference between consuming content (scrolling, checking) and genuinely taking in nourishment?"],
-    fu:{ t:50, q:"When was the last time you spent a full day in input mode — and what does the answer tell you about your depletion?", prompts:["Have you been running on output for so long that you forgot what input feels like?","What kind of input nourishes you most — and are you getting enough of it?","What would change about your creative work if you had regular input days?"] },
-    ref:"You cannot pour from an empty cup, and you cannot create from an empty mind. Input days are not indulgent — they're essential. The well must be filled before you can draw from it.",
-    action:{ i:"📚", t:"Schedule a regular input day — even if it's just half a day every two weeks. Mark it in your calendar as non-negotiable. No output allowed." }
+  {day:6,phase:2,phaseName:"Stop the Drain",title:"Slow Down on Purpose",
+    uts:"Speed is one of the most reliable ways to stay depleted. When everything moves fast, nothing has time to land. Experiences pass through without accumulating. Ideas arrive and disappear before they can be held. Slowing down on purpose isn't about being less productive. It's about letting things actually reach you.",
+    q:"Write about what it would mean to slow down this week. Not stop — just slow. What would you do less of? What would you do more slowly?",
+    prompts:["What do you currently rush through that might be worth lingering in?","What would you notice if you moved at half your usual speed today?","What has speed been costing you that you haven't fully accounted for?"],
+    kg:"Write about one thing you're going to do more slowly today. Describe it in detail before you do it. What might you notice that you usually miss?",
+    notice:"Notice if slowing down feels uncomfortable. That discomfort is usually a sign that speed has become a way of avoiding something. Worth knowing.",
+    action:{i:"🐌",t:"Do one thing today at half your usual speed. A meal, a walk, a conversation. Write one sentence about what you noticed."}
   },
-  { day:7, phase:2, phaseName:"Rest", title:"Pleasure Without Purpose",
-    fw:{ name:"Play", author:"Stuart Brown — Play",
-      body:"Brown's research on play shows that pleasure without purpose — doing something purely because it feels good, with no outcome or goal — is not a luxury. It is a biological necessity for cognitive and emotional recovery. Depleted people have usually eliminated purposeless pleasure from their lives, replacing it with productive leisure. Today you do something purely for pleasure.",
-      benefit:"<strong>Cognitive benefit:</strong> Purposeless pleasure activates the brain's reward circuits without engaging the goal-directed systems that produce stress. This unique neurological combination — pleasure without performance anxiety — produces deep recovery that goal-oriented relaxation (exercise for health, reading for learning) cannot provide." },
-    q:"Do something today purely for pleasure — with zero productive value, zero self-improvement, zero output. Then write about what you chose and how it felt.",
-    prompts:["What did you do for pure pleasure? Something with absolutely no point other than enjoyment.","How did it feel to do something with no productive justification?","Did guilt show up? Did you catch yourself trying to make the pleasure productive?","When was the last time you did something purely because it felt good? How long ago?","What does your relationship to purposeless pleasure reveal about how deeply productivity has colonised your rest?"],
-    fu:{ t:50, q:"What would your life look like if regular purposeless pleasure was as non-negotiable as regular productive work?", prompts:["What pleasures have you eliminated from your life because they weren't productive?","What would you bring back if productivity wasn't the only measure of value?","How much of your rest is actually disguised productivity?"] },
-    ref:"Pleasure without purpose is not lazy. It is medicine for the depleted. When every moment must be productive, the nervous system never gets the signal that it's safe to rest. Purposeless pleasure sends that signal.",
-    action:{ i:"🎈", t:"Write down three purely pleasurable activities — things you enjoy that produce nothing. Schedule one for this week. Do it without guilt." }
+  {day:7,phase:2,phaseName:"Stop the Drain",title:"What You Need",
+    uts:"Most depleted people are very good at knowing what others need and much less practiced at knowing what they themselves need. Asking the question directly — and answering it honestly, without immediately dismissing the answer as impractical or self-indulgent — is a skill. It's the precondition for actually getting what you need.",
+    q:"Write about what you actually need right now. Not what you should need, not the responsible answer. What do you genuinely need to feel more like yourself?",
+    prompts:["If you had a week with no obligations, what would you do?","What does your body want that you've been ignoring?","What would make you feel more alive than you currently do?"],
+    kg:"Write about what's standing between you and getting what you need. Be honest about what's real and what's just a story you're telling yourself.",
+    notice:"Notice if what you need is simpler than you've been making it. Often it is. A walk, a conversation, an afternoon of doing nothing. The answer is usually quieter than the problem.",
+    action:{i:"🧭",t:"Write one thing you need and one small step toward getting it. Just one. Today."}
   },
-  { day:8, phase:2, phaseName:"Rest", title:"The Slow Morning",
-    fw:{ name:"In Praise of Slowness", author:"Carl Honore — In Praise of Slowness",
-      body:"Honore documents the Slow Movement — a deliberate counter to the cult of speed that depletes creative professionals. The slow morning is a practice of beginning the day without urgency — allowing time to expand rather than compress. For depleted people, the morning sets the nervous system's pace for the entire day. A rushed morning guarantees a depleted day.",
-      benefit:"<strong>Cognitive benefit:</strong> Slow, unrushed mornings lower cortisol levels and activate the parasympathetic nervous system — the body's rest-and-recover mode. Research shows that people who begin their day slowly experience less fatigue, better focus, and more creative insight than those who begin in stress mode, even when total working hours are the same." },
-    q:"Have a slow morning tomorrow — no rushing, no checking, no urgency for at least the first hour. Then write about what it was like.",
-    prompts:["What did you do during your slow morning? How did you fill the time without rushing?","What was different about your mental state compared to a normal morning?","What did you notice — about yourself, your environment, your thoughts — that you normally miss?","Was it difficult to resist the pull of email, phone, or urgency? What happened when you resisted?","How did the slow morning affect the rest of your day?"],
-    fu:{ t:50, q:"What would it mean to have a slow morning every day — and what would you need to change to make that possible?", prompts:["What would you need to give up — sleep time, productivity, the feeling of being busy?","Is the rush of normal mornings actually necessary, or is it a habit?","What would your relationship to your work look like if you never started the day in stress mode?"] },
-    ref:"How you begin the day is how you live the day. A slow morning is not a luxury — it's a foundation. When you start slowly, you have something to draw from. When you start in a rush, you're already depleting.",
-    action:{ i:"☕", t:"Set your alarm 30 minutes earlier tomorrow. Use the extra time for nothing productive. Coffee, silence, a window. Begin slowly. See what changes." }
+  {day:8,phase:3,phaseName:"Restore and Receive",title:"Take Something In",
+    uts:"Restoration requires input. Not consumption, which is passive and often depleting, but genuine receiving. The difference is attention and intention. Consuming is scrolling past. Receiving is stopping, being present, letting something actually reach you. The same piece of music, the same walk, the same conversation can be consumed or received. The difference is how much of you shows up.",
+    q:"Write about something you're going to take in today with full attention. A piece of music, a walk, a book, a meal, a conversation. Something you're going to receive rather than consume.",
+    prompts:["What does this thing give you when you're fully present to it?","What do you usually miss because you're only half paying attention?","What would it mean to let this thing actually reach you?"],
+    kg:"Do the thing. Then write about what you noticed. What reached you that usually doesn't?",
+    notice:"Notice the difference between consuming and receiving. That difference is worth protecting.",
+    action:{i:"🎧",t:"Name one thing you're going to receive today — not just consume. Write it down before you do it."}
   },
-  { day:9, phase:3, phaseName:"Restore", title:"One Beautiful Thing",
-    fw:{ name:"The Aesthetics of Recovery", author:"Alain de Botton — The Architecture of Happiness",
-      body:"De Botton argues that beauty is not superficial — it is a genuine need, as real as food or shelter. Depleted people often live in environments stripped of beauty — functional, efficient, optimised. Restoring beauty to your daily experience is not decoration. It is nourishment for a nervous system that has been running on function alone.",
-      benefit:"<strong>Cognitive benefit:</strong> Exposure to beauty activates the brain's reward circuits and reduces activity in the stress-response networks. Research on neuroaesthetics shows that experiencing beauty — visual, auditory, natural — produces measurable recovery effects, including reduced cortisol, increased oxytocin, and enhanced creative cognition." },
-    q:"Find or create one beautiful thing today — not useful, not productive, just beautiful. Then write about the experience.",
-    prompts:["What beautiful thing did you find or create? Describe it in detail.","What happened in your body when you encountered or made this beautiful thing?","When did you last deliberately seek beauty in your daily life? How long ago?","What role does beauty currently play in your environment — at home, at work, in your routines?","What would change about your daily experience if beauty was a priority rather than an afterthought?"],
-    fu:{ t:50, q:"What has depletion stolen from your aesthetic life — what beauty have you stopped noticing or seeking?", prompts:["Have you stripped your environment of beauty in the name of function?","What beautiful experiences did you used to have that you've let go of?","What would restoring beauty to your daily life cost — and is the cost actually real, or assumed?"] },
-    ref:"Beauty is not frivolous. It is restorative. When the well is empty, beauty is one of the fastest ways to begin filling it — because it bypasses the mind's resistance and nourishes directly.",
-    action:{ i:"🌸", t:"Add one beautiful thing to your daily environment this week — a flower, a piece of art, a object that pleases you for no productive reason. Let it be there for beauty alone." }
+  {day:9,phase:3,phaseName:"Restore and Receive",title:"Follow Curiosity",
+    uts:"Curiosity is one of the most reliable signs that the well is starting to refill. It shows up as a pull toward something, a question you want to follow, an interest that has no obvious practical application. Elizabeth Gilbert writes about curiosity as a more sustainable guide than passion, because it doesn't require intensity. It just requires following the small pull, even when it doesn't make sense.",
+    q:"Write about what you're currently curious about. Not what you think you should be interested in. What actually pulls your attention right now, even if it seems irrelevant or impractical.",
+    prompts:["What have you been wanting to learn about, explore, or understand?","What question keeps coming up that you haven't given yourself time to follow?","What would you explore if no one was watching and nothing had to come of it?"],
+    kg:"Follow one thread of curiosity right now. Write about it. Let it go somewhere without trying to make it useful.",
+    notice:"Notice if following curiosity felt different from doing productive work. That feeling is the beginning of restoration.",
+    action:{i:"🔍",t:"Spend 15 minutes today following one curiosity with no agenda. Then write one sentence about where it led."}
   },
-  { day:10, phase:3, phaseName:"Restore", title:"The Beginner Mind",
-    fw:{ name:"Zen Mind, Beginner's Mind", author:"Shunryu Suzuki",
-      body:"Suzuki writes that in the beginner's mind there are many possibilities, but in the expert's mind there are few. Depletion often accompanies expertise — the more you know, the harder everything feels, because you can see all the problems. Beginner mind is a deliberate return to not-knowing — approaching something as if for the first time, without the weight of expertise.",
-      benefit:"<strong>Cognitive benefit:</strong> Beginner mind deactivates the brain's expertise-consolidation circuits and reactivates the curiosity and discovery circuits that are most active in novel learning. Research shows that deliberately adopting a beginner stance reduces creative fatigue and produces more original thinking than working from expert mode." },
-    q:"Try something today as a complete beginner — something you have no skill in and no expectation of being good at. Then write about the experience.",
-    prompts:["What did you try as a beginner? Something completely outside your expertise.","What was it like to be bad at something — to have no competence, no standard to meet?","What did you notice about the experience of learning that you've forgotten since becoming good at your thing?","How is beginner energy different from expert energy? Which one feels more alive?","What does this exercise reveal about what expertise has cost you — the weight of knowing versus the lightness of not-knowing?"],
-    fu:{ t:50, q:"What would your creative practice feel like if you could access beginner energy inside your area of expertise?", prompts:["Is beginner mind possible when you already know so much — or does knowledge prevent it?","What aspect of your work could you approach with beginner eyes?","What would you see differently if you pretended you'd never done this before?"] },
-    ref:"Expertise is valuable. But it's also heavy. The beginner mind is light, curious, and unburdened by the weight of knowing. Finding ways to access it — even briefly — is one of the most powerful restoration tools available.",
-    action:{ i:"🌱", t:"Schedule one more beginner experience this week. Something you've never tried. The point is not to discover a new hobby — it's to remember what learning feels like when the stakes are zero." }
+  {day:10,phase:3,phaseName:"Restore and Receive",title:"Make Something With No Purpose",
+    uts:"Play is serious work for the creative system. It's how the brain makes unexpected connections, how new ideas form, how the relationship between effort and expression gets restored. Most adults have stopped playing because play feels unjustifiable. But making something with no purpose, no audience, no output in mind, is one of the fastest ways to restore creative energy. Not because it produces anything. Because of what it restores.",
+    q:"Make something today with no purpose. Not for anyone, not toward anything. A piece of writing that will never be read, a drawing, a list of things you find beautiful, a description of a memory. Just make something for the sake of making.",
+    prompts:["Give yourself permission to make it badly and privately.","Don't try to make it good. Try to make it genuine.","What would you make if you knew no one would ever see it?"],
+    kg:"Write about what it felt like to make something with no stakes. What came up when the pressure was off?",
+    notice:"Notice if making something purposeless felt more alive than some of your purposeful work. That's information about what your creative system actually needs.",
+    action:{i:"🎨",t:"Keep what you made today. Don't show it to anyone. It's just yours."}
   },
-  { day:11, phase:3, phaseName:"Restore", title:"Fill Before You Give",
-    fw:{ name:"Boundaries", author:"Henry Cloud & John Townsend — Boundaries",
-      body:"Cloud and Townsend's work on boundaries reveals a pattern common in depleted people: they give before they're full. They pour from the cup before it's been filled, and they wonder why they're empty. Filling before you give is not selfish — it's structural. You cannot sustain giving from an empty tank. Today is about establishing the principle: fill first.",
-      benefit:"<strong>Cognitive benefit:</strong> Prioritising self-restoration before other-focused output activates the brain's self-care circuits and reduces the guilt-based inhibition that prevents depleted people from resting. Research shows that people who fill their own needs first give more sustainably and at higher quality than those who give from depletion." },
-    q:"What does it look like to fill your own tank before you give to anyone or anything else — and what has to change to make that happen?",
-    prompts:["What are you currently giving before you're full — where are you pouring from empty?","What would filling first look like in your daily life? What would you do before the demands begin?","What guilt, obligation, or identity prevents you from prioritising your own restoration?","Who benefits when you give from a full tank versus an empty one? Is giving from empty actually serving anyone?","What needs to change structurally — in your schedule, your commitments, your boundaries — to make fill-first the default?"],
-    fu:{ t:50, q:"What identity do you hold — helper, provider, always-available person — that makes filling first feel impossible or selfish?", prompts:["Where did that identity come from?","Who would you be without it?","Is the identity serving you, or are you serving the identity?"] },
-    ref:"Fill first is not selfish. It's sustainable. The people who give the most over a lifetime are the ones who learned to fill their own tank first. The ones who give from empty burn out and disappear.",
-    action:{ i:"🫗", t:"Tomorrow morning, do one thing for yourself before you do anything for anyone else. Not after the demands. Before them. See how it changes the day." }
+  {day:11,phase:3,phaseName:"Restore and Receive",title:"What's Coming Back",
+    uts:"Restoration is rarely dramatic. It arrives quietly. A thought that surprises you. A small pull toward something you'd stopped caring about. A moment of genuine interest after a long stretch of going through the motions. These are the signs the well is refilling. They're easy to miss if you're not paying attention.",
+    q:"Write about what's been coming back. Small signs of creative energy returning. They might be subtle. Write them down anyway.",
+    prompts:["What have you found yourself interested in this week that you weren't last week?","What ideas have surfaced that you haven't immediately dismissed?","What felt slightly more alive than usual?"],
+    kg:"Pick one thing that's coming back and follow it further. Write about it, explore it, let it develop without forcing it into something useful yet.",
+    notice:"Notice the difference between what was coming back and what you were forcing. The returning things are probably closer to what you actually need to be making.",
+    action:{i:"🌱",t:"Write one thing that's starting to return. Give it a name. It's worth tracking."}
   },
-  { day:12, phase:4, phaseName:"Sustain", title:"Your Boundaries",
-    fw:{ name:"Set Boundaries, Find Peace", author:"Nedra Glennon Tawwab — Set Boundaries, Find Peace",
-      body:"Tawwab's work shows that boundaries are not walls — they're the structure that makes sustainable relationships and sustainable work possible. For depleted people, boundaries are usually the missing piece. Not time management, not productivity systems, not self-care rituals — boundaries. Clear limits on what you will and won't give, do, and tolerate.",
-      benefit:"<strong>Cognitive benefit:</strong> Establishing and enforcing boundaries reduces chronic stress activation and rebuilds the brain's self-regulatory capacity. Research shows that people with clear boundaries experience less decision fatigue, less resentment, and more sustained energy than those who remain perpetually available." },
-    q:"What boundaries do you need to set — with people, with work, with yourself — to protect your restoration and prevent future depletion?",
-    prompts:["Where are you currently saying yes when you mean no? List the specific situations.","What boundary with another person would most change your energy level?","What boundary with work — hours, availability, scope — would most protect your restoration?","What boundary with yourself — perfectionism, over-functioning, people-pleasing — do you most need to set?","Write each boundary as a clear statement: 'I will...' or 'I will not...' Make them specific and enforceable."],
-    fu:{ t:50, q:"What makes boundary-setting hard for you — and is the difficulty about the boundaries or about how you think others will respond?", prompts:["What are you afraid will happen if you enforce your boundaries?","What has been the cost of not having them?","Which boundary is most urgent — the one that, if set today, would produce the most immediate relief?"] },
-    ref:"Boundaries are not mean. They're the infrastructure of sustainable giving, sustainable creating, and sustainable living. Without them, refilling is temporary — the tank drains again as fast as you fill it.",
-    action:{ i:"🚧", t:"Set one boundary this week — the most urgent one. Communicate it clearly to the person or context that needs to hear it. Not aggressively. Clearly. Then hold it." }
+  {day:12,phase:4,phaseName:"Return With Something in the Well",title:"What You Want to Make",
+    uts:"When the well starts to refill, something shifts in the relationship to making. Instead of forcing output from an empty place, there's something to draw from. Ideas arrive with a different quality. The want to make something comes back, tentatively at first, then with more clarity. This is the moment to listen carefully to what's asking to be made, without rushing it into production.",
+    q:"Write about what you want to make now. Not what you should make, not what's practical or expected. What genuinely wants to be made from where you are right now?",
+    prompts:["What has this period of restoration uncovered or clarified?","What do you see or think about differently than you did two weeks ago?","What would you make if you trusted that the well would stay full?"],
+    kg:"Write about what this thing would be for. Not the audience, not the outcome. What would it be an expression of?",
+    notice:"Notice if what wants to be made now is different from what you thought you should be making before you started this track. Often it is.",
+    action:{i:"✨",t:"Write one sentence about what you want to make next. Just one. That's enough for now."}
   },
-  { day:13, phase:4, phaseName:"Sustain", title:"The Rhythm",
-    fw:{ name:"The Power of Full Engagement", author:"Jim Loehr & Tony Schwartz",
-      body:"Loehr and Schwartz found that sustainable performance requires rhythm — deliberate oscillation between expenditure and recovery. Not working hard then collapsing. Working in cycles: effort, then rest, then effort, then rest. The rhythm is the structural solution to depletion. It prevents the empty tank by building recovery into the system, rather than waiting for the system to break.",
-      benefit:"<strong>Cognitive benefit:</strong> Rhythmic oscillation between stress and recovery trains the autonomic nervous system to shift efficiently between sympathetic (active) and parasympathetic (recovery) modes. Research shows that people who build recovery rhythms into their daily and weekly schedules sustain higher performance with less depletion than those who work in long, unbroken stretches." },
-    q:"Design your rhythm — the daily, weekly, and seasonal patterns of effort and recovery that will sustain you without depleting you.",
-    prompts:["What does a sustainable daily rhythm look like for you — when do you work, when do you rest, when do you refill?","What does a sustainable weekly rhythm look like — which days are for output, which are for input and recovery?","What does a sustainable seasonal rhythm look like — when do you push, when do you pull back?","What recovery rituals will you build into each cycle — daily recovery, weekly recovery, quarterly recovery?","What is the early warning sign that your rhythm is off — the first signal that depletion is returning?"],
-    fu:{ t:50, q:"What has historically prevented you from maintaining a sustainable rhythm — and what's different now?", prompts:["Is the obstacle external demands, internal pressure, or both?","What would you need to protect most fiercely to sustain this rhythm?","What would your life feel like six months from now if you actually maintained this rhythm?"] },
-    ref:"Rhythm is the antidote to burnout. Not a vacation after you crash. Not self-care after you collapse. Rhythm — built into the structure of your life so that depletion never reaches the empty tank again.",
-    action:{ i:"🔄", t:"Write your daily rhythm — effort and recovery times — on a card you'll see every morning. Start following it tomorrow. Adjust as needed, but don't abandon it." }
+  {day:13,phase:4,phaseName:"Return With Something in the Well",title:"Protecting the Well",
+    uts:"The well will empty again. That's not a failure — it's the nature of sustained creative work. The question isn't how to prevent depletion but how to notice it earlier, respond to it faster, and build in the restoration before it becomes a crisis. The practices that refilled the well are worth protecting as ongoing habits, not just emergency measures.",
+    q:"Write about what has restored you during this track. What practices, inputs, permissions, or slowings have made a difference?",
+    prompts:["Which days felt most restorative? What was happening on those days?","What did you learn about what actually fills you versus what you thought would fill you?","What would you want to protect as an ongoing practice going forward?"],
+    kg:"Write about how you want to work differently going forward. Not a grand plan. Just two or three things you're going to do to keep the well from running dry again.",
+    notice:"Notice if the things that restored you were simpler than you expected. They usually are. The well doesn't need expensive inputs. It needs consistent, genuine ones.",
+    action:{i:"🛡️",t:"Write two things you're going to protect as ongoing practices. Simple, specific, realistic. Those are your commitments."}
   },
-  { day:14, phase:4, phaseName:"Sustain", title:"The Full Well",
-    fw:{ name:"The Artist's Way", author:"Julia Cameron — The Artist's Way",
-      body:"Cameron uses the metaphor of the well — a deep reservoir of creative and emotional energy that requires regular filling. The well doesn't fill itself. It fills through rest, beauty, play, input, boundaries, and rhythm. After fourteen days of diagnosing, resting, restoring, and building sustainable structures, the question is: what does the full well feel like — and what will you do to keep it full?",
-      benefit:"<strong>Cognitive benefit:</strong> Integrative reflection on recovery produces lasting neural changes. Research shows that people who consciously reflect on their restoration process — naming what worked and committing to sustaining it — maintain their recovery gains at significantly higher rates than those who simply stop the program." },
-    q:"After fourteen days of diagnosing, resting, restoring, and building sustainable rhythms — how full is your well now? What changed? What will you protect?",
-    prompts:["What is different about your energy, your presence, and your creative capacity compared to Day 1?","What practices from this program genuinely worked for you — what will you keep?","What did you learn about your depletion that you didn't know or wouldn't admit before?","What boundaries, rhythms, and recovery practices are now non-negotiable for you?","What do you want to remember about this experience when the pressure to deplete yourself returns — as it will?"],
-    fu:{ t:50, q:"What would you tell someone who is where you were on Day 1 — running on empty, unable to stop, performing fullness?", prompts:["What do you know now about depletion that you needed to hear then?","What was the hardest truth to accept — and what changed when you accepted it?","What is one sentence you would offer as a compass for sustainable creative living?"] },
-    ref:"The full well is not a destination — it's a practice. It empties when you stop filling it and when you stop protecting it. You now know what fills it, what drains it, and what rhythms sustain it. The practice is daily. The reward is everything.",
-    action:{ i:"💧", t:"Write your well-filling commitment — the daily, weekly, and seasonal practices you will protect. Keep it where you'll see it. Read it when the temptation to over-give returns." }
+  {day:14,phase:5,phaseName:"Return",title:"The Return",
+    uts:"You started this track depleted. You've spent two weeks acknowledging it, stopping the drain, restoring, and beginning to return. The well isn't overflowing. But there's something in it. That's enough to begin. That's always been enough to begin.",
+    q:"Write about where you started and where you are now. Not in terms of output. In terms of how the well feels.",
+    prompts:["What's different about your creative energy compared to Day 1?","What surprised you most about this process?","What do you want to protect going forward?"],
+    kg:"Write your return statement. Not a plan. Just an acknowledgment of what's been restored and what you're bringing back with you.",
+    notice:"Notice what's in the well now that wasn't there before. Even if it's small. Small is enough.",
+    action:{i:"🌅",t:"Write three words that describe how your creative energy feels now. Then write one sentence about what you're going to make first."}
   }
 ];
 
+const completed=new Set(JSON.parse(localStorage.getItem('crc-rf')||'[]'));
 
-const completed = new Set(JSON.parse(localStorage.getItem('crc-rf') || '[]'));
+function init(){buildSidebar();document.getElementById('mainContent').innerHTML=program.map(buildDay).join('')+buildJournal();showDay(1);updateProgress();}
 
-function init() {
-  buildSidebar();
-  document.getElementById('mainContent').innerHTML = program.map(buildDay).join('') + buildJournal();
-  showDay(1);
-  updateProgress();
-}
-
-function buildSidebar() {
-  const phases = {};
-  program.forEach(d => { if(!phases[d.phase]) phases[d.phase]=[]; phases[d.phase].push(d); });
-  let html = '';
-  Object.entries(phases).forEach(([ph, days]) => {
-    html += `<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
-    days.forEach(d => {
-      html += `<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})">
-        <div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;
-    });
-    html += '</div>';
+function buildSidebar(){
+  const phases={};program.forEach(d=>{if(!phases[d.phase])phases[d.phase]=[];phases[d.phase].push(d);});
+  let html='';
+  Object.entries(phases).forEach(([ph,days])=>{
+    html+=`<div class="phase-group"><div class="phase-label">Phase ${ph} — ${days[0].phaseName}</div>`;
+    days.forEach(d=>{html+=`<button class="day-nav-item ${completed.has(d.day)?'completed':''}" id="nav-${d.day}" onclick="showDay(${d.day})"><div class="day-nav-num">${d.day}</div><div class="day-nav-title">${d.title}</div></button>`;});
+    html+='</div>';
   });
-  html += `<div class="phase-group"><div class="phase-label">Review</div>
-    <button class="day-nav-item" id="nav-journal" onclick="showJournal()">
-      <div class="day-nav-num" style="font-size:13px">📖</div>
-      <div class="day-nav-title">Full Journal + AI Reflection</div>
-    </button></div>`;
-  document.getElementById('sidebarNav').innerHTML = html;
+  html+=`<div class="phase-group"><div class="phase-label">Review</div><button class="day-nav-item" id="nav-journal" onclick="showJournal()"><div class="day-nav-num" style="font-size:13px">📖</div><div class="day-nav-title">Full Journal + AI Reflection</div></button></div>`;
+  document.getElementById('sidebarNav').innerHTML=html;
 }
 
-function buildDay(d) {
-  const sv = getSaved(d.day,'main'), sf = getSaved(d.day,'fu');
-  const wc = wordCount(sv), pct = Math.min(100,(wc/MIN)*100), suf = wc>=MIN;
-  const done = completed.has(d.day);
-  return `<div class="day-view" id="day-${d.day}">
-    <div class="day-header">
-      <div class="day-meta">
-        <div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div>
-        <h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1>
-        <div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div>
-      </div>
-      <div class="day-number-large">${d.day}</div>
-    </div>
-    <div class="framework-card">
-      <div class="framework-eyebrow">framework</div>
-      <div class="framework-name">${d.fw.name}</div>
-      <div class="framework-author">${d.fw.author}</div>
-      <div class="framework-body">${d.fw.body}</div>
-      <div class="framework-benefit">${d.fw.benefit}</div>
-    </div>
-    <div class="section">
-      <div class="section-label">today's question</div>
-      <div class="question-text">"${d.q}"</div>
-      <div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
+function buildDay(d){
+  const sv=getSaved(d.day,'main');const wc=wordCount(sv),pct=Math.min(100,(wc/MIN)*100),suf=wc>=MIN;const done=completed.has(d.day);
+  return`<div class="day-view" id="day-${d.day}">
+    <div class="day-header"><div class="day-meta"><div class="day-eyebrow">Day ${d.day} · Phase ${d.phase}: ${d.phaseName}</div><h1 class="day-title">${d.title.split(' ').slice(0,-1).join(' ')} <em>${d.title.split(' ').slice(-1)}</em></h1><div class="day-completed-badge ${done?'show':''}" id="badge-${d.day}">Completed</div></div><div class="day-number-large">${d.day}</div></div>
+    <details class="uts-section"><summary class="uts-toggle"><span class="uts-label">under the surface</span><span class="uts-icon">+</span></summary><div class="uts-body">${d.uts}</div></details>
+    <div class="section"><div class="section-label">start here</div><div class="question-text">"${d.q}"</div><div class="writing-prompts">${d.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
       <textarea class="writing-area${suf?' sufficient':''}" id="write-${d.day}" placeholder="Write freely and at length. Use the prompts above as guides — not limits." oninput="onWrite(${d.day})">${sv}</textarea>
-      <div class="char-counter">
-        <div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div>
-        <div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div>
-      </div>
-      <div class="followup-section ${(sf||wordCount(sv)>=d.fu.t)?'visible':''}" id="fu-${d.day}">
-        <div class="followup-label">going deeper</div>
-        <div class="followup-question">"${d.fu.q}"</div>
-        <div class="writing-prompts">${d.fu.prompts.map(p=>`<div class="writing-prompt">${p}</div>`).join('')}</div>
-        <textarea class="followup-textarea" id="fw-${d.day}" placeholder="Keep writing. Don't stop." oninput="save(${d.day},'fu',this.value)">${sf}</textarea>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-label">reflection</div>
-      <div class="reflection-box"><div class="reflection-prompt">${d.ref}</div></div>
-    </div>
-    <div class="section">
-      <div class="section-label">micro-action</div>
-      <div class="action-card">
-        <div class="action-icon">${d.action.i}</div>
-        <div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div>
-      </div>
-    </div>
-    <div class="complete-row">
-      <button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>
-      ${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}
-      ${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}
-    </div>
+      <div class="char-counter"><div class="char-bar"><div class="char-fill${suf?' sufficient':''}" id="fill-${d.day}" style="width:${pct}%"></div></div><div class="char-num${suf?' sufficient':''}" id="ctr-${d.day}">${suf?'✓ ready':`${wc} / ${MIN} words`}</div></div></div>
+    <div class="section"><div class="section-label">keep going</div><div class="question-text">"${d.kg}"</div></div>
+    <div class="section"><div class="section-label">notice this</div><div class="reflection-box"><div class="reflection-prompt">${d.notice}</div></div></div>
+    <div class="section"><div class="section-label">micro-action</div><div class="action-card"><div class="action-icon">${d.action.i}</div><div><div class="action-label">do this today</div><div class="action-text">${d.action.t}</div></div></div></div>
+    <div class="complete-row"><button class="btn-complete" id="cbtn-${d.day}" onclick="completeDay(${d.day})" ${done?'disabled':''}>${done?'Day Complete ✓':'Mark Day Complete'}</button>${d.day<14?`<button class="btn-next" onclick="showDay(${d.day+1})">Day ${d.day+1} →</button>`:`<button class="btn-next" onclick="showJournal()">See your full journal →</button>`}${!done?`<div class="complete-note" id="note-${d.day}">Write at least ${MIN} words to complete this day.</div>`:''}</div>
   </div>`;
 }
 
-function buildJournal() {
-  return `<div class="journal-view" id="journal-view">
-    <div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div>
-    <h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Refilling</em></h1>
-    <p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p>
-    <div id="j-entries"></div>
-    <div class="ai-section">
-      <div class="ai-eyebrow">AI Reflection</div>
-      <h2 class="ai-title">What your writing <em>reveals</em></h2>
-      <p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p>
-      <div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div>
-    </div>
-  </div>`;
+function buildJournal(){
+  return`<div class="journal-view" id="journal-view"><div class="day-eyebrow" style="margin-bottom:14px">Your Journey</div><h1 class="day-title" style="margin-bottom:8px">Fourteen Days of <em>Refilling</em></h1><p style="font-size:15px;color:var(--ink-soft);line-height:1.7;margin-bottom:44px;font-weight:300">Everything you wrote, in one place.</p><div id="j-entries"></div>
+    <div class="ai-section"><div class="ai-eyebrow">AI Reflection</div><h2 class="ai-title">What your writing <em>reveals</em></h2><p class="ai-sub">A warm mirror of what you said — then 2–3 patterns surfaced from everything you worked through across 14 days.</p><div id="ai-state"><button class="btn-generate" onclick="generateReflection()">Generate my reflection</button></div></div></div>`;
 }
 
-function showDay(n) {
-  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('day-'+n)?.classList.add('active');
-  document.getElementById('nav-'+n)?.classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
-  closeSidebar();
+function showDay(n){document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));document.getElementById('day-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});closeSidebar();}
+function showJournal(){document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));document.getElementById('journal-view').classList.add('active');document.getElementById('nav-journal')?.classList.add('active');populateJournal();window.scrollTo({top:0,behavior:'smooth'});closeSidebar();}
+
+function populateJournal(){
+  document.getElementById('j-entries').innerHTML=program.map(d=>{const m=getSaved(d.day,'main');return`<div class="journal-entry"><div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div><div class="journal-day-title">${d.title}</div><div class="journal-question">"${d.q}"</div>${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}</div>`;}).join('');
 }
 
-function showJournal() {
-  document.querySelectorAll('.day-view,.journal-view').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.day-nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('journal-view').classList.add('active');
-  document.getElementById('nav-journal')?.classList.add('active');
-  populateJournal();
-  window.scrollTo({top:0,behavior:'smooth'});
-  closeSidebar();
+function onWrite(n){
+  const v=document.getElementById('write-'+n)?.value||'';save(n,'main',v);
+  const wc=wordCount(v),pct=Math.min(100,(wc/MIN)*100),suf=wc>=MIN;
+  const fill=document.getElementById('fill-'+n),ctr=document.getElementById('ctr-'+n),ta=document.getElementById('write-'+n);
+  if(fill){fill.style.width=pct+'%';fill.className='char-fill'+(suf?' sufficient':'');}
+  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`;ctr.className='char-num'+(suf?' sufficient':'');}
+  if(ta)ta.className='writing-area'+(suf?' sufficient':'');
+  const note=document.getElementById('note-'+n);if(note)note.style.display=suf?'none':'block';
 }
 
-function populateJournal() {
-  document.getElementById('j-entries').innerHTML = program.map(d=>{
-    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
-    return `<div class="journal-entry">
-      <div class="journal-day-label">Day ${d.day} · ${d.phaseName}</div>
-      <div class="journal-day-title">${d.title}</div>
-      <div class="journal-question">"${d.q}"</div>
-      ${m?`<div class="journal-answer">${m}</div>`:`<div class="journal-empty">Nothing written yet.</div>`}
-      ${f?`<div style="margin-top:18px"><div class="journal-question" style="margin-bottom:7px">"${d.fu.q}"</div><div class="journal-answer">${f}</div></div>`:''}
-    </div>`;
-  }).join('');
-}
-
-function onWrite(n) {
-  const v = document.getElementById('write-'+n)?.value||'';
-  save(n,'main',v);
-  const wc=wordCount(v), pct=Math.min(100,(wc/MIN)*100), suf=wc>=MIN;
-  const fill=document.getElementById('fill-'+n), ctr=document.getElementById('ctr-'+n), ta=document.getElementById('write-'+n);
-  if(fill){fill.style.width=pct+'%'; fill.className='char-fill'+(suf?' sufficient':'');}
-  if(ctr){ctr.textContent=suf?'✓ ready':`${wc} / ${MIN} words`; ctr.className='char-num'+(suf?' sufficient':'');}
-  if(ta) ta.className='writing-area'+(suf?' sufficient':'');
-  if(wordCount(v)>=program[n-1].fu.t) document.getElementById('fu-'+n)?.classList.add('visible');
-  const note=document.getElementById('note-'+n);
-  if(note) note.style.display=suf?'none':'block';
-}
-
-function completeDay(n) {
-  const v=getSaved(n,'main');
-  if(wordCount(v)<MIN){
-    const note=document.getElementById('note-'+n);
-    if(note){note.className='complete-note error'; note.textContent=`Please write at least ${MIN} words first.`;}
-    return;
-  }
-  completed.add(n);
-  localStorage.setItem('crc-rf',JSON.stringify([...completed]));
-  const btn=document.getElementById('cbtn-'+n);
-  if(btn){btn.textContent='Day Complete ✓'; btn.disabled=true;}
+function completeDay(n){
+  const v=getSaved(n,'main');if(wordCount(v)<MIN){const note=document.getElementById('note-'+n);if(note){note.className='complete-note error';note.textContent=`Please write at least ${MIN} words first.`;}return;}
+  completed.add(n);localStorage.setItem('crc-rf',JSON.stringify([...completed]));
+  const btn=document.getElementById('cbtn-'+n);if(btn){btn.textContent='Day Complete ✓';btn.disabled=true;}
   document.getElementById('badge-'+n)?.classList.add('show');
-  const nav=document.getElementById('nav-'+n);
-  if(nav) nav.classList.add('completed');
-  const nn=nav?.querySelector('.day-nav-num');
-  if(nn){nn.style.background='#C84B2F'; nn.style.color='white';}
-  updateProgress();
-  if(n<14) setTimeout(()=>showDay(n+1),500);
-  else setTimeout(()=>showJournal(),500);
+  const nav=document.getElementById('nav-'+n);if(nav)nav.classList.add('completed');
+  const nn=nav?.querySelector('.day-nav-num');if(nn){nn.style.background='#C84B2F';nn.style.color='white';}
+  updateProgress();window.parent.postMessage({type:'dayComplete',day:n},'*');
+  if(n<14)setTimeout(()=>showDay(n+1),500);else setTimeout(()=>showJournal(),500);
 }
 
-function updateProgress() {
-  const pct=(completed.size/14)*100;
-  document.getElementById('progressFill').style.width=pct+'%';
-  document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;
-}
+function updateProgress(){const pct=(completed.size/14)*100;document.getElementById('progressFill').style.width=pct+'%';document.getElementById('progressCount').textContent=`${completed.size} of 14 days complete`;}
 
-async function generateReflection() {
+async function generateReflection(){
   const el=document.getElementById('ai-state');
   el.innerHTML=`<div class="loading-box"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div><span style="font-size:14px;color:rgba(242,237,228,.7);font-weight:300">Reading everything you wrote across 14 days…</span></div>`;
-
-  const writing = program.map(d=>{
-    const m=getSaved(d.day,'main'), f=getSaved(d.day,'fu');
-    if(!m&&!f) return null;
-    return `DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}${f?`\n\nDeeper Q: "${d.fu.q}"\nA: ${f}`:''}`;
-  }).filter(Boolean).join('\n\n---\n\n');
-
-  if(!writing.trim()){
-    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;
-    return;
-  }
-
-  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Refill" — a program helping depleted creatives rest, restore, and build sustainable rhythms, grounded in Jim Loehr, Christina Maslach, Julia Cameron, and Carl Honore.
+  const writing=program.map(d=>{const m=getSaved(d.day,'main');if(!m)return null;return`DAY ${d.day} — ${d.title}\nQ: "${d.q}"\nA: ${m}`;}).filter(Boolean).join('\n\n---\n\n');
+  if(!writing.trim()){el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px;font-style:italic">Nothing written yet. Complete some days first and come back.</p>`;return;}
+  const prompt=`You are a warm, insightful coach reviewing someone's 14-day journal from "Refill" — a program helping people restore creative energy after a period of depletion, rediscover what fills them, and return to making with something in the well.
 
 Here is everything they wrote:
 
@@ -523,54 +336,21 @@ CLOSING
 [One sentence. True and forward-facing. Something they can carry.]
 
 Tone: warm but direct. Honest without being harsh. Like a trusted person who has read every word carefully.`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
-    });
-    const data = await res.json();
-    const text = data.content?.map(b=>b.text||'').join('')||'';
-    if(!text) throw new Error();
-
-    const warmMatch = text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);
-    const warm = warmMatch ? warmMatch[1].trim() : '';
-
-    const patterns = [];
-    const patternRe = /PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;
-    let pm;
-    while((pm=patternRe.exec(text))!==null) {
-      patterns.push({ title: pm[1].trim(), body: pm[2].trim() });
-    }
-
-    const closingMatch = text.match(/CLOSING\s*([\s\S]*?)$/i);
-    const closing = closingMatch ? closingMatch[1].trim() : '';
-
-    el.innerHTML = `<div class="reflection-output">
-      <div class="warm-block">
-        <div class="warm-label">what I heard</div>
-        <div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
-      </div>
-      <div class="patterns-label">patterns across 14 days</div>
-      ${(patterns.length?patterns:[{title:'THE OVER-GIVING PATTERN',body:'Across your writing, a consistent theme: you have been giving more than you have, to more people than you should, for longer than you realized.'},{title:'REST AS RESISTANCE',body:'Your struggle with doing nothing revealed how deeply productivity culture has embedded itself in your nervous system. The difficulty of rest was itself the most important data.'},{title:'THE RHYTHM YOU NEED',body:'Through trial and reflection, you identified a sustainable pattern — not a fantasy schedule, but a real rhythm that accounts for who you actually are.'}]).slice(0,3).map((p,i)=>`
-        <div class="pattern-card">
-          <div class="pattern-num">${i+1}</div>
-          <div class="pattern-title">${p.title}</div>
-          <div class="pattern-body">${p.body}</div>
-        </div>`).join('')}
-      ${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}
-    </div>`;
-  } catch(e) {
-    el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p>
-      <button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;
-  }
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    const data=await res.json();const text=data.content?.map(b=>b.text||'').join('')||'';if(!text)throw new Error();
+    const warmMatch=text.match(/WARM MIRROR\s*([\s\S]*?)(?=PATTERN 1)/i);const warm=warmMatch?warmMatch[1].trim():'';
+    const patterns=[];const patternRe=/PATTERN \d+\s+([A-Z][^\n]+)\s+([\s\S]*?)(?=PATTERN \d+|CLOSING|$)/gi;let pm;
+    while((pm=patternRe.exec(text))!==null){patterns.push({title:pm[1].trim(),body:pm[2].trim()});}
+    const closingMatch=text.match(/CLOSING\s*([\s\S]*?)$/i);const closing=closingMatch?closingMatch[1].trim():'';
+    el.innerHTML=`<div class="reflection-output"><div class="warm-block"><div class="warm-label">what I heard</div><div class="warm-text">${warm.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div></div><div class="patterns-label">patterns across 14 days</div>${(patterns.length?patterns:[{title:'THE WELL WAS NEVER BROKEN',body:'Across your writing, a recognition emerged that depletion wasn\'t damage — it was the natural result of sustained giving without receiving. The well was working exactly as designed. It just needed to be refilled.'},{title:'WHAT ACTUALLY FILLS YOU',body:'You discovered that restoration came from simpler, quieter sources than expected. Not grand gestures but genuine receiving — attention, curiosity, play, and the permission to stop.'},{title:'SOMETHING IS COMING BACK',body:'By the end, small signs of creative energy returning became visible. Not a flood, but a trickle. And a trickle, consistently fed, becomes a flow.'}]).slice(0,3).map((p,i)=>`<div class="pattern-card"><div class="pattern-num">${i+1}</div><div class="pattern-title">${p.title}</div><div class="pattern-body">${p.body}</div></div>`).join('')}${closing?`<div class="closing-block"><div class="closing-text">${closing}</div></div>`:''}</div>`;
+  }catch(e){el.innerHTML=`<p style="color:var(--sand-mid);font-size:14px">Something went wrong. Try again after completing more days.</p><button class="btn-generate" onclick="generateReflection()" style="margin-top:14px">Try again</button>`;}
 }
 
-function save(day,key,val){ localStorage.setItem(`crc-rf-${day}-${key}`,val); }
-function getSaved(day,key){ return localStorage.getItem(`crc-rf-${day}-${key}`)||''; }
-function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
-function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+function save(day,key,val){localStorage.setItem(`crc-rf-${day}-${key}`,val);}
+function getSaved(day,key){return localStorage.getItem(`crc-rf-${day}-${key}`)||'';}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 
 init();
 </script>
