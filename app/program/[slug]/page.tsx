@@ -1188,8 +1188,8 @@ init = function() {
 
   // Listen for messages from iframe (day completion, voice, consent)
   useEffect(() => {
-    const iframeRef = document.querySelector("iframe");
     const handleMessage = async (event: MessageEvent) => {
+      const iframeRef = document.querySelector("iframe");
       if (!userId) return;
       const { type } = event.data || {};
 
