@@ -632,6 +632,17 @@ function saveKgResponse(dayNum) {
 
 // Listen for AI response and voice URL from parent
 window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'completedDays') {
+    if (event.data.days && Array.isArray(event.data.days)) {
+      event.data.days.forEach(function(d) { completedDaysFromDB.add(d); });
+      // If day 1 is showing and completed, render it immediately
+      var activeDay = document.querySelector('.day-view.active');
+      if (activeDay) {
+        var dn = parseInt(activeDay.id.replace('day-',''));
+        if (completedDaysFromDB.has(dn)) showCompletedDay(dn);
+      }
+    }
+  }
   if (event.data && event.data.type === 'existingVoiceUrl') {
     var dayNum = event.data.dayNumber;
     if (event.data.url) {
@@ -889,6 +900,45 @@ function collapseStep(stepEl) {
   // Hide the continue button in collapsed state
   var btn = stepEl.querySelector('.pstep-continue');
   if (btn) btn.style.display = 'none';
+}
+
+var completedDaysFromDB = new Set();
+
+function showAllStepsExpanded(dayNum) {
+  var contentWrap = document.getElementById('day-content-' + dayNum);
+  if (!contentWrap) return;
+  var steps = contentWrap.querySelectorAll('.pstep');
+  steps.forEach(function(step) {
+    step.classList.remove('pstep-active', 'pstep-done', 'pstep-expanded');
+    step.style.display = '';
+    var collapsed = step.querySelector('.pstep-collapsed');
+    if (collapsed) collapsed.remove();
+    // Show the step content directly, no animation
+    step.classList.add('pstep-active');
+    step.style.animation = 'none';
+    // Hide continue buttons on completed days
+    var btn = step.querySelector('.pstep-continue');
+    if (btn) btn.style.display = 'none';
+  });
+  // Close Under the Surface details
+  var uts = contentWrap.querySelector('.uts-section');
+  if (uts) uts.removeAttribute('open');
+}
+
+function showCompletedDay(dayNum) {
+  // Skip settle-in: hide it, show collapsed header, show content
+  var settleWrap = document.getElementById('settle-' + dayNum);
+  var collapsedH = document.getElementById('settle-collapsed-' + dayNum);
+  var contentWrap = document.getElementById('day-content-' + dayNum);
+  if (settleWrap) { settleWrap.classList.add('settled-done'); settleWrap.classList.remove('settled-expanded'); }
+  if (collapsedH) { collapsedH.classList.add('show'); collapsedH.classList.remove('expanded'); }
+  if (contentWrap) {
+    contentWrap.style.display = 'block';
+    showAllStepsExpanded(dayNum);
+  }
+  // Show voice continue button (voice data will be loaded by fetchVoiceUrl)
+  var vcBtn = document.getElementById('pstep-voice-btn-' + dayNum);
+  if (vcBtn) vcBtn.style.display = 'none';
 }
 
 function showStepsForDay(dayNum) {
@@ -1156,7 +1206,13 @@ function wrapShowDayForSettle() {
   _settleShowDay = showDay;
   showDay = function(n) {
     _settleShowDay(n);
-    // Reset settle state
+
+    if (completedDaysFromDB.has(n)) {
+      showCompletedDay(n);
+      return;
+    }
+
+    // Reset settle state for incomplete days
     var settleWrap = document.getElementById('settle-' + n);
     var contentWrap = document.getElementById('day-content-' + n);
     var btn = document.getElementById('settle-btn-' + n);
@@ -1164,12 +1220,9 @@ function wrapShowDayForSettle() {
     if (settleWrap && contentWrap && btn) {
       contentWrap.style.display = 'none';
       btn.style.display = '';
-      // Reset settle state
       settleWrap.classList.remove('settled-done', 'settled-expanded');
       if (collapsedH) { collapsedH.classList.remove('show', 'expanded'); }
-      // Reset progressive steps for this day
       showStepsForDay(n);
-      // Restart animation
       var exIdx = getSettleExercise(n);
       var sc = document.getElementById('settle-content-' + n);
       if (sc) { sc.innerHTML = buildSettleHTML(exIdx); }
@@ -1189,7 +1242,8 @@ init = function() {
   wrapShowDayForSettle();
   // Start settle animation for day 1
   startSettleAnimation(getSettleExercise(1));
-  // Fetch existing voice URLs
+  // Fetch completed days and existing voice URLs
+  window.parent.postMessage({ type: 'fetchCompletedDays' }, '*');
   for (var d = 1; d <= 14; d++) {
     window.parent.postMessage({ type: 'fetchVoiceUrl', day: d }, '*');
   }
@@ -1268,6 +1322,20 @@ init = function() {
           keep_going_question: event.data.question,
           keep_going_response: event.data.response,
         }, { onConflict: "user_id,program_id,day_number" });
+      }
+
+      if (type === "fetchCompletedDays") {
+        const { data: subs } = await supabase
+          .from("day_submissions")
+          .select("day_number")
+          .eq("user_id", userId)
+          .eq("program_id", slug)
+          .gt("day_number", 0)
+          .not("submitted_at", "is", null);
+        iframeRef?.contentWindow?.postMessage({
+          type: "completedDays",
+          days: subs?.map((s: { day_number: number }) => s.day_number) || [],
+        }, "*");
       }
 
       if (type === "fetchVoiceUrl") {
