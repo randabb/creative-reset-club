@@ -654,33 +654,33 @@ function setupProgressiveSteps() {
     s2.appendChild(s2body);
     steps.push(s2);
 
-    // Step 3: Voice Reflection
+    // Step 3: Keep Going + Notice This
     var s3 = document.createElement('div');
     s3.className = 'pstep';
     s3.setAttribute('data-step','2');
-    s3.setAttribute('data-label','voice reflection');
+    s3.setAttribute('data-label','keep going');
     var s3body = document.createElement('div');
     s3body.className = 'pstep-body';
-    if (voice) s3body.appendChild(voice);
+    if (keepGoing) s3body.appendChild(keepGoing);
+    if (noticeThis) s3body.appendChild(noticeThis);
     var s3btn = document.createElement('button');
     s3btn.className = 'pstep-continue';
-    s3btn.id = 'pstep-voice-btn-' + dayNum;
     s3btn.textContent = 'continue';
     s3body.appendChild(s3btn);
     s3.appendChild(s3body);
     steps.push(s3);
 
-    // Step 4: Keep Going + Notice This
+    // Step 4: Voice Reflection
     var s4 = document.createElement('div');
     s4.className = 'pstep';
     s4.setAttribute('data-step','3');
-    s4.setAttribute('data-label','keep going');
+    s4.setAttribute('data-label','voice reflection');
     var s4body = document.createElement('div');
     s4body.className = 'pstep-body';
-    if (keepGoing) s4body.appendChild(keepGoing);
-    if (noticeThis) s4body.appendChild(noticeThis);
+    if (voice) s4body.appendChild(voice);
     var s4btn = document.createElement('button');
     s4btn.className = 'pstep-continue';
+    s4btn.id = 'pstep-voice-btn-' + dayNum;
     s4btn.textContent = 'continue';
     s4body.appendChild(s4btn);
     s4.appendChild(s4body);
