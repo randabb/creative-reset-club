@@ -209,15 +209,15 @@ export default function Dashboard() {
           setStreak(calculateStreak(submissions));
         }
 
-        // Check expansion room unlock: day 1 completed with voice transcript
+        // Check expansion room unlock: day 1 submitted with voice transcript
         const { data: day1 } = await supabase
           .from("day_submissions")
-          .select("completed_at, voice_note_transcript")
+          .select("submitted_at, voice_note_transcript")
           .eq("user_id", user.id)
           .eq("program_id", mp)
           .eq("day_number", 1)
           .maybeSingle();
-        if (day1?.completed_at && day1?.voice_note_transcript) {
+        if (day1?.submitted_at && day1?.voice_note_transcript) {
           setExpansionUnlocked(true);
         }
       }
