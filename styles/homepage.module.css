@@ -691,7 +691,7 @@
   }
   .orbitalSystem {
     width: 420px; height: 420px;
-    transform: scale(0.6);
+    transform: scale(0.75);
     transform-origin: center center;
     margin: -80px auto -56px;
   }
