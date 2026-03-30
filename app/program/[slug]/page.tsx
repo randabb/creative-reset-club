@@ -232,6 +232,14 @@ export default function ProgramPage() {
           .pstep-done.pstep-expanded > .pstep-collapsed + .pstep-body { display:block; }
           .section-label::after { display:none; }
 
+          /* Inline read-only text + edit */
+          .saved-text-display { position:relative; font-size:15px; line-height:1.7; color:var(--ink-soft); white-space:pre-wrap; font-weight:300; padding:8px 0; }
+          .saved-text-display:hover .edit-pencil { opacity:1; }
+          .edit-pencil { position:absolute; top:4px; right:0; background:none; border:none; font-size:14px; color:var(--sand-mid); cursor:pointer; opacity:0; transition:opacity 0.2s; padding:4px; }
+          @media(max-width:768px) { .edit-pencil { opacity:0.5; } }
+          .edit-save-btn { display:inline-block; margin-top:8px; background:var(--ink); color:var(--cream); border:none; padding:8px 20px; border-radius:100px; font-family:'Codec Pro',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+          .edit-save-btn:hover { opacity:0.8; }
+
           /* Keep Going AI */
           .kg-loading { display:flex; align-items:center; gap:10px; padding:20px 0; }
           .kg-loading-dots { display:flex; gap:4px; }
@@ -651,6 +659,16 @@ window.addEventListener('message', function(event) {
     if (event.data.transcript) {
       voiceTranscriptCache[dayNum] = event.data.transcript;
     }
+    if (event.data.writtenResponse) {
+      savedWrittenResponses[dayNum] = event.data.writtenResponse;
+    }
+    if (event.data.keepGoingResponse) {
+      savedKeepGoingResponses[dayNum] = event.data.keepGoingResponse;
+    }
+    // Apply read-only display if this is a completed day
+    if (completedDaysFromDB.has(dayNum)) {
+      applyReadOnlyToCompletedDay(dayNum);
+    }
     // Restore completed voice UI if data exists
     if (event.data.url || event.data.transcript) {
       var result = document.getElementById('vresult-' + dayNum);
@@ -903,6 +921,93 @@ function collapseStep(stepEl) {
 }
 
 var completedDaysFromDB = new Set();
+var savedWrittenResponses = {};
+var savedKeepGoingResponses = {};
+
+function renderReadOnlyText(container, text, dayNum, field) {
+  if (!text || !text.trim()) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = '';
+  var display = document.createElement('div');
+  display.className = 'saved-text-display';
+  display.textContent = text;
+  var pencil = document.createElement('button');
+  pencil.className = 'edit-pencil';
+  pencil.textContent = '✏';
+  pencil.onclick = function(e) {
+    e.stopPropagation();
+    startInlineEdit(container, text, dayNum, field);
+  };
+  display.appendChild(pencil);
+  container.appendChild(display);
+}
+
+function startInlineEdit(container, text, dayNum, field) {
+  container.innerHTML = '';
+  var ta = document.createElement('textarea');
+  ta.className = 'writing-area';
+  ta.value = text;
+  ta.style.minHeight = '120px';
+  container.appendChild(ta);
+  ta.focus();
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'edit-save-btn';
+  saveBtn.textContent = 'save';
+  saveBtn.onclick = function() {
+    var newText = ta.value;
+    if (field === 'main') {
+      savedWrittenResponses[dayNum] = newText;
+      save(dayNum, 'main', newText);
+      window.parent.postMessage({ type: 'saveWriting', day: dayNum, text: newText }, '*');
+    } else if (field === 'keepgoing') {
+      savedKeepGoingResponses[dayNum] = newText;
+      window.parent.postMessage({ type: 'saveKeepGoing', day: dayNum, response: newText, question: '' }, '*');
+    }
+    renderReadOnlyText(container, newText, dayNum, field);
+  };
+  container.appendChild(saveBtn);
+  // Click outside to cancel
+  function handleClickOutside(e) {
+    if (!container.contains(e.target)) {
+      document.removeEventListener('mousedown', handleClickOutside);
+      renderReadOnlyText(container, text, dayNum, field);
+    }
+  }
+  setTimeout(function() { document.addEventListener('mousedown', handleClickOutside); }, 50);
+}
+
+function applyReadOnlyToCompletedDay(dayNum) {
+  var contentWrap = document.getElementById('day-content-' + dayNum);
+  if (!contentWrap) return;
+  // Replace main writing textarea
+  var mainText = savedWrittenResponses[dayNum] || getSaved(dayNum, 'main') || '';
+  var mainTa = document.getElementById('write-' + dayNum);
+  if (mainTa) {
+    var mainContainer = mainTa.parentNode;
+    // Remove textarea, char counter, encouragement
+    var charCounter = mainContainer.querySelector('.char-counter');
+    if (charCounter) charCounter.style.display = 'none';
+    var encouragement = mainContainer.querySelector('.writing-encouragement');
+    if (encouragement) encouragement.style.display = 'none';
+    // Create read-only wrapper
+    var readOnlyWrap = document.createElement('div');
+    readOnlyWrap.id = 'readonly-main-' + dayNum;
+    mainTa.style.display = 'none';
+    mainContainer.insertBefore(readOnlyWrap, mainTa);
+    renderReadOnlyText(readOnlyWrap, mainText, dayNum, 'main');
+  }
+  // Replace Keep Going response
+  var kgText = savedKeepGoingResponses[dayNum] || '';
+  var kgContent = document.getElementById('kg-content-' + dayNum);
+  if (kgContent && kgText) {
+    var kgReadOnly = document.createElement('div');
+    kgReadOnly.id = 'readonly-kg-' + dayNum;
+    kgContent.appendChild(kgReadOnly);
+    renderReadOnlyText(kgReadOnly, kgText, dayNum, 'keepgoing');
+  }
+}
 
 function showAllStepsExpanded(dayNum) {
   var contentWrap = document.getElementById('day-content-' + dayNum);
@@ -1341,7 +1446,7 @@ init = function() {
       if (type === "fetchVoiceUrl") {
         const { data: sub } = await supabase
           .from("day_submissions")
-          .select("voice_note_url, voice_note_transcript")
+          .select("voice_note_url, voice_note_transcript, written_response, keep_going_response")
           .eq("user_id", userId)
           .eq("program_id", slug)
           .eq("day_number", event.data.day)
@@ -1361,6 +1466,8 @@ init = function() {
           dayNumber: event.data.day,
           url: signedUrl,
           transcript: sub?.voice_note_transcript || null,
+          writtenResponse: sub?.written_response || null,
+          keepGoingResponse: sub?.keep_going_response || null,
         }, "*");
       }
 
