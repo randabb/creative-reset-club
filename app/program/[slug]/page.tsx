@@ -141,8 +141,11 @@ export default function ProgramPage() {
           .voice-consent-skip { padding:12px 24px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
 
           /* Settle In */
-          .settle-wrap { background:#FAF7F0; padding:48px 24px 40px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; margin-bottom:0; border-bottom:1px solid rgba(0,3,50,0.06); }
-          .settle-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:28px; font-weight:500; }
+          .settle-wrap { background:#FAF7F0; padding:72px 24px 64px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; margin-bottom:32px; border-bottom:1px solid rgba(0,3,50,0.06); }
+          .settle-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:12px; font-weight:500; }
+          .settle-eyebrow { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:8px; }
+          .settle-title { font-family:'Codec Pro',sans-serif; font-size:clamp(22px,3.5vw,32px); line-height:1.12; font-weight:400; color:#000332; margin-bottom:32px; }
+          .settle-title em { font-style:normal; color:#FF9090; }
           .settle-content { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:180px; gap:16px; }
           .settle-text { font-family:'Codec Pro',sans-serif; font-size:17px; color:#000332; opacity:.6; font-weight:300; line-height:1.7; }
           .settle-text-small { font-family:'Codec Pro',sans-serif; font-size:13px; color:#000332; opacity:.35; font-weight:300; line-height:1.7; }
@@ -931,10 +934,18 @@ function setupSettleIn() {
     var dayNum = parseInt(dayView.id.replace('day-',''));
     if (isNaN(dayNum)) return;
     var exIdx = getSettleExercise(dayNum);
+    // Extract day header info for settle screen
+    var dayHeader = dayView.querySelector('.day-header');
+    var eyebrowEl = dayHeader ? dayHeader.querySelector('.day-eyebrow') : null;
+    var titleEl = dayHeader ? dayHeader.querySelector('.day-title') : null;
+    var eyebrowText = eyebrowEl ? eyebrowEl.textContent : '';
+    var titleHTML = titleEl ? titleEl.innerHTML : '';
     var wrap = document.createElement('div');
     wrap.className = 'settle-wrap';
     wrap.id = 'settle-' + dayNum;
     wrap.innerHTML = '<div class="settle-label">settle in</div>' +
+      '<div class="settle-eyebrow">' + eyebrowText + '</div>' +
+      '<div class="settle-title">' + titleHTML + '</div>' +
       '<div class="settle-content" id="settle-content-' + dayNum + '">' + buildSettleHTML(exIdx) + '</div>' +
       '<button class="settle-continue" id="settle-btn-' + dayNum + '">continue</button>';
     // Hide existing day content
