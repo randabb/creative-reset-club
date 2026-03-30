@@ -671,18 +671,23 @@ window.addEventListener('message', function(event) {
     }
     // Restore completed voice UI if data exists
     if (event.data.url || event.data.transcript) {
-      var result = document.getElementById('vresult-' + dayNum);
-      var voiceSection = document.getElementById('voice-' + dayNum);
-      if (result && voiceSection) {
-        var playerHtml = event.data.url ? '<div class="voice-player"><audio controls src="' + event.data.url + '"></audio></div>' : '';
-        if (event.data.transcript) {
-          result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + event.data.transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
-        } else if (event.data.url) {
-          result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+      // On completed days, apply the full read-only treatment (hides controls)
+      if (completedDaysFromDB.has(dayNum)) {
+        applyReadOnlyToCompletedDay(dayNum);
+      } else {
+        // On incomplete days, just show the result alongside controls
+        var result = document.getElementById('vresult-' + dayNum);
+        var voiceSection = document.getElementById('voice-' + dayNum);
+        if (result && voiceSection) {
+          var playerHtml = event.data.url ? '<div class="voice-player"><audio controls src="' + event.data.url + '"></audio></div>' : '';
+          if (event.data.transcript) {
+            result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + event.data.transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+          } else if (event.data.url) {
+            result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+          }
+          var vcBtn = document.getElementById('pstep-voice-btn-' + dayNum);
+          if (vcBtn) vcBtn.style.display = '';
         }
-        // Show the continue button since voice is already done
-        var vcBtn = document.getElementById('pstep-voice-btn-' + dayNum);
-        if (vcBtn) vcBtn.style.display = '';
       }
     }
   }
@@ -981,31 +986,58 @@ function startInlineEdit(container, text, dayNum, field) {
 function applyReadOnlyToCompletedDay(dayNum) {
   var contentWrap = document.getElementById('day-content-' + dayNum);
   if (!contentWrap) return;
+
   // Replace main writing textarea
   var mainText = savedWrittenResponses[dayNum] || getSaved(dayNum, 'main') || '';
   var mainTa = document.getElementById('write-' + dayNum);
-  if (mainTa) {
+  if (mainTa && !document.getElementById('readonly-main-' + dayNum)) {
     var mainContainer = mainTa.parentNode;
-    // Remove textarea, char counter, encouragement
     var charCounter = mainContainer.querySelector('.char-counter');
     if (charCounter) charCounter.style.display = 'none';
     var encouragement = mainContainer.querySelector('.writing-encouragement');
     if (encouragement) encouragement.style.display = 'none';
-    // Create read-only wrapper
     var readOnlyWrap = document.createElement('div');
     readOnlyWrap.id = 'readonly-main-' + dayNum;
     mainTa.style.display = 'none';
     mainContainer.insertBefore(readOnlyWrap, mainTa);
     renderReadOnlyText(readOnlyWrap, mainText, dayNum, 'main');
   }
+
   // Replace Keep Going response
   var kgText = savedKeepGoingResponses[dayNum] || '';
   var kgContent = document.getElementById('kg-content-' + dayNum);
-  if (kgContent && kgText) {
-    var kgReadOnly = document.createElement('div');
-    kgReadOnly.id = 'readonly-kg-' + dayNum;
-    kgContent.appendChild(kgReadOnly);
-    renderReadOnlyText(kgReadOnly, kgText, dayNum, 'keepgoing');
+  if (kgContent && !document.getElementById('readonly-kg-' + dayNum)) {
+    // Hide any existing KG response textarea
+    var kgTa = kgContent.querySelector('.kg-response-area');
+    if (kgTa) kgTa.style.display = 'none';
+    if (kgText) {
+      var kgReadOnly = document.createElement('div');
+      kgReadOnly.id = 'readonly-kg-' + dayNum;
+      kgContent.appendChild(kgReadOnly);
+      renderReadOnlyText(kgReadOnly, kgText, dayNum, 'keepgoing');
+    }
+  }
+
+  // Restore voice UI: hide record controls, show player + transcript
+  var voiceSection = document.getElementById('voice-' + dayNum);
+  if (voiceSection && (voiceUrlCache[dayNum] || voiceTranscriptCache[dayNum])) {
+    // Hide recording controls
+    var controls = voiceSection.querySelector('.voice-controls');
+    if (controls) controls.style.display = 'none';
+    var privacy = voiceSection.querySelector('.voice-privacy');
+    if (privacy) privacy.style.display = 'none';
+    // Render player + transcript in result area
+    var result = document.getElementById('vresult-' + dayNum);
+    if (result && !result.querySelector('.voice-transcript-card') && !result.querySelector('.voice-player')) {
+      var url = voiceUrlCache[dayNum] || '';
+      var transcript = voiceTranscriptCache[dayNum] || '';
+      var playerHtml = url ? '<div class="voice-player"><audio controls src="' + url + '"></audio></div>' : '';
+      if (transcript) {
+        result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+      } else if (url) {
+        result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+      }
+    }
   }
 }
 
