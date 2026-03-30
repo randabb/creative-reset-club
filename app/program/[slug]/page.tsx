@@ -452,6 +452,7 @@ var recChunks = {};
 var recTimers = {};
 var recIntervals = {};
 var voiceUrlCache = {};
+var voiceTranscriptCache = {};
 
 function toggleRecording(day) {
   if (recorders[day] && recorders[day].state === 'recording') {
@@ -533,10 +534,7 @@ function setVoiceStatus(day, text) {
 function onRecordingDone(day) {
   var blob = new Blob(recChunks[day], { type: 'audio/webm' });
   console.log('1. Recording stopped, blob size:', blob.size);
-  // Show the continue button now that recording is done
-  var vcBtn = document.getElementById('pstep-voice-btn-' + day);
-  if (vcBtn) vcBtn.style.display = '';
-  setVoiceStatus(day, 'saving your voice note...');
+  setVoiceStatus(day, 'transcribing...');
   var reader = new FileReader();
   reader.onloadend = function() {
     var base64 = reader.result.split(',')[1];
@@ -557,17 +555,23 @@ window.addEventListener('message', function(event) {
     var voiceUrl = event.data.url || '';
     if (voiceUrl) voiceUrlCache[day] = voiceUrl;
     var playerHtml = voiceUrl ? '<div class="voice-player"><audio controls src="' + voiceUrl + '"></audio></div>' : '';
+    var vcBtn = document.getElementById('pstep-voice-btn-' + day);
     if (event.data.transcript) {
+      voiceTranscriptCache[day] = event.data.transcript;
       result.innerHTML = '<div class="voice-transcript-card">' +
         '<div class="voice-transcript-label">what you said:</div>' +
         '<div class="voice-transcript-text">' + event.data.transcript + '</div>' +
       '</div>' + playerHtml +
       '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
+      // Show continue now that transcript is ready
+      if (vcBtn) vcBtn.style.display = '';
     } else {
       result.innerHTML = (voiceUrl ? '<div class="voice-status visible">your voice note is saved.</div>' : '<div class="voice-status visible">transcription unavailable.</div>') +
         playerHtml +
         (voiceUrl ? '<button class="voice-retry" onclick="retryTranscription(' + day + ',\\'' + voiceUrl + '\\')">retry transcription</button>' : '') +
         '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
+      // Still show continue even without transcript if audio was saved
+      if (vcBtn && voiceUrl) vcBtn.style.display = '';
     }
   }
 });
@@ -645,6 +649,25 @@ window.addEventListener('message', function(event) {
     var dayNum = event.data.dayNumber;
     if (event.data.url) {
       voiceUrlCache[dayNum] = event.data.url;
+    }
+    if (event.data.transcript) {
+      voiceTranscriptCache[dayNum] = event.data.transcript;
+    }
+    // Restore completed voice UI if data exists
+    if (event.data.url || event.data.transcript) {
+      var result = document.getElementById('vresult-' + dayNum);
+      var voiceSection = document.getElementById('voice-' + dayNum);
+      if (result && voiceSection) {
+        var playerHtml = event.data.url ? '<div class="voice-player"><audio controls src="' + event.data.url + '"></audio></div>' : '';
+        if (event.data.transcript) {
+          result.innerHTML = '<div class="voice-transcript-card"><div class="voice-transcript-label">what you said:</div><div class="voice-transcript-text">' + event.data.transcript + '</div></div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+        } else if (event.data.url) {
+          result.innerHTML = '<div class="voice-status visible">your voice note is saved.</div>' + playerHtml + '<button class="voice-rerecord" onclick="reRecord(' + dayNum + ')">re-record</button>';
+        }
+        // Show the continue button since voice is already done
+        var vcBtn = document.getElementById('pstep-voice-btn-' + dayNum);
+        if (vcBtn) vcBtn.style.display = '';
+      }
     }
   }
   if (event.data && event.data.type === 'keepGoingResult') {
@@ -1263,7 +1286,7 @@ init = function() {
       if (type === "fetchVoiceUrl") {
         const { data: sub } = await supabase
           .from("day_submissions")
-          .select("voice_note_url")
+          .select("voice_note_url, voice_note_transcript")
           .eq("user_id", userId)
           .eq("program_id", slug)
           .eq("day_number", event.data.day)
@@ -1282,6 +1305,7 @@ init = function() {
           type: "existingVoiceUrl",
           dayNumber: event.data.day,
           url: signedUrl,
+          transcript: sub?.voice_note_transcript || null,
         }, "*");
       }
 
