@@ -76,6 +76,8 @@ export default function ExpansionRoom({
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [panning, setPanning] = useState(false);
+  const isPanningRef = useRef(false);
+  const didPanRef = useRef(false);
   const panStartRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -200,7 +202,7 @@ export default function ExpansionRoom({
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (dragState || resizeState || panning) return;
+    if (dragState || resizeState || panning || didPanRef.current) return;
     const { x, y } = screenToCanvas(e.clientX, e.clientY);
 
     if (activeTool === "sticky") {
@@ -226,8 +228,14 @@ export default function ExpansionRoom({
       const pt = screenToCanvas(e.clientX, e.clientY);
       eraseAtPoint(pt.x, pt.y);
     } else if (activeTool === "select" && !dragState && !resizeState) {
-      setPanning(true);
-      panStartRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
+      // Only pan if clicking empty space (viewport or canvas surface, not an element)
+      const target = e.target as HTMLElement;
+      if (target === viewportRef.current || target === canvasRef.current) {
+        isPanningRef.current = true;
+        didPanRef.current = false;
+        setPanning(true);
+        panStartRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
+      }
     }
   };
 
@@ -243,7 +251,8 @@ export default function ExpansionRoom({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (panning && panStartRef.current) {
+    if (isPanningRef.current && panStartRef.current) {
+      didPanRef.current = true;
       setPanX(panStartRef.current.px + (e.clientX - panStartRef.current.x));
       setPanY(panStartRef.current.py + (e.clientY - panStartRef.current.y));
       return;
@@ -293,6 +302,7 @@ export default function ExpansionRoom({
     }
     setDrawing(false);
     setErasing(false);
+    isPanningRef.current = false;
     setPanning(false);
     panStartRef.current = null;
     setCurrentPath([]);
