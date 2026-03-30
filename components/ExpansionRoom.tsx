@@ -72,6 +72,12 @@ export default function ExpansionRoom({
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [canvasLoaded, setCanvasLoaded] = useState(false);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [panning, setPanning] = useState(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number; px: number; py: number } | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,12 +132,55 @@ export default function ExpansionRoom({
     setElements((prev) => prev.filter((el) => el.id !== id));
   };
 
+  // Convert screen coordinates to canvas coordinates
+  const screenToCanvas = useCallback((clientX: number, clientY: number) => {
+    if (!viewportRef.current) return { x: 0, y: 0 };
+    const rect = viewportRef.current.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - panX) / zoom,
+      y: (clientY - rect.top - panY) / zoom,
+    };
+  }, [panX, panY, zoom]);
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom((z) => Math.min(3, Math.max(0.2, z * delta)));
+  }, []);
+
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    vp.addEventListener("wheel", handleWheel, { passive: false });
+    return () => vp.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
+
+  const zoomIn = () => setZoom((z) => Math.min(3, z * 1.2));
+  const zoomOut = () => setZoom((z) => Math.max(0.2, z / 1.2));
+  const fitToScreen = () => {
+    if (!viewportRef.current || elements.length === 0) {
+      setPanX(0); setPanY(0); setZoom(1);
+      return;
+    }
+    const vp = viewportRef.current.getBoundingClientRect();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    elements.forEach((el) => {
+      minX = Math.min(minX, el.x);
+      minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + el.w);
+      maxY = Math.max(maxY, el.y + el.h);
+    });
+    const cw = maxX - minX + 100;
+    const ch = maxY - minY + 100;
+    const newZoom = Math.min(1.5, Math.min(vp.width / cw, vp.height / ch));
+    setPanX(vp.width / 2 - (minX + cw / 2) * newZoom + 50 * newZoom);
+    setPanY(vp.height / 2 - (minY + ch / 2) * newZoom + 50 * newZoom);
+    setZoom(newZoom);
+  };
+
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (dragState || resizeState) return;
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (dragState || resizeState || panning) return;
+    const { x, y } = screenToCanvas(e.clientX, e.clientY);
 
     if (activeTool === "sticky") {
       addElement({ id: crypto.randomUUID(), type: "sticky", x: x - 90, y: y - 70, w: 180, h: 140, color: nextStickyColor(), text: "" });
@@ -147,14 +196,18 @@ export default function ExpansionRoom({
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    if (activeTool === "draw" && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
+    if (activeTool === "draw") {
+      const pt = screenToCanvas(e.clientX, e.clientY);
       setDrawing(true);
-      setCurrentPath([{ x: e.clientX - rect.left, y: e.clientY - rect.top }]);
-    } else if (activeTool === "eraser" && canvasRef.current) {
+      setCurrentPath([pt]);
+    } else if (activeTool === "eraser") {
       setErasing(true);
-      const rect = canvasRef.current.getBoundingClientRect();
-      eraseAtPoint(e.clientX - rect.left, e.clientY - rect.top);
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      eraseAtPoint(pt.x, pt.y);
+    } else if (activeTool === "select" && !dragState && !resizeState) {
+      // Pan on empty space drag
+      setPanning(true);
+      setPanStart({ x: e.clientX, y: e.clientY, px: panX, py: panY });
     }
   };
 
@@ -170,22 +223,27 @@ export default function ExpansionRoom({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
+    if (panning && panStart) {
+      setPanX(panStart.px + (e.clientX - panStart.x));
+      setPanY(panStart.py + (e.clientY - panStart.y));
+      return;
+    }
 
     if (drawing && activeTool === "draw") {
-      setCurrentPath((prev) => [...prev, { x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      setCurrentPath((prev) => [...prev, pt]);
       return;
     }
 
     if (erasing && activeTool === "eraser") {
-      eraseAtPoint(e.clientX - rect.left, e.clientY - rect.top);
+      const pt = screenToCanvas(e.clientX, e.clientY);
+      eraseAtPoint(pt.x, pt.y);
       return;
     }
 
     if (resizeState) {
-      const dx = e.clientX - resizeState.startX;
-      const dy = e.clientY - resizeState.startY;
+      const dx = (e.clientX - resizeState.startX) / zoom;
+      const dy = (e.clientY - resizeState.startY) / zoom;
       setElements((prev) =>
         prev.map((el) =>
           el.id === resizeState.id
@@ -197,10 +255,11 @@ export default function ExpansionRoom({
     }
 
     if (dragState) {
+      const pt = screenToCanvas(e.clientX, e.clientY);
       setElements((prev) =>
         prev.map((el) =>
           el.id === dragState.id
-            ? { ...el, x: e.clientX - rect.left - dragState.offsetX, y: e.clientY - rect.top - dragState.offsetY }
+            ? { ...el, x: pt.x - dragState.offsetX, y: pt.y - dragState.offsetY }
             : el
         )
       );
@@ -214,6 +273,8 @@ export default function ExpansionRoom({
     }
     setDrawing(false);
     setErasing(false);
+    setPanning(false);
+    setPanStart(null);
     setCurrentPath([]);
     setDragState(null);
     setResizeState(null);
@@ -221,10 +282,11 @@ export default function ExpansionRoom({
 
   const handleElementMouseDown = (id: string, e: React.MouseEvent) => {
     if (activeTool !== "select") return;
+    e.stopPropagation();
     const el = elements.find((el) => el.id === id);
-    if (!el || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    setDragState({ id, offsetX: e.clientX - rect.left - el.x, offsetY: e.clientY - rect.top - el.y });
+    if (!el) return;
+    const pt = screenToCanvas(e.clientX, e.clientY);
+    setDragState({ id, offsetX: pt.x - el.x, offsetY: pt.y - el.y });
   };
 
   const handleResizeMouseDown = (id: string, e: React.MouseEvent) => {
@@ -374,7 +436,7 @@ export default function ExpansionRoom({
     { id: "shape", label: "Shape", icon: "◻" },
   ];
 
-  const canvasCursor = activeTool === "select" ? (dragState ? "grabbing" : "default") : activeTool === "draw" ? "crosshair" : activeTool === "eraser" ? "cell" : "cell";
+  const canvasCursor = activeTool === "select" ? (dragState ? "grabbing" : panning ? "grabbing" : "grab") : activeTool === "draw" ? "crosshair" : activeTool === "eraser" ? "cell" : "cell";
 
   // Delete button + resize handle renderer
   const renderOverlays = (el: CanvasElement) => {
@@ -491,25 +553,39 @@ export default function ExpansionRoom({
             >
               save
             </button>
+            <div style={{ width: 1, height: 24, background: "#e2ddd8", margin: "0 4px" }} />
+            <button onClick={zoomOut} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 14, color: "rgba(0,3,50,0.45)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+            <button onClick={zoomIn} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 14, color: "rgba(0,3,50,0.45)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={fitToScreen} title="Fit to screen" style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 10, color: "rgba(0,3,50,0.45)", cursor: "pointer", fontFamily: "'Codec Pro',sans-serif" }}>fit</button>
           </div>
         </div>
 
-        {/* CANVAS AREA */}
+        {/* CANVAS VIEWPORT */}
         <div
-          ref={canvasRef}
-          onClick={handleCanvasClick}
+          ref={viewportRef}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
-            flex: 1, position: "relative", background: "#ffffff",
-            backgroundImage: "radial-gradient(circle, rgba(0,3,50,0.08) 1px, transparent 1px)",
-            backgroundSize: "24px 24px", overflow: "hidden", cursor: canvasCursor,
+            flex: 1, position: "relative", overflow: "hidden", cursor: canvasCursor,
           }}
         >
+          {/* CANVAS (transformed) */}
+          <div
+            ref={canvasRef}
+            onClick={handleCanvasClick}
+            style={{
+              width: 3000, height: 2000, position: "absolute",
+              transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+              transformOrigin: "0 0",
+              background: "#ffffff",
+              backgroundImage: "radial-gradient(circle, rgba(0,3,50,0.08) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          >
           {/* Drawing layer */}
-          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}>
+          <svg style={{ position: "absolute", inset: 0, width: 3000, height: 2000, pointerEvents: "none", zIndex: 0 }}>
             {paths.map((p) => (
               <path key={p.id} d={pointsToPath(p.points)} fill="none" stroke="#000332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
             ))}
@@ -631,6 +707,11 @@ export default function ExpansionRoom({
             }
             return null;
           })}
+          </div>
+          {/* Zoom indicator */}
+          <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", fontSize: 11, color: "rgba(0,3,50,0.3)", fontFamily: "'Codec Pro',sans-serif", pointerEvents: "none", zIndex: 10 }}>
+            {Math.round(zoom * 100)}%
+          </div>
         </div>
       </div>
 
