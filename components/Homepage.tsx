@@ -22,7 +22,7 @@ export default function Homepage() {
       {/* NAV */}
       <nav className={styles.nav} id="nav">
         <div className={styles.navLogo}>creativeresetclub</div>
-        <a href="#" className={styles.navSign}>sign in</a>
+        <Link href="/login" className={styles.navSign}>sign in</Link>
       </nav>
 
       {/* HERO */}
