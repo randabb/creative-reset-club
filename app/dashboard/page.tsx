@@ -174,6 +174,7 @@ export default function Dashboard() {
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expansionUnlocked, setExpansionUnlocked] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -206,6 +207,18 @@ export default function Dashboard() {
         if (submissions && submissions.length > 0) {
           setCompletedDays(submissions.length);
           setStreak(calculateStreak(submissions));
+        }
+
+        // Check expansion room unlock: day 1 completed with voice transcript
+        const { data: day1 } = await supabase
+          .from("day_submissions")
+          .select("completed_at, voice_note_transcript")
+          .eq("user_id", user.id)
+          .eq("program_id", mp)
+          .eq("day_number", 1)
+          .maybeSingle();
+        if (day1?.completed_at && day1?.voice_note_transcript) {
+          setExpansionUnlocked(true);
         }
       }
 
@@ -406,6 +419,7 @@ export default function Dashboard() {
           {!streak && <div style={{ marginBottom: 28 }} />}
 
           {matched ? (
+            <>
             <div style={{
               background: "#000332", borderRadius: 24, padding: "44px 48px",
               maxWidth: 560, position: "relative", overflow: "hidden",
@@ -459,6 +473,46 @@ export default function Dashboard() {
                 {isComplete ? "revisit track →" : completedDays > 0 ? "continue →" : "start track →"}
               </a>
             </div>
+
+            {/* EXPANSION ROOM CARD */}
+            <div style={{
+              background: expansionUnlocked ? "#000332" : "rgba(0,3,50,0.04)",
+              borderRadius: 24, padding: "36px 40px",
+              maxWidth: 560, marginTop: 16, position: "relative", overflow: "hidden",
+              opacity: expansionUnlocked ? 1 : 0.5,
+              border: expansionUnlocked ? "none" : "1px solid rgba(0,3,50,0.08)",
+            }}>
+              {!expansionUnlocked && (
+                <div style={{ fontSize: 20, marginBottom: 12, opacity: 0.3 }}>🔒</div>
+              )}
+              <p style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+                color: expansionUnlocked ? "#ff9090" : "rgba(0,3,50,0.35)", marginBottom: 10,
+              }}>
+                expansion room
+              </p>
+              <p style={{
+                fontSize: 14, lineHeight: 1.6,
+                color: expansionUnlocked ? "rgba(244,242,238,0.6)" : "rgba(0,3,50,0.4)",
+                fontWeight: 300, marginBottom: expansionUnlocked ? 20 : 0,
+              }}>
+                {expansionUnlocked ? "your canvas is ready" : "finish day 1 with a voice reflection to unlock"}
+              </p>
+              {expansionUnlocked && (
+                <a
+                  href="/expansion-room"
+                  style={{
+                    display: "inline-block",
+                    background: "#ff9090", color: "#000332",
+                    padding: "14px 28px", borderRadius: 100,
+                    fontSize: 13, fontWeight: 700, textDecoration: "none",
+                  }}
+                >
+                  open →
+                </a>
+              )}
+            </div>
+            </>
           ) : (
             <div style={{
               background: "#000332", borderRadius: 24, padding: "44px 48px",
