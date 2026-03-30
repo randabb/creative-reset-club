@@ -118,7 +118,7 @@ export default function ProgramPage() {
           @keyframes celebFadeUp { 0% { opacity:0; transform:translateY(12px); } 100% { opacity:1; transform:translateY(0); } }
 
           /* Voice recording section */
-          .voice-section { margin-top:32px; padding-top:28px; border-top:1px solid rgba(0,3,50,0.08); }
+          .voice-section { margin-top:32px; padding-top:28px; border-top:none; }
           .voice-section.hidden { display:none; }
           .voice-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); margin-bottom:8px; }
           .voice-heading { font-family:'Codec Pro',sans-serif; font-size:20px; color:var(--ink); margin-bottom:6px; font-weight:700; }
