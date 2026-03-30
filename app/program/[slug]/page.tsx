@@ -661,9 +661,9 @@ window.addEventListener('message', function(event) {
     if (event.data.transcript) {
       voiceTranscriptCache[dayNum] = event.data.transcript;
     }
-    if (event.data.writtenResponse) {
-      savedWrittenResponses[dayNum] = event.data.writtenResponse;
-    }
+    // Written responses loaded from localStorage (column may not exist in Supabase)
+    var writtenFromLS = getSaved(dayNum, 'main');
+    if (writtenFromLS) savedWrittenResponses[dayNum] = writtenFromLS;
     // KG responses loaded from localStorage (not in Supabase table yet)
     var kgFromLS = localStorage.getItem('crc-' + CRC_UID + '-kg-response-' + dayNum);
     if (kgFromLS) savedKeepGoingResponses[dayNum] = kgFromLS;
@@ -1491,7 +1491,7 @@ init = function() {
       if (type === "fetchVoiceUrl") {
         const { data: sub, error: fetchErr } = await supabase
           .from("day_submissions")
-          .select("voice_note_url, voice_note_transcript, written_response")
+          .select("voice_note_url, voice_note_transcript")
           .eq("user_id", userId)
           .eq("program_id", slug)
           .eq("day_number", event.data.day)
@@ -1512,7 +1512,6 @@ init = function() {
           dayNumber: event.data.day,
           url: signedUrl,
           transcript: sub?.voice_note_transcript || null,
-          writtenResponse: sub?.written_response || null,
         }, "*");
       }
 
