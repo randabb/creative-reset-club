@@ -187,6 +187,59 @@ export default function ExpansionRoom({
     } catch { /* silent */ }
   };
 
+  // Generate personalized actions via API
+  const generateActionCard = async (thread: string) => {
+    const cardId = crypto.randomUUID();
+    const placeholderCard: CanvasElement = {
+      id: cardId, type: "action-card", x: 60 + Math.random() * 100, y: 80 + Math.random() * 100, w: 280, h: 240,
+      theme: thread || "what you discovered",
+      insight: initialDiscovery.length > 120 ? initialDiscovery.slice(0, 120) + "..." : initialDiscovery,
+      actions: [
+        { text: "generating...", timeframe: "first move", checked: false },
+        { text: "", timeframe: "this week", checked: false },
+        { text: "", timeframe: "the practice", checked: false },
+      ],
+    };
+    addElement(placeholderCard);
+    setMessages((prev) => [...prev, { role: "ai", content: "building your action card..." }]);
+
+    try {
+      const res = await fetch("/api/expansion/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: initialDiscovery, direction: "turn it into actions", thread }),
+      });
+      const result = await res.json();
+      if (result.actions && Array.isArray(result.actions)) {
+        setElements((prev) =>
+          prev.map((el) =>
+            el.id === cardId
+              ? { ...el, actions: result.actions.map((a: { text: string; timeframe: string }) => ({ text: a.text, timeframe: a.timeframe, checked: false })) }
+              : el
+          )
+        );
+        setMessages((prev) => [...prev, { role: "ai", content: "done. your action card is on the canvas — personalized to what you said." }]);
+      } else {
+        throw new Error("bad response");
+      }
+    } catch {
+      // Fallback to generic actions
+      setElements((prev) =>
+        prev.map((el) =>
+          el.id === cardId
+            ? { ...el, actions: [
+                { text: "name the thing you want to move forward", timeframe: "first move", checked: false },
+                { text: "write down one concrete next step", timeframe: "this week", checked: false },
+                { text: "return to this card daily and check in", timeframe: "the practice", checked: false },
+              ] }
+            : el
+        )
+      );
+      setMessages((prev) => [...prev, { role: "ai", content: "here's an action card based on what you said. i've added it to your canvas." }]);
+    }
+    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
   // Chat handlers
   const handleChoice = (choice: string) => {
     setMessages((prev) => [...prev, { role: "user", content: choice }]);
@@ -194,24 +247,15 @@ export default function ExpansionRoom({
       addElement({ id: crypto.randomUUID(), type: "sticky", x: 40 + Math.random() * 200, y: 80 + Math.random() * 200, w: 180, h: 140, color: nextStickyColor(), text: "" });
       setMessages((prev) => [...prev, { role: "ai", content: "added a sticky note to your canvas. click it to start writing." }]);
     } else if (choice === "turn it into actions") {
-      const actionCard: CanvasElement = {
-        id: crypto.randomUUID(), type: "action-card", x: 60 + Math.random() * 100, y: 80 + Math.random() * 100, w: 280, h: 240,
-        theme: "what you discovered",
-        insight: initialDiscovery.length > 120 ? initialDiscovery.slice(0, 120) + "..." : initialDiscovery,
-        actions: [
-          { text: "name the thing you want to move forward", timeframe: "first move", checked: false },
-          { text: "write down one concrete next step", timeframe: "this week", checked: false },
-          { text: "return to this card daily and check in", timeframe: "the practice", checked: false },
-        ],
-      };
-      addElement(actionCard);
-      setMessages((prev) => [...prev, { role: "ai", content: "here's an action card based on what you said. i've added it to your canvas." }]);
+      generateActionCard("what you discovered");
     } else if (choice === "break it down") {
       setMessages((prev) => [...prev, { role: "ai", content: "let's pull it apart. what's the one thread in what you said that feels most alive right now?", choices: ["the thing i'm avoiding", "what surprised me", "where i got stuck"] }]);
     } else if (choice === "sit with it") {
       setMessages((prev) => [...prev, { role: "ai", content: "that's a valid response. sometimes the best thing to do with a discovery is to let it sit. come back when you're ready." }]);
     } else if (choice === "keep talking") {
       setMessages((prev) => [...prev, { role: "ai", content: "go ahead. what else is coming up?" }]);
+    } else if (["the thing i'm avoiding", "what surprised me", "where i got stuck"].includes(choice)) {
+      generateActionCard(choice);
     } else {
       setMessages((prev) => [...prev, { role: "ai", content: `you said "${choice}." that's worth following. want to put that on the canvas?`, choices: ["add as a sticky note", "turn it into actions"] }]);
     }
