@@ -139,6 +139,28 @@ export default function ProgramPage() {
           .voice-consent-btns { display:flex; gap:10px; flex-wrap:wrap; }
           .voice-consent-accept { padding:12px 24px; border-radius:100px; border:none; background:var(--ink); color:var(--cream); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
           .voice-consent-skip { padding:12px 24px; border-radius:100px; border:1.5px solid var(--ink); background:none; color:var(--ink); font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+
+          /* Settle In */
+          .settle-wrap { background:#FAF7F0; padding:48px 24px 40px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; margin-bottom:0; border-bottom:1px solid rgba(0,3,50,0.06); }
+          .settle-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,3,50,0.35); margin-bottom:28px; font-weight:500; }
+          .settle-content { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:180px; gap:16px; }
+          .settle-text { font-family:'Codec Pro',sans-serif; font-size:17px; color:#000332; opacity:.6; font-weight:300; line-height:1.7; }
+          .settle-text-small { font-family:'Codec Pro',sans-serif; font-size:13px; color:#000332; opacity:.35; font-weight:300; line-height:1.7; }
+          .settle-text-large { font-family:'Codec Pro',sans-serif; font-size:clamp(48px,10vw,80px); color:#000332; font-weight:300; line-height:1; }
+          .settle-line-item { font-family:'Codec Pro',sans-serif; font-size:16px; color:#000332; opacity:0; font-weight:300; line-height:1.8; animation:settleFadeIn 0.5s ease forwards; }
+          .settle-continue { margin-top:28px; background:#000332; color:#FAF7F0; border:none; padding:13px 28px; border-radius:100px; font-family:'Codec Pro',sans-serif; font-size:13px; font-weight:700; cursor:pointer; letter-spacing:.02em; transition:opacity .2s; }
+          .settle-continue:hover { opacity:.8; }
+          .settle-circle { border-radius:50%; background:#FF9090; }
+          .settle-dot { width:10px; height:10px; border-radius:50%; background:#FF9090; }
+          .settle-ring { border-radius:50%; border:1.5px solid #FF9090; position:absolute; }
+          .settle-horizon { height:1.5px; background:#000332; border-radius:1px; }
+          .settle-tab { background:#000332; color:#FAF7F0; font-family:'Codec Pro',sans-serif; font-size:11px; padding:8px 16px; border-radius:6px; font-weight:400; }
+          @keyframes settleFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes settleBreathIn { 0%,100% { width:60px; height:60px; opacity:.7; } 50% { width:120px; height:120px; opacity:1; } }
+          @keyframes settlePulse { 0%,100% { transform:scale(1); opacity:.6; } 50% { transform:scale(1.4); opacity:1; } }
+          @keyframes settleSlowBlink { 0%,100% { opacity:1; } 50% { opacity:.08; } }
+          @keyframes settleRipple { 0% { width:10px; height:10px; opacity:.6; } 100% { width:120px; height:120px; opacity:0; } }
+          @keyframes settleChordRing { 0% { width:14px; height:14px; opacity:.5; } 100% { width:100px; height:100px; opacity:0; } }
         `;
         html = html.replace('</style>\n</head>', `${injectedCSS}</style>\n</head>`);
         html = html.replace('</style></head>', `${injectedCSS}</style></head>`);
@@ -506,12 +528,239 @@ function reRecord(day) {
   document.getElementById('timer-' + day).textContent = '1:00';
 }
 
+// ── SETTLE IN ──
+var settleAudioCtx = null;
+var settleAudioNodes = [];
+
+function getSettleExercise(dayNum) {
+  return ((dayNum - 1) % 14);
+}
+
+function buildSettleHTML(exIdx) {
+  switch(exIdx) {
+    case 0: // Breathing Circle
+      return '<div class="settle-circle" id="settleAnim" style="width:60px;height:60px;animation:settleBreathIn 8s ease-in-out infinite"></div>' +
+        '<div class="settle-text" id="settleBreathText">breathe in</div>';
+    case 1: // The Dot
+      return '<div class="settle-dot" id="settleAnim" style="animation:settlePulse 3s ease-in-out infinite"></div>' +
+        '<div class="settle-text">watch it. just for a moment.</div>';
+    case 2: // The Horizon Line
+      return '<div class="settle-horizon" id="settleAnim" style="width:0;max-width:280px;transition:width 4s ease-out"></div>' +
+        '<div class="settle-text">let your eyes follow it. don\\'t rush.</div>';
+    case 3: // The Countdown
+      return '<div class="settle-text-large" id="settleCountdown">5</div>';
+    case 4: // Shake It Off
+      return '<div id="settleLines" style="display:flex;flex-direction:column;gap:4px"></div>';
+    case 5: // The Sound
+      return '<div style="position:relative;display:flex;align-items:center;justify-content:center;width:120px;height:120px">' +
+        '<div class="settle-dot" style="width:14px;height:14px;position:relative;z-index:2"></div>' +
+        '<div class="settle-ring" id="settleRing1" style="animation:settleChordRing 3s ease-out infinite"></div>' +
+        '<div class="settle-ring" id="settleRing2" style="animation:settleChordRing 3s ease-out infinite 1s"></div>' +
+        '<div class="settle-ring" id="settleRing3" style="animation:settleChordRing 3s ease-out infinite 2s"></div>' +
+        '</div>' +
+        '<div class="settle-text">let it wash over you.</div>' +
+        '<div class="settle-text-small" id="settleTimer">20</div>';
+    case 6: // Three Things
+      return '<div class="settle-text">before we begin — name three things you can feel right now.</div>' +
+        '<div class="settle-text-small">the chair. the temperature. your breath.</div>';
+    case 7: // The Slow Blink
+      return '<div class="settle-circle" id="settleAnim" style="width:48px;height:48px;animation:settleSlowBlink 2s ease-in-out 3"></div>' +
+        '<div class="settle-text">blink slowly. three times.</div>';
+    case 8: // The Permission Slip
+      return '<div class="settle-text" id="settleAnim" style="font-size:20px;font-style:italic;opacity:0;animation:settleFadeIn 1.2s ease forwards">nothing you write needs to be good.</div>';
+    case 9: // The Tab Close
+      return '<div id="settleTab" class="settle-tab" style="transition:transform 4s ease,opacity 3.5s ease">what you were just doing</div>' +
+        '<div class="settle-text" style="margin-top:16px">think of one thing you were just doing. now close the tab in your mind.</div>';
+    case 10: // The Exhale
+      return '<div class="settle-text" style="font-size:20px;font-style:italic">take one long exhale before you begin.</div>';
+    case 11: // The Empty Page
+      return '<div class="settle-text" id="settleReady" style="font-size:22px;opacity:0">ready.</div>';
+    case 12: // The Body Scan
+      return '<div id="settleLines" style="display:flex;flex-direction:column;gap:4px"></div>';
+    case 13: // The Arrive
+      return '<div style="position:relative;display:flex;align-items:center;justify-content:center;width:120px;height:120px">' +
+        '<div class="settle-dot" style="width:10px;height:10px;position:relative;z-index:2"></div>' +
+        '<div class="settle-ring" id="settleRing1" style="animation:settleRipple 3s ease-out infinite"></div>' +
+        '<div class="settle-ring" id="settleRing2" style="animation:settleRipple 3s ease-out infinite 1s"></div>' +
+        '<div class="settle-ring" id="settleRing3" style="animation:settleRipple 3s ease-out infinite 2s"></div>' +
+        '</div>' +
+        '<div class="settle-text">you made it here. that\\'s the hardest part.</div>';
+    default: return '';
+  }
+}
+
+function startSettleAnimation(exIdx) {
+  if (exIdx === 0) { // Breathing Circle — alternate text
+    var bt = document.getElementById('settleBreathText');
+    if (bt) { window._settleBreathInt = setInterval(function(){ bt.textContent = bt.textContent === 'breathe in' ? 'breathe out' : 'breathe in'; }, 4000); }
+  }
+  if (exIdx === 2) { // Horizon Line — trigger width
+    setTimeout(function(){ var h = document.getElementById('settleAnim'); if(h) h.style.width='280px'; }, 50);
+  }
+  if (exIdx === 3) { // Countdown
+    var nums = [5,4,3,2,1];
+    var ci = 0;
+    var cd = document.getElementById('settleCountdown');
+    window._settleCountdownInt = setInterval(function(){
+      ci++;
+      if (ci < nums.length && cd) { cd.style.opacity='0'; setTimeout(function(){ cd.textContent=nums[ci]; cd.style.opacity='1'; },200); }
+      else { clearInterval(window._settleCountdownInt); }
+    }, 1200);
+  }
+  if (exIdx === 4) { // Shake It Off
+    var lines = ['roll your shoulders back.','drop your jaw.','unclench your hands.','you\\'re here now.'];
+    var container = document.getElementById('settleLines');
+    if (container) {
+      lines.forEach(function(l, i) {
+        setTimeout(function(){
+          var el = document.createElement('div');
+          el.className = 'settle-line-item';
+          el.style.animationDelay = '0s';
+          el.textContent = l;
+          container.appendChild(el);
+        }, i * 900);
+      });
+    }
+  }
+  if (exIdx === 5) { // The Sound — Web Audio
+    try {
+      settleAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var freqs = [220, 261.63, 329.63, 392, 523.25]; // A minor pentatonic
+      freqs.forEach(function(f) {
+        var osc = settleAudioCtx.createOscillator();
+        var gain = settleAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        gain.gain.value = 0.04;
+        osc.connect(gain);
+        gain.connect(settleAudioCtx.destination);
+        osc.start();
+        settleAudioNodes.push({ osc: osc, gain: gain });
+      });
+      var st = document.getElementById('settleTimer');
+      var sec = 20;
+      window._settleSoundInt = setInterval(function(){
+        sec--;
+        if (st) st.textContent = sec;
+        if (sec <= 0) clearInterval(window._settleSoundInt);
+      }, 1000);
+    } catch(e) {}
+  }
+  if (exIdx === 9) { // Tab Close — animate away
+    setTimeout(function(){ var tab = document.getElementById('settleTab'); if(tab){ tab.style.transform='translateY(-40px)'; tab.style.opacity='0'; }}, 500);
+  }
+  if (exIdx === 11) { // Empty Page — fade in "ready."
+    setTimeout(function(){ var r = document.getElementById('settleReady'); if(r){ r.style.transition='opacity 1.5s ease'; r.style.opacity='1'; }}, 3000);
+  }
+  if (exIdx === 12) { // Body Scan
+    var blines = ['feet on the floor.','hands relaxed.','shoulders down.','eyes soft.'];
+    var bc = document.getElementById('settleLines');
+    if (bc) {
+      blines.forEach(function(l, i) {
+        setTimeout(function(){
+          var el = document.createElement('div');
+          el.className = 'settle-line-item';
+          el.textContent = l;
+          bc.appendChild(el);
+        }, i * 1000);
+      });
+    }
+  }
+}
+
+function stopSettleAnimation(exIdx) {
+  // Stop all intervals
+  clearInterval(window._settleBreathInt);
+  clearInterval(window._settleCountdownInt);
+  clearInterval(window._settleSoundInt);
+  // Kill all CSS animations on settle elements
+  document.querySelectorAll('.settle-content *').forEach(function(el) {
+    el.style.animationPlayState = 'paused';
+    el.style.animation = 'none';
+  });
+  // Fade out audio
+  if (settleAudioCtx && settleAudioNodes.length) {
+    settleAudioNodes.forEach(function(n) {
+      try {
+        n.gain.gain.linearRampToValueAtTime(0, settleAudioCtx.currentTime + 1);
+        setTimeout(function(){ n.osc.stop(); }, 1100);
+      } catch(e){}
+    });
+    settleAudioNodes = [];
+  }
+  // Specific fixups
+  if (exIdx === 0) { // Breathing — show circle at rest
+    var c = document.getElementById('settleAnim'); if(c){ c.style.width='90px'; c.style.height='90px'; c.style.opacity='1'; }
+    var bt = document.getElementById('settleBreathText'); if(bt) bt.style.display='none';
+  }
+  if (exIdx === 3) { // Countdown — show "1"
+    var cd = document.getElementById('settleCountdown'); if(cd){ cd.textContent='1'; cd.style.opacity='1'; }
+  }
+  if (exIdx === 7) { // Slow Blink — full opacity
+    var sb = document.getElementById('settleAnim'); if(sb){ sb.style.opacity='1'; }
+  }
+}
+
+function setupSettleIn() {
+  document.querySelectorAll('.day-view').forEach(function(dayView) {
+    var dayNum = parseInt(dayView.id.replace('day-',''));
+    if (isNaN(dayNum)) return;
+    var exIdx = getSettleExercise(dayNum);
+    var wrap = document.createElement('div');
+    wrap.className = 'settle-wrap';
+    wrap.id = 'settle-' + dayNum;
+    wrap.innerHTML = '<div class="settle-label">settle in</div>' +
+      '<div class="settle-content" id="settle-content-' + dayNum + '">' + buildSettleHTML(exIdx) + '</div>' +
+      '<button class="settle-continue" id="settle-btn-' + dayNum + '">continue</button>';
+    // Hide existing day content
+    var children = Array.from(dayView.children);
+    var contentWrap = document.createElement('div');
+    contentWrap.id = 'day-content-' + dayNum;
+    contentWrap.style.display = 'none';
+    children.forEach(function(ch) { contentWrap.appendChild(ch); });
+    dayView.appendChild(wrap);
+    dayView.appendChild(contentWrap);
+    // Button handler
+    document.getElementById('settle-btn-' + dayNum).onclick = function() {
+      stopSettleAnimation(exIdx);
+      this.style.display = 'none';
+      document.getElementById('day-content-' + dayNum).style.display = 'block';
+    };
+  });
+}
+
+// Override showDay to trigger settle animation
+var _settleShowDay;
+function wrapShowDayForSettle() {
+  _settleShowDay = showDay;
+  showDay = function(n) {
+    _settleShowDay(n);
+    // Reset settle state
+    var settleWrap = document.getElementById('settle-' + n);
+    var contentWrap = document.getElementById('day-content-' + n);
+    var btn = document.getElementById('settle-btn-' + n);
+    if (settleWrap && contentWrap && btn) {
+      contentWrap.style.display = 'none';
+      btn.style.display = '';
+      // Restart animation
+      var exIdx = getSettleExercise(n);
+      var sc = document.getElementById('settle-content-' + n);
+      if (sc) { sc.innerHTML = buildSettleHTML(exIdx); }
+      startSettleAnimation(exIdx);
+    }
+  };
+}
+
 const _origInit = init;
 init = function() {
   _origInit();
   setupProgressiveReveal();
   setupWritingEncouragement();
   setupVoiceSections();
+  setupSettleIn();
+  wrapShowDayForSettle();
+  // Start settle animation for day 1
+  startSettleAnimation(getSettleExercise(1));
   // Check voice consent with parent
   window.parent.postMessage({ type: 'checkVoiceConsent' }, '*');
 };
