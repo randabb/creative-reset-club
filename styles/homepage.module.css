@@ -91,6 +91,7 @@
   margin-bottom: 20px;
 }
 .hlCoral { color: var(--coral); }
+.brDesktop { display: inline; }
 
 .heroSub {
   font-size: 15px; font-weight: 300;
@@ -690,7 +691,7 @@
   }
   .orbitalSystem {
     width: 420px; height: 420px;
-    transform: scale(0.55);
+    transform: scale(0.6);
     transform-origin: center center;
     margin: -80px auto -56px;
   }
@@ -702,9 +703,10 @@
     text-align: center;
   }
   .heroHeadline {
-    font-size: clamp(28px, 7vw, 40px);
+    font-size: clamp(24px, 6.4vw, 34px);
     margin-bottom: 12px;
   }
+  .brDesktop { display: none; }
   .heroSub {
     font-size: 14px;
     margin-bottom: 24px;
