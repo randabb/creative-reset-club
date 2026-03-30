@@ -72,11 +72,11 @@ export default function ExpansionRoom({
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [canvasLoaded, setCanvasLoaded] = useState(false);
-  const [panX, setPanX] = useState(40);
-  const [panY, setPanY] = useState(40);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [panning, setPanning] = useState(false);
-  const [panStart, setPanStart] = useState<{ x: number; y: number; px: number; py: number } | null>(null);
+  const panStartRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -142,24 +142,44 @@ export default function ExpansionRoom({
     };
   }, [panX, panY, zoom]);
 
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.92 : 1.08;
-    setZoom((z) => Math.min(3, Math.max(0.3, z * delta)));
-  }, []);
+  // Zoom centered on mouse position
+  const zoomAtPoint = useCallback((newZoom: number, clientX: number, clientY: number) => {
+    if (!viewportRef.current) { setZoom(newZoom); return; }
+    const rect = viewportRef.current.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    // Keep the point under the mouse fixed
+    setPanX((px) => mx - (mx - px) * (newZoom / zoom));
+    setPanY((py) => my - (my - py) * (newZoom / zoom));
+    setZoom(newZoom);
+  }, [zoom]);
 
   useEffect(() => {
     const vp = viewportRef.current;
     if (!vp) return;
-    vp.addEventListener("wheel", handleWheel, { passive: false });
-    return () => vp.removeEventListener("wheel", handleWheel);
-  }, [handleWheel]);
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const nz = Math.min(3, Math.max(0.25, zoom * factor));
+      zoomAtPoint(nz, e.clientX, e.clientY);
+    };
+    vp.addEventListener("wheel", onWheel, { passive: false });
+    return () => vp.removeEventListener("wheel", onWheel);
+  }, [zoom, zoomAtPoint]);
 
-  const zoomIn = () => setZoom((z) => Math.min(3, z * 1.15));
-  const zoomOut = () => setZoom((z) => Math.max(0.3, z / 1.15));
+  const zoomIn = () => {
+    if (!viewportRef.current) return;
+    const r = viewportRef.current.getBoundingClientRect();
+    zoomAtPoint(Math.min(3, zoom * 1.1), r.left + r.width / 2, r.top + r.height / 2);
+  };
+  const zoomOut = () => {
+    if (!viewportRef.current) return;
+    const r = viewportRef.current.getBoundingClientRect();
+    zoomAtPoint(Math.max(0.25, zoom / 1.1), r.left + r.width / 2, r.top + r.height / 2);
+  };
   const fitToScreen = () => {
     if (!viewportRef.current || elements.length === 0) {
-      setPanX(40); setPanY(40); setZoom(1);
+      setPanX(0); setPanY(0); setZoom(1);
       return;
     }
     const vp = viewportRef.current.getBoundingClientRect();
@@ -171,12 +191,12 @@ export default function ExpansionRoom({
       maxY = Math.max(maxY, el.y + el.h);
     });
     const pad = 60;
-    const cw = maxX - minX + pad * 2;
-    const ch = maxY - minY + pad * 2;
-    const newZoom = Math.min(1, Math.min((vp.width - 40) / cw, (vp.height - 40) / ch));
-    setPanX((vp.width - cw * newZoom) / 2 - minX * newZoom + pad * newZoom);
-    setPanY((vp.height - ch * newZoom) / 2 - minY * newZoom + pad * newZoom);
-    setZoom(Math.max(0.3, newZoom));
+    const bw = maxX - minX + pad * 2;
+    const bh = maxY - minY + pad * 2;
+    const nz = Math.max(0.25, Math.min(1, Math.min(vp.width / bw, vp.height / bh)));
+    setPanX((vp.width - bw * nz) / 2 - (minX - pad) * nz);
+    setPanY((vp.height - bh * nz) / 2 - (minY - pad) * nz);
+    setZoom(nz);
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -206,9 +226,8 @@ export default function ExpansionRoom({
       const pt = screenToCanvas(e.clientX, e.clientY);
       eraseAtPoint(pt.x, pt.y);
     } else if (activeTool === "select" && !dragState && !resizeState) {
-      // Pan on empty space drag
       setPanning(true);
-      setPanStart({ x: e.clientX, y: e.clientY, px: panX, py: panY });
+      panStartRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
     }
   };
 
@@ -224,9 +243,9 @@ export default function ExpansionRoom({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (panning && panStart) {
-      setPanX(panStart.px + (e.clientX - panStart.x));
-      setPanY(panStart.py + (e.clientY - panStart.y));
+    if (panning && panStartRef.current) {
+      setPanX(panStartRef.current.px + (e.clientX - panStartRef.current.x));
+      setPanY(panStartRef.current.py + (e.clientY - panStartRef.current.y));
       return;
     }
 
@@ -275,7 +294,7 @@ export default function ExpansionRoom({
     setDrawing(false);
     setErasing(false);
     setPanning(false);
-    setPanStart(null);
+    panStartRef.current = null;
     setCurrentPath([]);
     setDragState(null);
     setResizeState(null);
@@ -556,6 +575,7 @@ export default function ExpansionRoom({
             </button>
             <div style={{ width: 1, height: 24, background: "#e2ddd8", margin: "0 4px" }} />
             <button onClick={zoomOut} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 14, color: "rgba(0,3,50,0.45)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+            <span style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontFamily: "'Codec Pro',sans-serif", minWidth: 36, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
             <button onClick={zoomIn} style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 14, color: "rgba(0,3,50,0.45)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
             <button onClick={fitToScreen} title="Fit to screen" style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #e2ddd8", background: "#fff", fontSize: 10, color: "rgba(0,3,50,0.45)", cursor: "pointer", fontFamily: "'Codec Pro',sans-serif" }}>fit</button>
           </div>
@@ -577,7 +597,7 @@ export default function ExpansionRoom({
             ref={canvasRef}
             onClick={handleCanvasClick}
             style={{
-              width: 8000, height: 6000, position: "absolute",
+              width: 4000, height: 3000, position: "absolute",
               transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
               transformOrigin: "0 0",
               background: "#ffffff",
@@ -708,10 +728,6 @@ export default function ExpansionRoom({
             }
             return null;
           })}
-          </div>
-          {/* Zoom indicator */}
-          <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", fontSize: 11, color: "rgba(0,3,50,0.3)", fontFamily: "'Codec Pro',sans-serif", pointerEvents: "none", zIndex: 10 }}>
-            {Math.round(zoom * 100)}%
           </div>
         </div>
       </div>
