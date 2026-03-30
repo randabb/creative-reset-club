@@ -1304,10 +1304,20 @@ init = function() {
           .eq("program_id", slug)
           .eq("day_number", event.data.day)
           .maybeSingle();
+        let signedUrl = null;
+        if (sub?.voice_note_url) {
+          const match = sub.voice_note_url.match(/voice-notes\/(.+)$/);
+          if (match) {
+            const { data: signed } = await supabase.storage
+              .from("voice-notes")
+              .createSignedUrl(match[1], 3600);
+            signedUrl = signed?.signedUrl || null;
+          }
+        }
         iframeRef?.contentWindow?.postMessage({
           type: "existingVoiceUrl",
           dayNumber: event.data.day,
-          url: sub?.voice_note_url || null,
+          url: signedUrl,
         }, "*");
       }
 
@@ -1357,10 +1367,22 @@ init = function() {
           const result = await res.json();
           console.log("6. /api/voice result:", result);
 
+          // Convert public URL to signed URL for playback
+          let playableUrl = result.url || null;
+          if (playableUrl) {
+            const urlMatch = playableUrl.match(/voice-notes\/(.+)$/);
+            if (urlMatch) {
+              const { data: signed } = await supabase.storage
+                .from("voice-notes")
+                .createSignedUrl(urlMatch[1], 3600);
+              if (signed?.signedUrl) playableUrl = signed.signedUrl;
+            }
+          }
+
           iframeRef?.contentWindow?.postMessage({
             type: "voiceNoteResult",
             dayNumber,
-            url: result.url || null,
+            url: playableUrl,
             transcript: result.transcript || null,
             error: result.error || null,
           }, "*");
