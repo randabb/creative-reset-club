@@ -159,6 +159,11 @@ export default function ProgramPage() {
           .voice-status.visible { opacity:1; }
           @keyframes fadeStatus { from { opacity:0; } to { opacity:1; } }
           .voice-retry { font-size:12px; color:var(--red); cursor:pointer; background:none; border:none; font-family:'Codec Pro',sans-serif; text-decoration:underline; text-underline-offset:3px; margin-top:8px; display:block; text-align:center; }
+          .voice-player { margin-top:12px; }
+          .voice-player audio { width:100%; height:36px; border-radius:8px; }
+          .voice-skipped-note { font-size:13px; color:var(--sand-mid); font-style:italic; font-weight:300; margin-top:8px; }
+          .voice-playback-collapsed { margin-top:8px; }
+          .voice-playback-collapsed audio { width:100%; height:32px; border-radius:6px; }
 
           /* Voice consent modal */
           .voice-consent-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -434,6 +439,8 @@ var recorders = {};
 var recChunks = {};
 var recTimers = {};
 var recIntervals = {};
+var voiceUrlCache = {};
+var voiceSkipped = {};
 
 function toggleRecording(day) {
   if (voiceConsent === null) {
@@ -478,6 +485,7 @@ function declineVoiceConsent() {
 }
 
 function skipVoice(day) {
+  voiceSkipped[day] = true;
   document.getElementById('voice-' + day)?.classList.add('hidden');
 }
 
@@ -578,14 +586,17 @@ window.addEventListener('message', function(event) {
     var result = document.getElementById('vresult-' + day);
     if (!result) return;
     var voiceUrl = event.data.url || '';
+    if (voiceUrl) voiceUrlCache[day] = voiceUrl;
+    var playerHtml = voiceUrl ? '<div class="voice-player"><audio controls src="' + voiceUrl + '"></audio></div>' : '';
     if (event.data.transcript) {
       result.innerHTML = '<div class="voice-transcript-card">' +
         '<div class="voice-transcript-label">what you said:</div>' +
         '<div class="voice-transcript-text">' + event.data.transcript + '</div>' +
-      '</div>' +
+      '</div>' + playerHtml +
       '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
     } else {
-      result.innerHTML = '<div class="voice-status visible">transcription unavailable — but your voice note is saved. you can still continue.</div>' +
+      result.innerHTML = (voiceUrl ? '<div class="voice-status visible">your voice note is saved.</div>' : '<div class="voice-status visible">transcription unavailable.</div>') +
+        playerHtml +
         (voiceUrl ? '<button class="voice-retry" onclick="retryTranscription(' + day + ',\\'' + voiceUrl + '\\')">retry transcription</button>' : '') +
         '<button class="voice-rerecord" onclick="reRecord(' + day + ')">re-record</button>';
     }
@@ -612,18 +623,22 @@ function toggleSidebarCollapse() {
 var kgCache = {}; // dayNum -> { question, fallback }
 
 function generateKeepGoing(dayNum) {
+  console.log('[KG] 1. generateKeepGoing called for day', dayNum);
   if (kgCache[dayNum] && kgCache[dayNum].question) {
+    console.log('[KG] 1a. Cache hit, using cached question');
     renderKeepGoingQuestion(dayNum, kgCache[dayNum].question);
     return;
   }
   var ta = document.getElementById('write-' + dayNum);
   var writing = ta ? ta.value : '';
+  console.log('[KG] 2. Writing length:', writing.length, 'chars');
   var kgContainer = document.getElementById('kg-content-' + dayNum);
-  if (!kgContainer) return;
+  if (!kgContainer) { console.log('[KG] 2a. ERROR: kg-content-' + dayNum + ' not found'); return; }
 
   // Show loading
   kgContainer.innerHTML = '<div class="kg-loading"><div class="kg-loading-dots"><div class="kg-loading-dot"></div><div class="kg-loading-dot"></div><div class="kg-loading-dot"></div></div><div class="kg-loading-text">thinking...</div></div>';
 
+  console.log('[KG] 3. Sending postMessage to parent: generateKeepGoing');
   window.parent.postMessage({ type: 'generateKeepGoing', day: dayNum, writing: writing }, '*');
 }
 
@@ -655,13 +670,21 @@ function saveKgResponse(dayNum) {
   }
 }
 
-// Listen for AI response from parent
+// Listen for AI response and voice URL from parent
 window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'existingVoiceUrl') {
+    var dayNum = event.data.dayNumber;
+    if (event.data.url) {
+      voiceUrlCache[dayNum] = event.data.url;
+    }
+  }
   if (event.data && event.data.type === 'keepGoingResult') {
     var dayNum = event.data.dayNumber;
+    console.log('[KG] 6. iframe received keepGoingResult for day', dayNum, 'question:', event.data.question ? event.data.question.substring(0,50) + '...' : 'NULL');
     if (event.data.question) {
       renderKeepGoingQuestion(dayNum, event.data.question);
     } else {
+      console.log('[KG] 6a. Falling back to static copy');
       renderKeepGoingFallback(dayNum);
     }
   }
@@ -854,12 +877,33 @@ function collapseStep(stepEl) {
   stepEl.classList.remove('pstep-active');
   stepEl.classList.add('pstep-done');
   var label = stepEl.getAttribute('data-label') || '';
+  var stepIdx = stepEl.getAttribute('data-step');
 
   // Add collapsed header if not already present
   if (!stepEl.querySelector('.pstep-collapsed')) {
     var collapsed = document.createElement('div');
     collapsed.className = 'pstep-collapsed';
-    collapsed.innerHTML = '<span class="pstep-collapsed-label">' + label + '</span><span class="pstep-collapsed-chevron">↓</span>';
+    var headerHtml = '<span class="pstep-collapsed-label">' + label + '</span><span class="pstep-collapsed-chevron">↓</span>';
+    collapsed.innerHTML = headerHtml;
+
+    // For voice step (data-step="3"), add playback or skipped note below header
+    if (stepIdx === '3') {
+      var dayView = stepEl.closest('.day-view');
+      var dayNum = dayView ? parseInt(dayView.id.replace('day-','')) : 0;
+      var url = voiceUrlCache[dayNum];
+      if (url) {
+        var playback = document.createElement('div');
+        playback.className = 'voice-playback-collapsed';
+        playback.innerHTML = '<audio controls src="' + url + '"></audio>';
+        collapsed.appendChild(playback);
+      } else if (voiceSkipped[dayNum]) {
+        var skipped = document.createElement('div');
+        skipped.className = 'voice-skipped-note';
+        skipped.textContent = 'you skipped this one.';
+        collapsed.appendChild(skipped);
+      }
+    }
+
     stepEl.insertBefore(collapsed, stepEl.firstChild);
     collapsed.addEventListener('click', function() {
       stepEl.classList.toggle('pstep-expanded');
@@ -1170,8 +1214,11 @@ init = function() {
   wrapShowDayForSettle();
   // Start settle animation for day 1
   startSettleAnimation(getSettleExercise(1));
-  // Check voice consent with parent
+  // Check voice consent and fetch existing voice URLs
   window.parent.postMessage({ type: 'checkVoiceConsent' }, '*');
+  for (var d = 1; d <= 14; d++) {
+    window.parent.postMessage({ type: 'fetchVoiceUrl', day: d }, '*');
+  }
 };
 `;
         html = html.replace('init();', `${lockScript}\ninit();`);
@@ -1212,24 +1259,30 @@ init = function() {
       }
 
       if (type === "generateKeepGoing") {
+        console.log("[KG] 4. Parent received generateKeepGoing for day", event.data.day, "iframeRef:", !!iframeRef);
         try {
           const res = await fetch("/api/generate-keep-going", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ writing: event.data.writing }),
           });
+          console.log("[KG] 5. API response status:", res.status);
           const result = await res.json();
+          console.log("[KG] 5a. API result:", JSON.stringify(result).substring(0, 100));
           iframeRef?.contentWindow?.postMessage({
             type: "keepGoingResult",
             dayNumber: event.data.day,
             question: result.question || null,
           }, "*");
-        } catch {
+          console.log("[KG] 5b. Sent keepGoingResult to iframe, question:", result.question ? "yes" : "null (fallback)");
+        } catch (err) {
+          console.log("[KG] 5c. ERROR in fetch:", err);
           iframeRef?.contentWindow?.postMessage({
             type: "keepGoingResult",
             dayNumber: event.data.day,
             question: null,
           }, "*");
+          console.log("[KG] 5d. Sent fallback keepGoingResult to iframe");
         }
       }
 
@@ -1241,6 +1294,21 @@ init = function() {
           keep_going_question: event.data.question,
           keep_going_response: event.data.response,
         }, { onConflict: "user_id,program_id,day_number" });
+      }
+
+      if (type === "fetchVoiceUrl") {
+        const { data: sub } = await supabase
+          .from("day_submissions")
+          .select("voice_note_url")
+          .eq("user_id", userId)
+          .eq("program_id", slug)
+          .eq("day_number", event.data.day)
+          .maybeSingle();
+        iframeRef?.contentWindow?.postMessage({
+          type: "existingVoiceUrl",
+          dayNumber: event.data.day,
+          url: sub?.voice_note_url || null,
+        }, "*");
       }
 
       if (type === "checkVoiceConsent") {
