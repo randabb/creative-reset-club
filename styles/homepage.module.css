@@ -678,18 +678,21 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
+  .mesh {
+    inset: -50%;
+  }
   .heroRight {
     order: -1;
-    padding: 72px 0 0;
+    padding: 96px 0 0;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
   }
   .orbitalSystem {
     width: 420px; height: 420px;
-    transform: scale(calc(min(85vw, 320px) / 420));
+    transform: scale(0.55);
     transform-origin: center center;
-    margin: -60px auto -44px;
+    margin: -80px auto -56px;
   }
 
   .heroLeft {
