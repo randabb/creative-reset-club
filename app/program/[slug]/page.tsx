@@ -984,8 +984,8 @@ init = function() {
   setupProgressiveReveal();
   setupWritingEncouragement();
   setupVoiceSections();
-  setupProgressiveSteps();
   setupSettleIn();
+  setupProgressiveSteps();
   wrapShowDayForSettle();
   // Start settle animation for day 1
   startSettleAnimation(getSettleExercise(1));
