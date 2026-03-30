@@ -65,8 +65,53 @@ export default function ExpansionRoom({
   const [drawing, setDrawing] = useState(false);
   const [erasing, setErasing] = useState(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [canvasLoaded, setCanvasLoaded] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Save canvas to Supabase
+  const saveCanvas = useCallback(async (els: CanvasElement[], pths: DrawPath[]) => {
+    setSaveStatus("saving");
+    try {
+      await fetch("/api/expansion/canvas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, canvasData: { elements: els, paths: pths } }),
+      });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch {
+      setSaveStatus("idle");
+    }
+  }, [userId]);
+
+  // Debounced autosave
+  const scheduleSave = useCallback((els: CanvasElement[], pths: DrawPath[]) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveCanvas(els, pths), 1000);
+  }, [saveCanvas]);
+
+  // Load canvas on mount
+  useEffect(() => {
+    const loadCanvas = async () => {
+      try {
+        const res = await fetch(`/api/expansion/canvas?userId=${userId}`);
+        const { canvasData } = await res.json();
+        if (canvasData?.elements) setElements(canvasData.elements);
+        if (canvasData?.paths) setPaths(canvasData.paths);
+      } catch { /* start with empty canvas */ }
+      setCanvasLoaded(true);
+    };
+    loadCanvas();
+  }, [userId]);
+
+  // Autosave on changes (only after initial load)
+  useEffect(() => {
+    if (!canvasLoaded) return;
+    scheduleSave(elements, paths);
+  }, [elements, paths, canvasLoaded, scheduleSave]);
 
   const addElement = useCallback((el: CanvasElement) => {
     setElements((prev) => [...prev, el]);
@@ -421,6 +466,27 @@ export default function ExpansionRoom({
               {nextShape === "rect" ? "□ rect" : "○ circle"}
             </button>
           )}
+          <div style={{ flex: 1 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              fontSize: 11, color: saveStatus === "saving" ? "rgba(0,3,50,0.4)" : saveStatus === "saved" ? "rgba(122,158,126,0.7)" : "rgba(0,3,50,0.2)",
+              fontFamily: "'Codec Pro',sans-serif", fontWeight: 300,
+              transition: "color 0.3s",
+            }}>
+              {saveStatus === "saving" ? "saving..." : saveStatus === "saved" ? "saved" : ""}
+            </span>
+            <button
+              onClick={() => saveCanvas(elements, paths)}
+              style={{
+                padding: "4px 12px", borderRadius: 6,
+                border: "1px solid #e2ddd8", background: "#fff",
+                fontSize: 11, color: "rgba(0,3,50,0.45)", cursor: "pointer",
+                fontFamily: "'Codec Pro',sans-serif",
+              }}
+            >
+              save
+            </button>
+          </div>
         </div>
 
         {/* CANVAS AREA */}
