@@ -421,7 +421,7 @@ function setupVoiceSections() {
           '<div class="voice-bar" style="height:12px"></div>' +
         '</div>' +
       '</div>' +
-      '<button class="voice-skip" onclick="skipVoice(' + dayId + ')">skip this exercise</button>' +
+      '' +
       '<div class="voice-privacy">Your voice note is saved privately to your account. Only you can access it.</div>' +
       '<div id="vresult-' + dayId + '"></div>';
     var sections = dayView.querySelectorAll('.section');
@@ -440,7 +440,6 @@ var recChunks = {};
 var recTimers = {};
 var recIntervals = {};
 var voiceUrlCache = {};
-var voiceSkipped = {};
 
 function toggleRecording(day) {
   if (voiceConsent === null) {
@@ -484,10 +483,6 @@ function declineVoiceConsent() {
   document.querySelectorAll('.voice-section').forEach(function(s) { s.classList.add('hidden'); });
 }
 
-function skipVoice(day) {
-  voiceSkipped[day] = true;
-  document.getElementById('voice-' + day)?.classList.add('hidden');
-}
 
 async function startRecording(day) {
   try {
@@ -558,6 +553,9 @@ function setVoiceStatus(day, text) {
 function onRecordingDone(day) {
   var blob = new Blob(recChunks[day], { type: 'audio/webm' });
   console.log('1. Recording stopped, blob size:', blob.size);
+  // Show the continue button now that recording is done
+  var vcBtn = document.getElementById('pstep-voice-btn-' + day);
+  if (vcBtn) vcBtn.style.display = '';
   setVoiceStatus(day, 'saving your voice note...');
   var reader = new FileReader();
   reader.onloadend = function() {
@@ -793,6 +791,7 @@ function setupProgressiveSteps() {
     s4btn.className = 'pstep-continue';
     s4btn.id = 'pstep-voice-btn-' + dayNum;
     s4btn.textContent = 'continue';
+    s4btn.style.display = 'none';
     s4body.appendChild(s4btn);
     s4.appendChild(s4body);
     steps.push(s4);
@@ -896,11 +895,6 @@ function collapseStep(stepEl) {
         playback.className = 'voice-playback-collapsed';
         playback.innerHTML = '<audio controls src="' + url + '"></audio>';
         collapsed.appendChild(playback);
-      } else if (voiceSkipped[dayNum]) {
-        var skipped = document.createElement('div');
-        skipped.className = 'voice-skipped-note';
-        skipped.textContent = 'you skipped this one.';
-        collapsed.appendChild(skipped);
       }
     }
 
