@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-type Tool = "select" | "sticky" | "text" | "draw" | "shape";
+type Tool = "select" | "sticky" | "text" | "draw" | "eraser" | "shape";
 type ShapeKind = "rect" | "circle";
 
 interface CanvasElement {
@@ -63,6 +63,7 @@ export default function ExpansionRoom({
   const [dragState, setDragState] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [resizeState, setResizeState] = useState<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
   const [drawing, setDrawing] = useState(false);
+  const [erasing, setErasing] = useState(false);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -100,7 +101,22 @@ export default function ExpansionRoom({
       const rect = canvasRef.current.getBoundingClientRect();
       setDrawing(true);
       setCurrentPath([{ x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+    } else if (activeTool === "eraser" && canvasRef.current) {
+      setErasing(true);
+      const rect = canvasRef.current.getBoundingClientRect();
+      eraseAtPoint(e.clientX - rect.left, e.clientY - rect.top);
     }
+  };
+
+  const eraseAtPoint = (ex: number, ey: number) => {
+    const radius = 20;
+    setPaths((prev) => prev.filter((p) => {
+      return !p.points.some((pt) => {
+        const dx = pt.x - ex;
+        const dy = pt.y - ey;
+        return dx * dx + dy * dy < radius * radius;
+      });
+    }));
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -109,6 +125,11 @@ export default function ExpansionRoom({
 
     if (drawing && activeTool === "draw") {
       setCurrentPath((prev) => [...prev, { x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+      return;
+    }
+
+    if (erasing && activeTool === "eraser") {
+      eraseAtPoint(e.clientX - rect.left, e.clientY - rect.top);
       return;
     }
 
@@ -142,6 +163,7 @@ export default function ExpansionRoom({
       setActiveTool("select");
     }
     setDrawing(false);
+    setErasing(false);
     setCurrentPath([]);
     setDragState(null);
     setResizeState(null);
@@ -298,10 +320,11 @@ export default function ExpansionRoom({
     { id: "sticky", label: "Note", icon: "▪" },
     { id: "text", label: "Text", icon: "T" },
     { id: "draw", label: "Draw", icon: "✎" },
+    { id: "eraser", label: "Eraser", icon: "◯" },
     { id: "shape", label: "Shape", icon: "◻" },
   ];
 
-  const canvasCursor = activeTool === "select" ? (dragState ? "grabbing" : "default") : activeTool === "draw" ? "crosshair" : "cell";
+  const canvasCursor = activeTool === "select" ? (dragState ? "grabbing" : "default") : activeTool === "draw" ? "crosshair" : activeTool === "eraser" ? "cell" : "cell";
 
   // Delete button + resize handle renderer
   const renderOverlays = (el: CanvasElement) => {
