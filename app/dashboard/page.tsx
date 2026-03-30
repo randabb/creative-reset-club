@@ -483,6 +483,43 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* TEMP: Clear all data button for testing */}
+          <div style={{ marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(0,3,50,0.08)" }}>
+            <button
+              onClick={async () => {
+                if (!user) return;
+                if (!confirm("This will permanently delete all your track progress, writing, and voice notes. Are you sure?")) return;
+                // Clear localStorage keys for this user
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                  const key = localStorage.key(i);
+                  if (key && key.startsWith("crc-" + user.id)) keysToRemove.push(key);
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+                // Also clear any legacy non-uid-scoped keys
+                const legacyPrefixes = ["crc-ri", "crc-mif", "crc-ot", "crc-rf", "crc-miy", "crc-eth", "crc-timestamps", "crc-kg-response"];
+                const legacyKeys: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                  const key = localStorage.key(i);
+                  if (key && legacyPrefixes.some(p => key.startsWith(p))) legacyKeys.push(key);
+                }
+                legacyKeys.forEach(k => localStorage.removeItem(k));
+                // Delete all day_submissions for this user
+                await supabase.from("day_submissions").delete().eq("user_id", user.id);
+                alert("All data cleared. Reloading...");
+                window.location.reload();
+              }}
+              style={{
+                background: "none", border: "1px solid rgba(0,3,50,0.15)",
+                borderRadius: 8, padding: "10px 18px",
+                fontFamily: "'Codec Pro',sans-serif", fontSize: 12,
+                color: "rgba(0,3,50,0.4)", cursor: "pointer",
+              }}
+            >
+              clear all data (testing only)
+            </button>
+          </div>
+
         </main>
       </div>
     </>
