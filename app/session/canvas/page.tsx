@@ -305,6 +305,8 @@ function CanvasInner() {
     const selId = [...selected][0];
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
+    // Dismiss coach card immediately
+    if (showCoach) dismissCoach();
     setAiLoading(true);
     try {
       const controller = new AbortController();
@@ -324,13 +326,22 @@ function CanvasInner() {
       const data = await res.json();
       const rawInstructions: ({ title: string; text: string } | string)[] = data.instructions || [];
 
-      // Normalize: handle both {title,text} and plain string formats
-      const instructions = rawInstructions.map((inst) => {
-        if (typeof inst === "string") {
-          const words = inst.split(/\s+/);
-          return { title: words.slice(0, 4).join(" "), text: inst };
+      // Normalize and parse: handle {title,text}, plain strings, and unparsed "TITLE: x | INSTRUCTION: y" lines
+      const instructions = rawInstructions.map((raw) => {
+        const str = typeof raw === "string" ? raw : (raw.text || "");
+        const titleRaw = typeof raw === "string" ? "" : (raw.title || "");
+        // Try parsing "TITLE: x | INSTRUCTION: y" format from the text
+        const pipeMatch = str.match(/^(?:TITLE:\s*)?(.+?)\s*\|\s*(?:INSTRUCTION:\s*)?(.+)$/i);
+        if (pipeMatch) {
+          return { title: pipeMatch[1].trim(), text: pipeMatch[2].trim() };
         }
-        return inst as { title: string; text: string };
+        // If API already parsed title and text cleanly
+        if (titleRaw && !str.includes(" | ")) {
+          return { title: titleRaw, text: str };
+        }
+        // Fallback: first 4 words as title
+        const words = str.split(/\s+/);
+        return { title: words.slice(0, 4).join(" "), text: str };
       });
 
       // Place as vertical stack to the right
@@ -342,7 +353,7 @@ function CanvasInner() {
 
       instructions.forEach((inst, i) => {
         let tx = targetX;
-        let ty = startY + i * 150;
+        let ty = startY + i * 160;
         for (let shift = 0; shift < 3; shift++) {
           const blocked = [...allExisting, ...newNotes].some(n => {
             if (n.source === "dimension") return false;
@@ -438,7 +449,7 @@ function CanvasInner() {
     // Create response note below the instruction
     const respId = uid();
     const respNote: Note = {
-      id: respId, x: instNote.x, y: instNote.y + 100,
+      id: respId, x: instNote.x, y: instNote.y + 90,
       text: responseText.trim(), source: "user",
     };
     setNotes(ns => [...ns, respNote]);
@@ -870,7 +881,7 @@ function CanvasInner() {
               <div className="cn" style={{
                 position: "absolute",
                 left: instNote.x,
-                top: instNote.y + 100,
+                top: instNote.y + 90,
                 width: dimensions.length > 0 ? 190 : 200,
                 background: "#fff",
                 border: `2px solid ${mColor}`,
