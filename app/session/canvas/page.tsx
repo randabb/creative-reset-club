@@ -167,7 +167,8 @@ function CanvasInner() {
   const [responseText, setResponseText] = useState("");
   const [respCardPos, setRespCardPos] = useState<{ x: number; y: number } | null>(null);
   const [respDragOff, setRespDragOff] = useState<{ x: number; y: number } | null>(null);
-  const [synthesis, setSynthesis] = useState<{ reflection: string; deliverable_label: string; deliverable: string } | null>(null);
+  const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string } | null>(null);
+  const [synthEditing, setSynthEditing] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
@@ -416,8 +417,9 @@ function CanvasInner() {
   // Export helpers
   const buildMarkdown = () => {
     let md = `# Primer Canvas Session\n\n`;
-    if (synthesis) {
-      md += `## Synthesis\n${synthesis.reflection}\n\n### ${synthesis.deliverable_label}\n${synthesis.deliverable}\n\n`;
+    if (synthesis?.sections) {
+      md += `## ${synthesis.deliverable_label}\n\n`;
+      synthesis.sections.forEach(s => { md += `### ${s.heading}\n${s.content}\n\n`; });
     }
     md += `## Goal\n${capture}\n\n## Guided Thinking\n`;
     qas.forEach((qa, i) => { md += `\n### Q${i + 1}: ${qa.question}\n${qa.answer}\n`; });
@@ -444,7 +446,11 @@ function CanvasInner() {
   };
 
   const copyPrompt = () => {
-    const md = "Here's my thinking so far on this topic. I've worked through it in Primer and want to take it further with you.\n\n" + buildMarkdown();
+    let synthText = "";
+    if (synthesis?.sections) {
+      synthText = `${synthesis.deliverable_label}\n\n` + synthesis.sections.map(s => `${s.heading}: ${s.content}`).join("\n\n") + "\n\n---\n\n";
+    }
+    const md = "Here's my thinking session output from Primer. I've already done the deep thinking — now I need help executing on it.\n\n" + synthText + "Original session notes:\n\n" + notes.filter(n => n.source !== "dimension").map(n => `- ${n.text}`).join("\n");
     navigator.clipboard.writeText(md);
     setToast("✓ Copied to clipboard!");
     setTimeout(() => setToast(""), 2500);
@@ -585,7 +591,7 @@ function CanvasInner() {
                 body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
               });
               const data = await res.json();
-              if (data.reflection) setSynthesis(data);
+              if (data.deliverable_label || data.sections) setSynthesis(data);
             } catch { /* use without synthesis */ }
             setSynthLoading(false);
           }
@@ -602,24 +608,44 @@ function CanvasInner() {
 
       {/* EXPORT PANEL */}
       {showExport && (
-        <div style={{ position: "absolute", top: 52, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 280, boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+        <div style={{ position: "absolute", top: 52, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 340, maxHeight: "calc(100vh - 100px)", overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
           {synthLoading && (
-            <div style={{ textAlign: "center", padding: "12px 0 16px" }}>
-              <div style={{ width: 16, height: 16, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", margin: "0 auto 8px" }} />
-              <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)" }}>Synthesizing...</p>
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ width: 18, height: 18, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", margin: "0 auto 10px" }} />
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.4)", fontWeight: 300 }}>Sharpening your thinking...</p>
             </div>
           )}
-          {synthesis && (
-            <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(0,3,50,0.06)" }}>
-              <p style={{ fontSize: 14, fontStyle: "italic", color: "#000332", lineHeight: 1.6, fontWeight: 300, marginBottom: 10 }}>{synthesis.reflection}</p>
-              <div style={{ borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12 }}>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "rgba(0,3,50,0.4)", marginBottom: 4 }}>{synthesis.deliverable_label}</p>
-                <p style={{ fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400 }}>{synthesis.deliverable}</p>
+          {synthesis && synthesis.sections && (
+            <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid rgba(0,3,50,0.06)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                <p style={{ fontSize: 18, fontWeight: 700, fontStyle: "italic", color: "#000332" }}>{synthesis.deliverable_label}</p>
+                <button onClick={() => setSynthEditing(!synthEditing)} style={{ background: "none", border: "none", fontSize: 11, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0, marginLeft: 8 }}>
+                  {synthEditing ? "Done" : "Edit"}
+                </button>
               </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {synthesis.sections.map((sec, i) => (
+                  <div key={i} style={{ borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12 }}>
+                    {synthEditing ? (
+                      <>
+                        <input value={sec.heading} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, heading: e.target.value } : s) }; setSynthesis(ns); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, fontWeight: 700, color: "#000332", fontFamily: "inherit", marginBottom: 4 }} />
+                        <textarea value={sec.content} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, content: e.target.value } : s) }; setSynthesis(ns); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400, fontFamily: "inherit", resize: "none", minHeight: 40 }} />
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{sec.heading}</p>
+                        <p style={{ fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400 }}>{sec.content}</p>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", fontStyle: "italic", marginTop: 12, fontWeight: 300 }}>
+                This is your thinking, sharpened. Edit anything, then take it with you.
+              </p>
             </div>
           )}
-          <p style={{ fontSize: 17, fontWeight: 700, fontStyle: "italic", color: "#000332", marginBottom: 4 }}>Take your thinking further</p>
-          <p style={{ fontSize: 12, color: "rgba(0,3,50,0.4)", marginBottom: 18, fontWeight: 300 }}>You did the thinking. Now bring it wherever you need it.</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
             <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>

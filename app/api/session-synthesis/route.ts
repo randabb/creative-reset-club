@@ -4,52 +4,54 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are the session synthesizer for Primer. The user has completed a thinking session. Read their goal, dimensions, and all their canvas notes, then generate a synthesis.
+const SYSTEM = `You are a senior strategist who just sat through someone's entire thinking session. You've seen their goal, their raw thinking, their guided answers, and everything they developed on the canvas. Now give them something they can IMMEDIATELY act on.
 
 RULES:
-- Summarize what they worked through in 2-3 sentences
-- Then generate a mode-specific deliverable:
-  - CLARITY: A single clarified problem statement (1-2 sentences)
-  - EXPANSION: 2-3 strongest angles worth pursuing (bullet points)
-  - DECISION: The decision, reasoning, and accepted risk (structured)
-  - EXPRESSION: A clean articulation of their position (short paragraph)
-- Use their EXACT language. This is THEIR thinking synthesized, not yours.
-- Keep the total synthesis under 150 words.
+- No fluff. No "great job thinking through this." No reflections on the process.
+- Write like a consultant handing over a deliverable, not a therapist summarizing feelings.
+- Use their EXACT words and phrases. This is their thinking, sharpened.
+- Be specific. Names, numbers, concrete actions. If they were vague, call it out.
+- The output should make them think "holy shit, I can actually move now."
 
-FORMAT — respond with ONLY a JSON object:
-{
-  "reflection": "2-3 sentence summary of what emerged",
-  "deliverable_label": "Your clarified problem / Your strongest angles / Your decision / Your articulated position",
-  "deliverable": "the actual deliverable content"
-}`;
+Respond with ONLY a JSON object, no markdown backticks, nothing else.
+
+If the mode is CLARITY, deliver a brief:
+{"deliverable_label":"Your clarity brief","sections":[{"heading":"The real problem","content":"One sentence. The actual problem stripped of noise. Use their words."},{"heading":"What was clouding it","content":"The assumptions or distractions that were hiding the real problem."},{"heading":"The move","content":"The specific next action this clarity enables. Not think more about it. An actual move."}]}
+
+If the mode is EXPANSION, deliver directions:
+{"deliverable_label":"Your strongest directions","sections":[{"heading":"Direction 1: [name it]","content":"2 sentences. What this angle is and why it's worth pursuing."},{"heading":"Direction 2: [name it]","content":"2 sentences. A genuinely different angle, not a variation of the first."},{"heading":"The one to start with","content":"Which direction to pursue first and the specific first step."}]}
+
+If the mode is DECISION, deliver a decision brief:
+{"deliverable_label":"Your decision brief","sections":[{"heading":"The decision","content":"State it clearly. No hedging."},{"heading":"Why this and not that","content":"The real reasoning using their own criteria from the session."},{"heading":"The risk you're accepting","content":"Name it honestly. What could go wrong and why you're okay with it."},{"heading":"First move by Friday","content":"One concrete action they can take within the week."}]}
+
+If the mode is EXPRESSION, deliver a draft:
+{"deliverable_label":"Your articulated position","sections":[{"heading":"The statement","content":"A tight clear paragraph they could paste into a message or pitch. Written in their voice. 3-5 sentences max."},{"heading":"The headline version","content":"One sentence. If they only had 10 seconds."},{"heading":"The objection they should expect","content":"The strongest pushback and how their thinking already addresses it."}]}
+
+CRITICAL: Every claim in the deliverable must trace back to something the user wrote. You are organizing and sharpening THEIR thinking. You are not generating new ideas.`;
 
 export async function POST(req: Request) {
   try {
     const { goal, mode, dimensions, allNotes } = await req.json();
     const safeMode = ["clarity", "expansion", "decision", "expression"].includes(mode) ? mode : "clarity";
-    const userMsg = `MODE: ${safeMode.toUpperCase()}\nGOAL: "${goal}"\nDIMENSIONS: ${JSON.stringify(dimensions)}\nALL CANVAS NOTES:\n${allNotes}`;
+    const userMsg = `MODE: ${safeMode.toUpperCase()}\nGOAL: "${goal}"\nDIMENSIONS: ${JSON.stringify(dimensions || [])}\nALL CANVAS NOTES:\n${allNotes || ""}`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", max_tokens: 300, system: SYSTEM,
+      model: "claude-sonnet-4-20250514", max_tokens: 600, system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
     clearTimeout(timer);
 
     const text = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
-    const jsonStr = text.replace(/^```json?\s*/, "").replace(/\s*```$/, "");
+    const jsonStr = text.replace(/^```json?\s*/g, "").replace(/\s*```$/g, "");
     const synthesis = JSON.parse(jsonStr);
     return NextResponse.json(synthesis);
   } catch (err) {
     console.error("[session-synthesis]", err);
-    const labels: Record<string, string> = { clarity: "Your clarified problem", expansion: "Your strongest angles", decision: "Your decision", expression: "Your articulated position" };
-    const body = await req.clone().json().catch(() => ({}));
-    const mode = body.mode || "clarity";
     return NextResponse.json({
-      reflection: "You worked through multiple dimensions of your goal and developed your thinking across several angles.",
-      deliverable_label: labels[mode] || labels.clarity,
-      deliverable: "Review your canvas notes to articulate the key takeaway.",
+      deliverable_label: "Your session summary",
+      sections: [{ heading: "What emerged", content: "Review your canvas notes to identify your key insight." }],
       fallback: true,
     });
   }
