@@ -122,6 +122,9 @@ function CanvasInner() {
   const [showGoal, setShowGoal] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [toast, setToast] = useState("");
+  const [showCoach, setShowCoach] = useState(false);
+  const [coachDismissed, setCoachDismissed] = useState(false);
+  const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -131,6 +134,32 @@ function CanvasInner() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (!capture) router.push("/session/new"); }, [capture, router]);
+
+  // Coach card + Q4 pulse
+  useEffect(() => {
+    const seen = localStorage.getItem("primer-canvas-coach-seen");
+    if (seen || coachDismissed) return;
+    const t = setTimeout(() => {
+      setShowCoach(true);
+      setQ4Pulsing(true);
+      // Stop pulsing after ~6s (3 pulses at 2s each)
+      setTimeout(() => setQ4Pulsing(false), 6000);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [coachDismissed]);
+
+  const dismissCoach = () => {
+    setShowCoach(false);
+    setCoachDismissed(true);
+    setQ4Pulsing(false);
+    localStorage.setItem("primer-canvas-coach-seen", "true");
+  };
+
+  // Auto-dismiss coach when user selects a note or clicks an action
+  useEffect(() => {
+    if (selected.size > 0 && showCoach) dismissCoach();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   // Pan
   useEffect(() => {
@@ -402,6 +431,33 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* COACH CARD */}
+      {showCoach && !coachDismissed && (
+        <div style={{
+          position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)",
+          zIndex: 35, maxWidth: 480, width: "calc(100% - 48px)",
+          background: "#fff", borderRadius: 14, padding: "18px 22px",
+          borderLeft: "3px solid #FF9090",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          animation: "coachIn 0.4s ease-out forwards",
+        }}>
+          <button onClick={dismissCoach} style={{
+            position: "absolute", top: 10, right: 12,
+            background: "none", border: "none", fontSize: 16,
+            color: "rgba(0,3,50,0.25)", cursor: "pointer", lineHeight: 1,
+          }}>×</button>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 8 }}>
+            WHERE TO START
+          </div>
+          <p style={{ fontSize: 16, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
+            {mode === "clarity" && <>Start with your core thread (top right) — select it and hit <strong style={{ color: "#FF9090" }}>Expand</strong> to push it further, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to sharpen it.</>}
+            {mode === "expansion" && <>Start with your strongest angle (top right) — select it and hit <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the essence, or <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it even further.</>}
+            {mode === "decision" && <>Start with your real test (top right) — select it and hit <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it, or <strong style={{ color: "#C4A6FF" }}>Express</strong> to articulate your choice.</>}
+            {mode === "expression" && <>Start with your opposition (top right) — select it and hit <strong style={{ color: "#C4A6FF" }}>Express</strong> to strengthen your position, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to find the core of what you&rsquo;re saying.</>}
+          </p>
+        </div>
+      )}
+
       {/* SELECTION HINT */}
       {hasSelection && !aiLoading && (
         <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 25, fontSize: 12, color: "rgba(0,3,50,0.35)", background: "#fff", padding: "8px 18px", borderRadius: 100, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
@@ -475,11 +531,11 @@ function CanvasInner() {
                   background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
-                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : "0 1px 3px rgba(0,3,50,0.03)",
+                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
                   zIndex: dragId === n.id ? 20 : isSel ? 10 : 1,
                   transition: isAi ? "none" : "box-shadow 0.15s",
-                  animation: isAi ? "noteIn 0.3s ease forwards" : undefined,
+                  animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3" : isAi ? "noteIn 0.3s ease forwards" : undefined,
                 }}
               >
                 {sl && (
@@ -518,6 +574,8 @@ function CanvasInner() {
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
       `}</style>
     </div>
   );
