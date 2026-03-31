@@ -1,0 +1,83 @@
+import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import {
+  GUIDED_THINKING_SYSTEM_PROMPT,
+  FALLBACK_QUESTIONS,
+} from "@/lib/prompts/guided-thinking";
+
+export const maxDuration = 30;
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+interface PreviousQA {
+  question: string;
+  answer: string;
+}
+
+export async function POST(req: Request) {
+  try {
+    const { mode, capture, previousQAs, questionNumber, arcContext } =
+      await req.json();
+
+    if (!capture || !mode) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const validModes = ["clarity", "expansion", "decision", "expression"];
+    const safeMode = validModes.includes(mode) ? mode : "clarity";
+    const qNum = Math.min(Math.max(questionNumber || 1, 1), 4);
+
+    // Build the user message with full context
+    let userMessage = `THINKING MODE: ${safeMode.toUpperCase()}\nQUESTION NUMBER: ${qNum} of 4\n\n`;
+    userMessage += `INITIAL CAPTURE:\n${capture}\n`;
+
+    if (previousQAs && previousQAs.length > 0) {
+      userMessage += "\nPREVIOUS QUESTIONS AND ANSWERS IN THIS SESSION:\n";
+      previousQAs.forEach((qa: PreviousQA, i: number) => {
+        userMessage += `\nQ${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}\n`;
+      });
+    }
+
+    if (arcContext) {
+      userMessage += `\nARC CONTEXT (previous sessions):\n${arcContext}\n`;
+    }
+
+    userMessage += `\nGenerate question ${qNum} for ${safeMode} mode.`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 100,
+      system: GUIDED_THINKING_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const question =
+      message.content[0]?.type === "text"
+        ? message.content[0].text.trim()
+        : "";
+
+    if (!question) {
+      throw new Error("Empty response");
+    }
+
+    return NextResponse.json({ question });
+  } catch (err) {
+    console.error("[generate-question] Error:", err);
+
+    // Return a mode-appropriate fallback question
+    const body = await req.clone().json().catch(() => ({}));
+    const mode = body.mode || "clarity";
+    const qNum = Math.min(Math.max(body.questionNumber || 1, 1), 4);
+    const validModes = ["clarity", "expansion", "decision", "expression"];
+    const safeMode = validModes.includes(mode) ? mode : "clarity";
+    const fallbacks = FALLBACK_QUESTIONS[safeMode] || FALLBACK_QUESTIONS.clarity;
+    const fallback = fallbacks[qNum - 1] || fallbacks[0];
+
+    return NextResponse.json({ question: fallback, fallback: true });
+  }
+}
