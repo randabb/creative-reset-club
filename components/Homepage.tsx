@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "@/styles/homepage.module.css";
 
@@ -15,6 +15,21 @@ export default function Homepage() {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const cycleWords = ["clearly", "deeply", "originally", "boldly"];
+  const [wordIdx, setWordIdx] = useState(0);
+  const [wordVisible, setWordVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordVisible(false);
+      setTimeout(() => {
+        setWordIdx((i) => (i + 1) % cycleWords.length);
+        setWordVisible(true);
+      }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -41,7 +56,20 @@ export default function Homepage() {
         {/* LEFT: copy */}
         <div className={styles.heroLeft}>
           <h1 className={styles.heroHeadline}>
-            Think <em className={styles.hlCoral}>clearly</em><br />
+            Think{" "}
+            <em
+              className={styles.hlCoral}
+              style={{
+                display: "inline-block",
+                minWidth: "4.5ch",
+                transition: "opacity 0.3s ease, transform 0.3s ease",
+                opacity: wordVisible ? 1 : 0,
+                transform: wordVisible ? "translateY(0)" : "translateY(-8px)",
+              }}
+            >
+              {cycleWords[wordIdx]}
+            </em>
+            <br />
             before you prompt.
           </h1>
           <p className={styles.heroSub}>
