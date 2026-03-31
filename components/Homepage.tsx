@@ -100,10 +100,10 @@ export default function Homepage() {
               <div className={styles.coreInner}></div>
             </div>
             <div className={styles.orbWm}>
-              <div className={styles.owWord}>reset.</div>
+              <div className={styles.owWord}>primer.</div>
             </div>
 
-            {/* Node 1: Empty the Head */}
+            {/* Node 1: Capture */}
             <div className={`${styles.node} ${styles.n1}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
@@ -115,11 +115,11 @@ export default function Homepage() {
                     <div className={styles.ethSkull}></div>
                   </div>
                 </div>
-                <div className={styles.nodeLabel}>Empty<br />the Head</div>
+                <div className={styles.nodeLabel}>Capture</div>
               </div>
             </div>
 
-            {/* Node 2: Reignite */}
+            {/* Node 2: Clarify */}
             <div className={`${styles.node} ${styles.n2}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
@@ -135,11 +135,11 @@ export default function Homepage() {
                     <div className={styles.sparkCoreNode}></div>
                   </div>
                 </div>
-                <div className={styles.nodeLabel}>Reignite</div>
+                <div className={styles.nodeLabel}>Clarify</div>
               </div>
             </div>
 
-            {/* Node 3: Move It Forward */}
+            {/* Node 3: Expand */}
             <div className={`${styles.node} ${styles.n3}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
@@ -150,11 +150,11 @@ export default function Homepage() {
                     </svg>
                   </div>
                 </div>
-                <div className={styles.nodeLabel}>Move It<br />Forward</div>
+                <div className={styles.nodeLabel}>Expand</div>
               </div>
             </div>
 
-            {/* Node 4: One Thing at a Time */}
+            {/* Node 4: Decide */}
             <div className={`${styles.node} ${styles.n4}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
@@ -164,11 +164,11 @@ export default function Homepage() {
                     <div className={styles.otatItem}><div className={styles.otatL}></div></div>
                   </div>
                 </div>
-                <div className={styles.nodeLabel}>One Thing<br />at a Time</div>
+                <div className={styles.nodeLabel}>Decide</div>
               </div>
             </div>
 
-            {/* Node 5: Refill */}
+            {/* Node 5: Express */}
             <div className={`${styles.node} ${styles.n5}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
@@ -181,18 +181,18 @@ export default function Homepage() {
                     </div>
                   </div>
                 </div>
-                <div className={styles.nodeLabel}>Refill</div>
+                <div className={styles.nodeLabel}>Express</div>
               </div>
             </div>
 
-            {/* Node 6: Make It Yours */}
+            {/* Node 6: Canvas */}
             <div className={`${styles.node} ${styles.n6}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim} style={{ position: "relative" }}>
                   <div className={styles.miyShape}></div>
                   <div className={styles.miyDot}></div>
                 </div>
-                <div className={styles.nodeLabel}>Make It<br />Yours</div>
+                <div className={styles.nodeLabel}>Canvas</div>
               </div>
             </div>
           </div>
