@@ -24,6 +24,14 @@ interface Note {
   dimIndex?: number;
   dimLabel?: string;
   dimDesc?: string;
+  aiTitle?: string;
+}
+
+interface ResponseFlow {
+  instructionIds: string[];
+  currentIdx: number;
+  sourceId: string;
+  action: Action;
 }
 
 const THINKING_LABELS: Record<string, string[]> = {
@@ -155,6 +163,8 @@ function CanvasInner() {
   const [showExport, setShowExport] = useState(false);
   const [toast, setToast] = useState("");
   const [showCoach, setShowCoach] = useState(false);
+  const [responseFlow, setResponseFlow] = useState<ResponseFlow | null>(null);
+  const [responseText, setResponseText] = useState("");
   const [synthesis, setSynthesis] = useState<{ reflection: string; deliverable_label: string; deliverable: string } | null>(null);
   const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
@@ -312,9 +322,18 @@ function CanvasInner() {
       });
       clearTimeout(timer);
       const data = await res.json();
-      const instructions: string[] = data.instructions || [];
+      const rawInstructions: ({ title: string; text: string } | string)[] = data.instructions || [];
 
-      // Simple vertical stack to the RIGHT of source note
+      // Normalize: handle both {title,text} and plain string formats
+      const instructions = rawInstructions.map((inst) => {
+        if (typeof inst === "string") {
+          const words = inst.split(/\s+/);
+          return { title: words.slice(0, 4).join(" "), text: inst };
+        }
+        return inst as { title: string; text: string };
+      });
+
+      // Place as vertical stack to the right
       const srcW = dimensions.length > 0 ? 190 : 200;
       let targetX = selNote.x + srcW + 80;
       const startY = selNote.y;
@@ -324,8 +343,6 @@ function CanvasInner() {
       instructions.forEach((inst, i) => {
         let tx = targetX;
         let ty = startY + i * 150;
-
-        // Collision check: shift right in 240px columns if blocked
         for (let shift = 0; shift < 3; shift++) {
           const blocked = [...allExisting, ...newNotes].some(n => {
             if (n.source === "dimension") return false;
@@ -334,14 +351,12 @@ function CanvasInner() {
           if (!blocked) break;
           tx += 240;
         }
-
-        // Clamp to canvas
         tx = Math.max(10, Math.min(3800, tx));
         ty = Math.max(10, Math.min(2900, ty));
-
         newNotes.push({
-          id: uid(), x: tx, y: ty, text: inst,
+          id: uid(), x: tx, y: ty, text: inst.text,
           source: "ai" as const, action, aiInstruction: true,
+          aiTitle: inst.title,
         });
       });
 
@@ -350,6 +365,15 @@ function CanvasInner() {
       }));
       setNotes(ns => [...ns, ...newNotes]);
       setConnections(cs => [...cs, ...newConns]);
+
+      // Start guided response flow
+      setResponseFlow({
+        instructionIds: newNotes.map(n => n.id),
+        currentIdx: 0,
+        sourceId: selId,
+        action,
+      });
+      setResponseText("");
       setSelected(new Set());
     } catch {
       // handled by API fallback
@@ -403,6 +427,47 @@ function CanvasInner() {
   };
 
   const hasSelection = selected.size > 0;
+
+  // Response flow: complete current instruction
+  const completeResponse = () => {
+    if (!responseFlow) return;
+    const instId = responseFlow.instructionIds[responseFlow.currentIdx];
+    const instNote = notes.find(n => n.id === instId);
+    if (!instNote || !responseText.trim()) return;
+
+    // Create response note below the instruction
+    const respId = uid();
+    const respNote: Note = {
+      id: respId, x: instNote.x, y: instNote.y + 100,
+      text: responseText.trim(), source: "user",
+    };
+    setNotes(ns => [...ns, respNote]);
+    setConnections(cs => [...cs, {
+      id: uid(), from: instId, to: respId, label: "", color: "rgba(0,3,50,0.1)",
+    }]);
+    setResponseText("");
+
+    // Advance to next instruction
+    const nextIdx = responseFlow.currentIdx + 1;
+    if (nextIdx < responseFlow.instructionIds.length) {
+      setResponseFlow({ ...responseFlow, currentIdx: nextIdx });
+    } else {
+      setResponseFlow(null);
+      setToast("Nice. You've worked through all the branches. Select another note to keep going.");
+      setTimeout(() => setToast(""), 3500);
+    }
+  };
+
+  const skipResponse = () => {
+    if (!responseFlow) return;
+    setResponseText("");
+    const nextIdx = responseFlow.currentIdx + 1;
+    if (nextIdx < responseFlow.instructionIds.length) {
+      setResponseFlow({ ...responseFlow, currentIdx: nextIdx });
+    } else {
+      setResponseFlow(null);
+    }
+  };
 
   // Get arrow endpoints: right-edge center → left-edge center, or bottom→top if vertically aligned
   const noteW = 200;
@@ -739,10 +804,12 @@ function CanvasInner() {
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
                   zIndex: dragId === n.id ? 20 : isSel ? 10 : 1,
-                  transition: isAi ? "none" : "box-shadow 0.15s",
-                  animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3" : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
-                  animationDelay: isAi ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
-                  opacity: isAi ? 0 : undefined,
+                  transition: isAi ? "none" : "box-shadow 0.15s, opacity 0.3s",
+                  animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3"
+                    : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
+                    : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
+                  animationDelay: isAi && !responseFlow ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
+                  opacity: responseFlow && n.aiInstruction && responseFlow.instructionIds.includes(n.id) && responseFlow.instructionIds.indexOf(n.id) !== responseFlow.currentIdx ? 0.4 : isAi && !responseFlow ? undefined : undefined,
                 }}
               >
                 {n.source !== "goal" && (
@@ -792,6 +859,65 @@ function CanvasInner() {
               </div>
             );
           })}
+
+          {/* RESPONSE CARD */}
+          {responseFlow && (() => {
+            const instId = responseFlow.instructionIds[responseFlow.currentIdx];
+            const instNote = notes.find(n => n.id === instId);
+            if (!instNote) return null;
+            const mColor = ACT[responseFlow.action].color;
+            return (
+              <div className="cn" style={{
+                position: "absolute",
+                left: instNote.x,
+                top: instNote.y + 100,
+                width: dimensions.length > 0 ? 190 : 200,
+                background: "#fff",
+                border: `2px solid ${mColor}`,
+                borderRadius: 10,
+                padding: "12px 14px",
+                boxShadow: `0 2px 12px ${mColor}18`,
+                zIndex: 25,
+                animation: "noteIn 0.3s ease-out forwards",
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: mColor, marginBottom: 6 }}>
+                  {instNote.aiTitle || "Your response"}
+                </div>
+                <textarea
+                  autoFocus
+                  value={responseText}
+                  onChange={e => setResponseText(e.target.value)}
+                  onMouseDown={e => e.stopPropagation()}
+                  placeholder="Write here..."
+                  style={{
+                    width: "100%", minHeight: 60, border: "none", outline: "none",
+                    resize: "none", background: "transparent",
+                    fontFamily: "'Codec Pro',sans-serif", fontSize: 13,
+                    lineHeight: 1.55, color: "#000332",
+                  }}
+                />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+                  <button
+                    onClick={completeResponse}
+                    disabled={!responseText.trim()}
+                    style={{
+                      padding: "6px 16px", borderRadius: 100, border: "none",
+                      background: responseText.trim() ? mColor : "rgba(0,3,50,0.06)",
+                      color: responseText.trim() ? "#000332" : "rgba(0,3,50,0.25)",
+                      fontSize: 12, fontWeight: 700, cursor: responseText.trim() ? "pointer" : "default",
+                      fontFamily: "inherit",
+                    }}
+                  >Done</button>
+                  <button onClick={skipResponse} style={{
+                    background: "none", border: "none", fontSize: 11,
+                    color: "rgba(0,3,50,0.3)", cursor: "pointer",
+                    fontFamily: "inherit", textDecoration: "underline",
+                    textUnderlineOffset: 2,
+                  }}>Skip</button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -799,6 +925,7 @@ function CanvasInner() {
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
+        @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
