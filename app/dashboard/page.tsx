@@ -253,7 +253,7 @@ export default function Dashboard() {
     <>
       <div style={{ padding: "0 28px", marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase", color: "#f4f2ee" }}>
-          creativeresetclub
+          primer
         </div>
         <button
           className="drawer-close"
@@ -383,7 +383,7 @@ export default function Dashboard() {
           ☰
         </button>
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase" as const, color: "#f4f2ee" }}>
-          creativeresetclub
+          primer
         </span>
       </nav>
 

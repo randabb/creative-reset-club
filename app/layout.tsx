@@ -16,7 +16,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Creative Reset Club",
+  title: "Primer",
   description: "Your daily practice for creative thinking, in the age of AI.",
 };
 

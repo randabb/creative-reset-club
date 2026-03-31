@@ -21,7 +21,7 @@ export default function Homepage() {
     <>
       {/* NAV */}
       <nav className={styles.nav} id="nav">
-        <div className={styles.navLogo}>creativeresetclub</div>
+        <div className={styles.navLogo}>primer</div>
         <Link href="/login" className={styles.navSign}>sign in</Link>
       </nav>
 

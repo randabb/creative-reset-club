@@ -98,8 +98,8 @@ export default function ProgramPage() {
           ".main { margin-left:0; padding:64px 18px 80px;"
         );
         html = html.replace(
-          '<div class="sidebar-logo">creative reset club</div>',
-          `<div class="sidebar-logo">creative reset club</div>${homeLink}<button class="sidebar-toggle" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()"><span>‹</span></button>`
+          '<div class="sidebar-logo">primer</div>',
+          `<div class="sidebar-logo">primer</div>${homeLink}<button class="sidebar-toggle" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()"><span>‹</span></button>`
         );
 
         // Fix 3: Day locking + Part 2 progressive reveal + Part 3 writing box + Part 5 celebration

@@ -248,7 +248,7 @@ export default function Onboarding() {
         zIndex: 100, background: "linear-gradient(to bottom, #f4f2ee 60%, transparent)"
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", textTransform: "lowercase" }}>
-          creativeresetclub
+          primer
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <button
