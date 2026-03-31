@@ -59,7 +59,7 @@ const QUESTIONS: Question[] = [
 
 export default function Onboarding() {
   const router = useRouter();
-  const [step, setStep] = useState(0); // 0=welcome, 1-4=questions, 5=result
+  const [step, setStep] = useState(1); // 1-4=questions, 5=result
   const [answers, setAnswers] = useState<Mode[]>([]);
   const [visible, setVisible] = useState(true);
   const [resultMode, setResultMode] = useState<Mode | null>(null);
@@ -134,58 +134,31 @@ export default function Onboarding() {
         transition: "opacity 0.25s ease, transform 0.25s ease",
       }}>
 
-        {/* WELCOME */}
-        {step === 0 && (
-          <>
-            <div style={{ fontSize: 19, fontWeight: 700, color: "#FAF7F0", letterSpacing: "-0.01em", marginBottom: 40 }}>
-              primer
-            </div>
-            <div style={{ position: "relative", width: 60, height: 60, margin: "0 auto 32px" }}>
-              <div style={{
-                width: 20, height: 20, borderRadius: "50%", background: "#FF9090",
-                position: "absolute", top: 20, left: 20,
-                animation: "corePulse 3s ease-in-out infinite",
-              }} />
-              <div style={{
-                width: 40, height: 40, borderRadius: "50%",
-                border: "1px solid rgba(255,144,144,0.3)",
-                position: "absolute", top: 10, left: 10,
-                animation: "ringExpand 3s ease-in-out infinite",
-              }} />
-              <div style={{
-                width: 60, height: 60, borderRadius: "50%",
-                border: "1px solid rgba(255,144,144,0.15)",
-                position: "absolute", top: 0, left: 0,
-                animation: "ringExpand 3s ease-in-out infinite 0.5s",
-              }} />
-            </div>
-            <style>{`
-              @keyframes corePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15); opacity:0.8; } }
-              @keyframes ringExpand { 0%,100% { transform:scale(1); opacity:0.3; } 50% { transform:scale(1.15); opacity:0; } }
-            `}</style>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#FF9090", marginBottom: 12 }}>
-              Where thinking starts.
-            </div>
-            <div style={{ fontSize: 15, color: "rgba(250,247,240,0.45)", fontWeight: 300, lineHeight: 1.6, marginBottom: 40 }}>
-              A few quick questions to set up your thinking space.
-            </div>
-            <button
-              onClick={() => transition(() => setStep(1))}
-              style={{
-                background: "#FF9090", color: "#000332",
-                border: "none", padding: "16px 40px", borderRadius: 100,
-                fontSize: 15, fontWeight: 700, cursor: "pointer",
-                fontFamily: "'Codec Pro', sans-serif",
-              }}
-            >
-              Let&rsquo;s go
-            </button>
-          </>
-        )}
+        <style>{`
+          @keyframes corePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15); opacity:0.8; } }
+          @keyframes ringExpand { 0%,100% { transform:scale(1); opacity:0.3; } 50% { transform:scale(1.15); opacity:0; } }
+        `}</style>
 
         {/* QUIZ QUESTIONS */}
         {step >= 1 && step <= 4 && (
           <>
+            {/* Logo + pulsing core */}
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#FAF7F0", letterSpacing: "-0.01em", marginBottom: 20 }}>
+              primer
+            </div>
+            <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 24px" }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#FF9090", position: "absolute", top: 15, left: 15, animation: "corePulse 3s ease-in-out infinite" }} />
+              <div style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid rgba(255,144,144,0.3)", position: "absolute", top: 7, left: 7, animation: "ringExpand 3s ease-in-out infinite" }} />
+              <div style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,144,144,0.15)", position: "absolute", top: 0, left: 0, animation: "ringExpand 3s ease-in-out infinite 0.5s" }} />
+            </div>
+
+            {/* Subtitle on Q1 only */}
+            {step === 1 && (
+              <div style={{ fontSize: 13, color: "rgba(250,247,240,0.35)", fontWeight: 300, marginBottom: 28 }}>
+                A few quick questions to set up your thinking space.
+              </div>
+            )}
+
             {/* Progress bar */}
             <div style={{ display: "flex", gap: 6, marginBottom: 56, justifyContent: "center" }}>
               {[0, 1, 2, 3].map((i) => (
