@@ -75,11 +75,9 @@ export default function ExpansionRoom({
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [panning, setPanning] = useState(false);
   const isPanningRef = useRef(false);
   const didPanRef = useRef(false);
-  const panStartXRef = useRef(0);
-  const panStartYRef = useRef(0);
+  const panStartRef = useRef({ x: 0, y: 0 });
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -193,6 +191,43 @@ export default function ExpansionRoom({
     return () => vp.removeEventListener("wheel", onWheel);
   }, [zoom, zoomAtPoint]);
 
+  // Native pan listeners — bypasses React synthetic event issues
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.canvas-element')) return;
+      if (activeTool !== 'select') return;
+      isPanningRef.current = true;
+      didPanRef.current = false;
+      panStartRef.current = { x: e.clientX - panX, y: e.clientY - panY };
+      el.style.cursor = 'grabbing';
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!isPanningRef.current) return;
+      didPanRef.current = true;
+      setPanX(e.clientX - panStartRef.current.x);
+      setPanY(e.clientY - panStartRef.current.y);
+    };
+    const onUp = () => {
+      if (isPanningRef.current) {
+        isPanningRef.current = false;
+        el.style.cursor = activeTool === 'select' ? 'grab' : '';
+      }
+    };
+    el.addEventListener('mousedown', onDown);
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseup', onUp);
+    el.addEventListener('mouseleave', onUp);
+    return () => {
+      el.removeEventListener('mousedown', onDown);
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('mouseup', onUp);
+      el.removeEventListener('mouseleave', onUp);
+    };
+  }, [panX, panY, activeTool]);
+
   const zoomIn = () => {
     if (!viewportRef.current) return;
     const r = viewportRef.current.getBoundingClientRect();
@@ -226,7 +261,7 @@ export default function ExpansionRoom({
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (dragState || resizeState || panning || didPanRef.current) return;
+    if (dragState || resizeState || didPanRef.current) return;
     const { x, y } = screenToCanvas(e.clientX, e.clientY);
 
     if (activeTool === "sticky") {
@@ -251,16 +286,6 @@ export default function ExpansionRoom({
       setErasing(true);
       const pt = screenToCanvas(e.clientX, e.clientY);
       eraseAtPoint(pt.x, pt.y);
-    } else if (activeTool === "select" && !dragState && !resizeState) {
-      // Only pan if clicking empty space (viewport or canvas surface, not an element)
-      const target = e.target as HTMLElement;
-      if (target === viewportRef.current || target === canvasRef.current) {
-        isPanningRef.current = true;
-        didPanRef.current = false;
-        panStartXRef.current = e.clientX - panX;
-        panStartYRef.current = e.clientY - panY;
-        setPanning(true);
-      }
     }
   };
 
@@ -276,13 +301,6 @@ export default function ExpansionRoom({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isPanningRef.current) {
-      didPanRef.current = true;
-      setPanX(e.clientX - panStartXRef.current);
-      setPanY(e.clientY - panStartYRef.current);
-      return;
-    }
-
     if (drawing && activeTool === "draw") {
       const pt = screenToCanvas(e.clientX, e.clientY);
       setCurrentPath((prev) => [...prev, pt]);
@@ -327,8 +345,6 @@ export default function ExpansionRoom({
     }
     setDrawing(false);
     setErasing(false);
-    isPanningRef.current = false;
-    setPanning(false);
     setCurrentPath([]);
     setDragState(null);
     setResizeState(null);
@@ -490,8 +506,6 @@ export default function ExpansionRoom({
     { id: "shape", label: "Shape", icon: "◻" },
   ];
 
-  const canvasCursor = activeTool === "select" ? (dragState ? "grabbing" : panning ? "grabbing" : "grab") : activeTool === "draw" ? "crosshair" : activeTool === "eraser" ? "cell" : "cell";
-
   // Delete button + resize handle renderer
   const renderOverlays = (el: CanvasElement) => {
     const isHovered = hoveredId === el.id;
@@ -618,18 +632,18 @@ export default function ExpansionRoom({
         {/* CANVAS VIEWPORT */}
         <div
           ref={viewportRef}
-          onMouseDown={handleCanvasMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
           style={{
-            flex: 1, position: "relative", overflow: "hidden", cursor: canvasCursor,
+            flex: 1, position: "relative", overflow: "hidden", cursor: activeTool === "select" ? "grab" : activeTool === "draw" ? "crosshair" : "cell",
           }}
         >
           {/* CANVAS (transformed) */}
           <div
             ref={canvasRef}
             onClick={handleCanvasClick}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
             style={{
               width: 4000, height: 3000, position: "absolute",
               transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
@@ -655,6 +669,7 @@ export default function ExpansionRoom({
               return (
                 <div
                   key={el.id}
+                  className="canvas-element"
                   onMouseDown={(e) => handleElementMouseDown(el.id, e)}
                   onMouseEnter={() => setHoveredId(el.id)}
                   onMouseLeave={() => setHoveredId(null)}
@@ -682,6 +697,7 @@ export default function ExpansionRoom({
               return (
                 <div
                   key={el.id}
+                  className="canvas-element"
                   onMouseDown={(e) => handleElementMouseDown(el.id, e)}
                   onMouseEnter={() => setHoveredId(el.id)}
                   onMouseLeave={() => setHoveredId(null)}
@@ -707,6 +723,7 @@ export default function ExpansionRoom({
               return (
                 <div
                   key={el.id}
+                  className="canvas-element"
                   onMouseDown={(e) => handleElementMouseDown(el.id, e)}
                   onMouseEnter={() => setHoveredId(el.id)}
                   onMouseLeave={() => setHoveredId(null)}
@@ -727,6 +744,7 @@ export default function ExpansionRoom({
               return (
                 <div
                   key={el.id}
+                  className="canvas-element"
                   onMouseDown={(e) => handleElementMouseDown(el.id, e)}
                   onMouseEnter={() => setHoveredId(el.id)}
                   onMouseLeave={() => setHoveredId(null)}
