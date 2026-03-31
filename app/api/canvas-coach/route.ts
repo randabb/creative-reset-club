@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { INTELLECTUAL_LAYER } from "@/lib/prompts/intellectual-layer";
 
 export const maxDuration = 30;
 
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 200,
-      system: SYSTEM,
+      system: SYSTEM + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nUse the intellectual layer to generate more specific, framework-grounded thinking instructions. Match the instruction to the user's situation type and thinking challenge.",
       messages: [{ role: "user", content: userMsg }],
     });
 

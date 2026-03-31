@@ -4,6 +4,7 @@ import {
   GUIDED_THINKING_SYSTEM_PROMPT,
   FALLBACK_QUESTIONS,
 } from "@/lib/prompts/guided-thinking";
+import { INTELLECTUAL_LAYER } from "@/lib/prompts/intellectual-layer";
 
 export const maxDuration = 30;
 
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 100,
-      system: GUIDED_THINKING_SYSTEM_PROMPT,
+      system: GUIDED_THINKING_SYSTEM_PROMPT + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nADDITIONAL INSTRUCTION: Before generating each question, silently classify:\n- SITUATION TYPE (strategy, product, people, career, communication, operations, creative, financial, complexity)\n- THINKING CHALLENGE (assumption blindness, option paralysis, idea thinness, articulation gap, complexity overwhelm, fear of commitment, pattern blindness, stakeholder misalignment)\nThen select the 2-3 most relevant frameworks from the intellectual layer and generate the question drawing from those specific framework question patterns. Adapt the patterns to use the user's exact language.\n\nDo NOT output the classification. Only output the single question.",
       messages: [{ role: "user", content: userMessage }],
     });
 
