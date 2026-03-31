@@ -315,21 +315,60 @@ function CanvasInner() {
       clearTimeout(timer);
       const data = await res.json();
       const instructions: string[] = data.instructions || [];
-      const newNotes: Note[] = instructions.map((inst, i) => ({
-        id: uid(),
-        x: selNote.x + 260,
-        y: selNote.y + (i - 1) * 130,
-        text: inst,
-        source: "ai" as const,
-        action,
-        aiInstruction: true,
-      }));
+      const count = instructions.length;
+
+      // Determine branch direction based on source position
+      const isSecondLevel = selNote.aiInstruction;
+      const dist = isSecondLevel ? 180 : 220;
+      const cx = selNote.x + 100; // center of note
+      const cy = selNote.y + 30;
+      const branchRight = cx < 2000;
+      const branchDown = cy < 1500;
+
+      // Base angle: 0 = right, PI = left
+      let baseAngle = branchRight ? 0 : Math.PI;
+      if (cy < 300) baseAngle += branchDown ? 0.3 : 0;
+      if (cy > 2500) baseAngle -= branchDown ? 0 : 0.3;
+
+      // Fan angles
+      const fanSpread = count === 2 ? 0.35 : 0.44; // ~20° or ~25° in radians
+      const fanAngles = count === 2
+        ? [-fanSpread, fanSpread]
+        : [-fanSpread, 0, fanSpread];
+
+      // Calculate positions with collision detection
+      const newNotes: Note[] = [];
+      const noteW = 190;
+      const noteH = 60;
+
+      instructions.forEach((inst, i) => {
+        const angle = baseAngle + fanAngles[i];
+        let tx = cx + Math.cos(angle) * dist - noteW / 2;
+        let ty = cy + Math.sin(angle) * dist - noteH / 2;
+
+        // Collision detection (max 5 attempts)
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const overlaps = [...notes, ...newNotes].some(n => {
+            if (n.source === "dimension") return false;
+            return Math.abs(n.x - tx) < noteW + 20 && Math.abs(n.y - ty) < noteH + 20;
+          });
+          if (!overlaps) break;
+          tx += Math.cos(angle) * 30;
+          ty += Math.sin(angle) * 30;
+        }
+
+        // Keep on canvas
+        tx = Math.max(10, Math.min(3800, tx));
+        ty = Math.max(10, Math.min(2900, ty));
+
+        newNotes.push({
+          id: uid(), x: tx, y: ty, text: inst,
+          source: "ai" as const, action, aiInstruction: true,
+        });
+      });
+
       const newConns: Connection[] = newNotes.map(n => ({
-        id: uid(),
-        from: selId,
-        to: n.id,
-        label: "",
-        color: ACT[action].color,
+        id: uid(), from: selId, to: n.id, label: "", color: ACT[action].color,
       }));
       setNotes(ns => [...ns, ...newNotes]);
       setConnections(cs => [...cs, ...newConns]);
@@ -609,7 +648,8 @@ function CanvasInner() {
               const lineOpacity = isAiArrow ? 0.45 : 0.25;
               return (
                 <g key={c.id}>
-                  <path d={ap.d} fill="none" stroke={col} strokeWidth="1.5" markerEnd="url(#ah)" opacity={lineOpacity} />
+                  <path d={ap.d} fill="none" stroke={col} strokeWidth="1.5" markerEnd="url(#ah)" opacity={lineOpacity}
+                    style={isAiArrow ? { strokeDasharray: 400, strokeDashoffset: 400, animation: "arrowDraw 0.4s ease-out forwards" } : undefined} />
                   {c.label && <text x={ap.mx} y={ap.my - 6} textAnchor="middle" fill="rgba(0,3,50,0.35)" fontSize="10" fontFamily="'Codec Pro',sans-serif">{c.label}</text>}
                 </g>
               );
@@ -680,7 +720,9 @@ function CanvasInner() {
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
                   zIndex: dragId === n.id ? 20 : isSel ? 10 : 1,
                   transition: isAi ? "none" : "box-shadow 0.15s",
-                  animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3" : isAi ? "noteIn 0.3s ease forwards" : undefined,
+                  animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3" : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
+                  animationDelay: isAi ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
+                  opacity: isAi ? 0 : undefined,
                 }}
               >
                 {n.source !== "goal" && (
@@ -736,7 +778,8 @@ function CanvasInner() {
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
-        @keyframes noteIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
+        @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
       `}</style>
