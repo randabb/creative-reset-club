@@ -79,7 +79,7 @@ function VoiceInner() {
     if (!hasSeenCanvas) {
       router.push(`/session/canvas-intro?${params.toString()}`);
     } else {
-      router.push(`/session/canvas?${params.toString()}`);
+      router.push(`/session/plan?${params.toString()}`);
     }
   };
 

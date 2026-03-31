@@ -13,7 +13,7 @@ function CanvasIntroInner() {
   const enter = () => {
     localStorage.setItem("primer-canvas-intro-seen", "true");
     const params = new URLSearchParams({ capture, mode, qas });
-    router.push(`/session/canvas?${params.toString()}`);
+    router.push(`/session/plan?${params.toString()}`);
   };
 
   const actions = [

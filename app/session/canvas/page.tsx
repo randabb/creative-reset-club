@@ -48,8 +48,11 @@ function CanvasInner() {
   const capture = sp.get("capture") || "";
   const mode = sp.get("mode") || "clarity";
   const qasRaw = sp.get("qas") || "[]";
+  const dimsRaw = sp.get("dimensions") || "[]";
   let qas: QA[] = [];
   try { qas = JSON.parse(qasRaw); } catch { qas = []; }
+  let dimensions: { label: string; description: string }[] = [];
+  try { dimensions = JSON.parse(dimsRaw); } catch { dimensions = []; }
 
   // Layout positions per mode: [goal, q1, q2, q3, q4]
   const POSITIONS: Record<string, { x: number; y: number }[]> = {
@@ -72,36 +75,68 @@ function CanvasInner() {
     const labels = ARROW_LABELS[mode] || ARROW_LABELS.clarity;
     const ns: Note[] = [];
     const cs: Connection[] = [];
+    const mColor = (ACT as Record<string, { color: string }>)[mode]?.color || "#FF9090";
 
     const goalId = uid();
     if (capture) {
-      ns.push({ id: goalId, x: positions[0].x, y: positions[0].y, text: capture, source: "goal" });
+      ns.push({ id: goalId, x: 60, y: 60, text: capture, source: "goal" });
     }
 
-    const noteIds = [goalId];
-    qas.forEach((qa, i) => {
-      const nid = uid();
-      const isQ4 = i === 3;
-      ns.push({
-        id: nid,
-        x: positions[i + 1]?.x || 40,
-        y: positions[i + 1]?.y || 200 + i * 130,
-        text: qa.answer,
-        source: "thinking",
-        qIndex: i,
-        ...(isQ4 ? { action: undefined } : {}),
+    if (dimensions.length > 0) {
+      // Dimension-based layout
+      const dimIds: string[] = [];
+      dimensions.forEach((dim, i) => {
+        const dimId = uid();
+        ns.push({
+          id: dimId,
+          x: 60 + i * 280,
+          y: 220,
+          text: dim.label + "\n" + dim.description,
+          source: "thinking" as const,
+          qIndex: undefined,
+        });
+        dimIds.push(dimId);
+        // Connect goal to first dimension
+        if (i === 0) {
+          cs.push({ id: uid(), from: goalId, to: dimId, label: "", color: "rgba(0,3,50,0.1)" });
+        }
+        // Chain dimensions
+        if (i > 0) {
+          cs.push({ id: uid(), from: dimIds[i - 1], to: dimId, label: "", color: "rgba(0,3,50,0.08)" });
+        }
       });
-      // Arrow from previous note to this one
-      const fromId = noteIds[noteIds.length - 1];
-      cs.push({
-        id: uid(),
-        from: fromId,
-        to: nid,
-        label: labels[i] || "",
-        color: "rgba(0,3,50,0.15)",
+      // Place Q&A notes below dimensions, spread evenly
+      qas.forEach((qa, i) => {
+        const dimIdx = Math.min(i, dimensions.length - 1);
+        const nid = uid();
+        ns.push({
+          id: nid,
+          x: 60 + dimIdx * 280,
+          y: 400 + (i >= dimensions.length ? (i - dimensions.length) * 130 : 0),
+          text: qa.answer,
+          source: "thinking",
+          qIndex: i,
+        });
+        cs.push({ id: uid(), from: dimIds[dimIdx], to: nid, label: "", color: "rgba(0,3,50,0.1)" });
       });
-      noteIds.push(nid);
-    });
+    } else {
+      // Fallback: arc layout (no dimensions)
+      const noteIds = [goalId];
+      qas.forEach((qa, i) => {
+        const nid = uid();
+        ns.push({
+          id: nid,
+          x: positions[i + 1]?.x || 40,
+          y: positions[i + 1]?.y || 200 + i * 130,
+          text: qa.answer,
+          source: "thinking",
+          qIndex: i,
+        });
+        const fromId = noteIds[noteIds.length - 1];
+        cs.push({ id: uid(), from: fromId, to: nid, label: labels[i] || "", color: "rgba(0,3,50,0.15)" });
+        noteIds.push(nid);
+      });
+    }
 
     return { notes: ns, conns: cs };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,6 +158,8 @@ function CanvasInner() {
   const [showExport, setShowExport] = useState(false);
   const [toast, setToast] = useState("");
   const [showCoach, setShowCoach] = useState(false);
+  const [synthesis, setSynthesis] = useState<{ reflection: string; deliverable_label: string; deliverable: string } | null>(null);
+  const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [panX, setPanX] = useState(0);
@@ -311,9 +348,17 @@ function CanvasInner() {
 
   // Export helpers
   const buildMarkdown = () => {
-    let md = `# Primer Canvas Session\n\n## Goal\n${capture}\n\n## Guided Thinking\n`;
+    let md = `# Primer Canvas Session\n\n`;
+    if (synthesis) {
+      md += `## Synthesis\n${synthesis.reflection}\n\n### ${synthesis.deliverable_label}\n${synthesis.deliverable}\n\n`;
+    }
+    md += `## Goal\n${capture}\n\n## Guided Thinking\n`;
     qas.forEach((qa, i) => { md += `\n### Q${i + 1}: ${qa.question}\n${qa.answer}\n`; });
-    md += "\n## Canvas Notes\n";
+    if (dimensions.length) {
+      md += "\n## Session Dimensions\n";
+      dimensions.forEach((d, i) => { md += `\n${i + 1}. **${d.label}** — ${d.description}`; });
+    }
+    md += "\n\n## Canvas Notes\n";
     notes.forEach(n => { md += `\n- ${n.text}`; });
     if (connections.length) {
       md += "\n\n## Connections\n";
@@ -392,7 +437,21 @@ function CanvasInner() {
       {/* RIGHT CONTROLS */}
       <div style={{ position: "absolute", top: 14, right: 20, zIndex: 30, display: "flex", gap: 8 }}>
         <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "8px 16px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.1)", background: "#fff", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
-        <button onClick={() => setShowExport(!showExport)} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Ready to go? →</button>
+        <button onClick={async () => {
+          setShowExport(!showExport);
+          if (!showExport && !synthesis && !synthLoading) {
+            setSynthLoading(true);
+            try {
+              const res = await fetch("/api/session-synthesis", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
+              });
+              const data = await res.json();
+              if (data.reflection) setSynthesis(data);
+            } catch { /* use without synthesis */ }
+            setSynthLoading(false);
+          }
+        }} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Ready to go? →</button>
       </div>
 
       {/* GOAL DROPDOWN */}
@@ -406,6 +465,21 @@ function CanvasInner() {
       {/* EXPORT PANEL */}
       {showExport && (
         <div style={{ position: "absolute", top: 52, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 280, boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+          {synthLoading && (
+            <div style={{ textAlign: "center", padding: "12px 0 16px" }}>
+              <div style={{ width: 16, height: 16, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", margin: "0 auto 8px" }} />
+              <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)" }}>Synthesizing...</p>
+            </div>
+          )}
+          {synthesis && (
+            <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(0,3,50,0.06)" }}>
+              <p style={{ fontSize: 14, fontStyle: "italic", color: "#000332", lineHeight: 1.6, fontWeight: 300, marginBottom: 10 }}>{synthesis.reflection}</p>
+              <div style={{ borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "rgba(0,3,50,0.4)", marginBottom: 4 }}>{synthesis.deliverable_label}</p>
+                <p style={{ fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400 }}>{synthesis.deliverable}</p>
+              </div>
+            </div>
+          )}
           <p style={{ fontSize: 17, fontWeight: 700, fontStyle: "italic", color: "#000332", marginBottom: 4 }}>Take your thinking further</p>
           <p style={{ fontSize: 12, color: "rgba(0,3,50,0.4)", marginBottom: 18, fontWeight: 300 }}>You did the thinking. Now bring it wherever you need it.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -450,10 +524,16 @@ function CanvasInner() {
             WHERE TO START
           </div>
           <p style={{ fontSize: 16, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
-            {mode === "clarity" && <>Start with your core thread (top right) — select it and hit <strong style={{ color: "#FF9090" }}>Expand</strong> to push it further, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to sharpen it.</>}
-            {mode === "expansion" && <>Start with your strongest angle (top right) — select it and hit <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the essence, or <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it even further.</>}
-            {mode === "decision" && <>Start with your real test (top right) — select it and hit <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it, or <strong style={{ color: "#C4A6FF" }}>Express</strong> to articulate your choice.</>}
-            {mode === "expression" && <>Start with your opposition (top right) — select it and hit <strong style={{ color: "#C4A6FF" }}>Express</strong> to strengthen your position, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to find the core of what you&rsquo;re saying.</>}
+            {dimensions.length > 0 ? (
+              <>Start with &ldquo;{dimensions[0].label}&rdquo; — select it and use <strong style={{ color: "#6B8AFE" }}>Clarify</strong> or <strong style={{ color: "#FF9090" }}>Expand</strong> to develop your thinking.</>
+            ) : (
+              <>
+                {mode === "clarity" && <>Start with your core thread (top right) — select it and hit <strong style={{ color: "#FF9090" }}>Expand</strong> to push it further, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to sharpen it.</>}
+                {mode === "expansion" && <>Start with your strongest angle (top right) — select it and hit <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the essence, or <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it even further.</>}
+                {mode === "decision" && <>Start with your real test (top right) — select it and hit <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it, or <strong style={{ color: "#C4A6FF" }}>Express</strong> to articulate your choice.</>}
+                {mode === "expression" && <>Start with your opposition (top right) — select it and hit <strong style={{ color: "#C4A6FF" }}>Express</strong> to strengthen your position, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to find the core of what you&rsquo;re saying.</>}
+              </>
+            )}
           </p>
         </div>
       )}
