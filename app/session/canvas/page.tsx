@@ -165,6 +165,8 @@ function CanvasInner() {
   const [showCoach, setShowCoach] = useState(false);
   const [responseFlow, setResponseFlow] = useState<ResponseFlow | null>(null);
   const [responseText, setResponseText] = useState("");
+  const [respCardPos, setRespCardPos] = useState<{ x: number; y: number } | null>(null);
+  const [respDragOff, setRespDragOff] = useState<{ x: number; y: number } | null>(null);
   const [synthesis, setSynthesis] = useState<{ reflection: string; deliverable_label: string; deliverable: string } | null>(null);
   const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
@@ -261,12 +263,17 @@ function CanvasInner() {
   };
 
   const onCanvasMove = (e: React.MouseEvent) => {
+    if (respDragOff) {
+      const pt = s2c(e.clientX, e.clientY);
+      setRespCardPos({ x: pt.x - respDragOff.x, y: pt.y - respDragOff.y });
+      return;
+    }
     if (!dragId) return;
     const pt = s2c(e.clientX, e.clientY);
     setNotes(ns => ns.map(n => n.id === dragId ? { ...n, x: pt.x - dragOff.x, y: pt.y - dragOff.y } : n));
   };
 
-  const onCanvasUp = () => setDragId(null);
+  const onCanvasUp = () => { setDragId(null); setRespDragOff(null); };
 
   const onCanvasDoubleClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
@@ -449,7 +456,7 @@ function CanvasInner() {
     // Create response note below the instruction
     const respId = uid();
     const respNote: Note = {
-      id: respId, x: instNote.x, y: instNote.y + 90,
+      id: respId, x: instNote.x, y: instNote.y + 120,
       text: responseText.trim(), source: "user",
     };
     setNotes(ns => [...ns, respNote]);
@@ -460,6 +467,7 @@ function CanvasInner() {
 
     // Advance to next instruction
     const nextIdx = responseFlow.currentIdx + 1;
+    setRespCardPos(null);
     if (nextIdx < responseFlow.instructionIds.length) {
       setResponseFlow({ ...responseFlow, currentIdx: nextIdx });
     } else {
@@ -472,6 +480,7 @@ function CanvasInner() {
   const skipResponse = () => {
     if (!responseFlow) return;
     setResponseText("");
+    setRespCardPos(null);
     const nextIdx = responseFlow.currentIdx + 1;
     if (nextIdx < responseFlow.instructionIds.length) {
       setResponseFlow({ ...responseFlow, currentIdx: nextIdx });
@@ -807,7 +816,7 @@ function CanvasInner() {
                 onDoubleClick={e => { e.stopPropagation(); setEditId(n.id); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
-                  width: dimensions.length > 0 ? 190 : 200, minHeight: 60, padding: "10px 12px",
+                  width: dimensions.length > 0 ? 190 : 200, minHeight: n.aiInstruction ? 100 : 60, padding: "10px 12px",
                   borderRadius: 10,
                   background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
@@ -877,11 +886,22 @@ function CanvasInner() {
             const instNote = notes.find(n => n.id === instId);
             if (!instNote) return null;
             const mColor = ACT[responseFlow.action].color;
+            const rcX = respCardPos ? respCardPos.x : instNote.x;
+            const rcY = respCardPos ? respCardPos.y : instNote.y + 120;
             return (
-              <div className="cn" style={{
+              <div
+                className="cn"
+                onMouseDown={(e) => {
+                  const t = e.target as HTMLElement;
+                  if (t.tagName === "TEXTAREA" || t.tagName === "BUTTON") return;
+                  e.stopPropagation();
+                  const pt = s2c(e.clientX, e.clientY);
+                  setRespDragOff({ x: pt.x - rcX, y: pt.y - rcY });
+                }}
+                style={{
                 position: "absolute",
-                left: instNote.x,
-                top: instNote.y + 90,
+                left: rcX,
+                top: rcY,
                 width: dimensions.length > 0 ? 190 : 200,
                 background: "#fff",
                 border: `2px solid ${mColor}`,
