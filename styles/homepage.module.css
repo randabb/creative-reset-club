@@ -396,6 +396,76 @@
 }
 .bottomMeta span { font-size: 11.5px; color: var(--navy); opacity: .28; font-weight: 300; }
 
+/* thinking modes section */
+.modesSection {
+  background: var(--navy);
+  padding: 100px 52px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.modesEyebrow {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--coral); margin-bottom: 12px; font-weight: 600;
+}
+.modesHeading {
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800; color: var(--cream);
+  letter-spacing: -0.03em; line-height: 1.1;
+  margin-bottom: 8px;
+}
+.modesSub {
+  font-size: 15px; color: var(--cream); opacity: .45;
+  font-weight: 300; margin-bottom: 56px; line-height: 1.6;
+}
+.modesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
+}
+.modeCard {
+  background: rgba(255,255,255,0.04);
+  border-radius: 16px;
+  padding: 32px 28px;
+  border: 1.5px solid transparent;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  opacity: 0;
+  animation: modesFadeIn 0.6s ease forwards;
+}
+.modeCard:nth-child(1) { animation-delay: 0s; }
+.modeCard:nth-child(2) { animation-delay: 0.1s; }
+.modeCard:nth-child(3) { animation-delay: 0.2s; }
+.modeCard:nth-child(4) { animation-delay: 0.3s; }
+.modeCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modeIcon {
+  font-size: 28px;
+  margin-bottom: 16px;
+  display: block;
+  line-height: 1;
+}
+.modeTitle {
+  font-size: 17px; font-weight: 700;
+  color: var(--cream); margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.modeDesc {
+  font-size: 13.5px; color: var(--cream); opacity: .55;
+  line-height: 1.7; font-weight: 300;
+}
+
+@media (max-width: 900px) {
+  .modesGrid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .modesSection { padding: 72px 24px; }
+  .modesGrid { grid-template-columns: 1fr; gap: 12px; }
+}
+
 /* ── SVG ANIMATION CLASSES ── */
 
 /* Animation 1: Inward Pull */
@@ -665,6 +735,10 @@
 @keyframes fade-in {
   from{opacity:0}
   to{opacity:1}
+}
+@keyframes modesFadeIn {
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
 }
 
 /* ══════════════════════════════════════

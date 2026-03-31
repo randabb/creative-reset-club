@@ -337,6 +337,35 @@ export default function Homepage() {
         </div>
       </div>
 
+      {/* THINKING MODES */}
+      <div className={styles.modesSection}>
+        <div className={styles.modesEyebrow}>How it works</div>
+        <h2 className={styles.modesHeading}>Four thinking modes</h2>
+        <p className={styles.modesSub}>Every session adapts to what your thinking actually needs</p>
+        <div className={styles.modesGrid}>
+          <div className={styles.modeCard} style={{ borderColor: "transparent" }} onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#6B8AFE")} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}>
+            <span className={styles.modeIcon} style={{ color: "#6B8AFE" }}>◎</span>
+            <div className={styles.modeTitle}>Clarity</div>
+            <p className={styles.modeDesc}>Untangle messy thinking. Separate signal from noise. Find the core thread.</p>
+          </div>
+          <div className={styles.modeCard} style={{ borderColor: "transparent" }} onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#FF9090")} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}>
+            <span className={styles.modeIcon} style={{ color: "#FF9090" }}>✦</span>
+            <div className={styles.modeTitle}>Expansion</div>
+            <p className={styles.modeDesc}>Stretch an idea in unexpected directions. Find angles you&rsquo;d never reach alone.</p>
+          </div>
+          <div className={styles.modeCard} style={{ borderColor: "transparent" }} onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7ED6A8")} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}>
+            <span className={styles.modeIcon} style={{ color: "#7ED6A8" }}>⟁</span>
+            <div className={styles.modeTitle}>Decision</div>
+            <p className={styles.modeDesc}>Work through choices with rigor. Stress-test options. Commit with confidence.</p>
+          </div>
+          <div className={styles.modeCard} style={{ borderColor: "transparent" }} onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#C4A6FF")} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}>
+            <span className={styles.modeIcon} style={{ color: "#C4A6FF" }}>◈</span>
+            <div className={styles.modeTitle}>Expression</div>
+            <p className={styles.modeDesc}>Articulate what you know but can&rsquo;t yet say. Structure your thinking for others.</p>
+          </div>
+        </div>
+      </div>
+
       {/* QUOTE BREAK */}
       <div className={styles.quoteBreak}>
         <p className={styles.quoteBreakText}>
