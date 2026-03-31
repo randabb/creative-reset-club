@@ -17,10 +17,13 @@ interface Note {
   x: number;
   y: number;
   text: string;
-  source?: "goal" | "thinking" | "ai" | "user";
+  source?: "goal" | "thinking" | "ai" | "user" | "dimension";
   action?: Action;
   aiInstruction?: boolean;
   qIndex?: number;
+  dimIndex?: number;
+  dimLabel?: string;
+  dimDesc?: string;
 }
 
 const THINKING_LABELS: Record<string, string[]> = {
@@ -83,36 +86,30 @@ function CanvasInner() {
     }
 
     if (dimensions.length > 0) {
-      // Dimension-based layout
+      // Dimension-based column layout
       const dimIds: string[] = [];
       dimensions.forEach((dim, i) => {
         const dimId = uid();
         ns.push({
           id: dimId,
-          x: 60 + i * 280,
-          y: 220,
-          text: dim.label + "\n" + dim.description,
-          source: "thinking" as const,
-          qIndex: undefined,
+          x: 60 + i * 260,
+          y: 200,
+          text: dim.label,
+          source: "dimension",
+          dimIndex: i,
+          dimLabel: dim.label,
+          dimDesc: dim.description,
         });
         dimIds.push(dimId);
-        // Connect goal to first dimension
-        if (i === 0) {
-          cs.push({ id: uid(), from: goalId, to: dimId, label: "", color: "rgba(0,3,50,0.1)" });
-        }
-        // Chain dimensions
-        if (i > 0) {
-          cs.push({ id: uid(), from: dimIds[i - 1], to: dimId, label: "", color: "rgba(0,3,50,0.08)" });
-        }
       });
-      // Place Q&A notes below dimensions, spread evenly
+      // Place Q&A notes below their dimension column
       qas.forEach((qa, i) => {
         const dimIdx = Math.min(i, dimensions.length - 1);
         const nid = uid();
         ns.push({
           id: nid,
-          x: 60 + dimIdx * 280,
-          y: 400 + (i >= dimensions.length ? (i - dimensions.length) * 130 : 0),
+          x: 65 + dimIdx * 260,
+          y: 340,
           text: qa.answer,
           source: "thinking",
           qIndex: i,
@@ -242,7 +239,7 @@ function CanvasInner() {
     if (editId === id) return;
     e.stopPropagation();
     const n = notes.find(n => n.id === id);
-    if (!n) return;
+    if (!n || n.source === "dimension") return;
     if (connecting) {
       if (!connectFrom) { setConnectFrom(id); return; }
       if (connectFrom !== id) { setConnModal({ from: connectFrom, to: id }); setConnectFrom(null); }
@@ -425,6 +422,7 @@ function CanvasInner() {
 
   const sourceLabel = (n: Note) => {
     if (n.source === "goal") return { text: "YOUR GOAL", color: "#000332" };
+    if (n.source === "dimension") return null; // dimensions render their own label internally
     if (n.source === "thinking" && n.qIndex !== undefined) {
       const labels = THINKING_LABELS[mode] || THINKING_LABELS.clarity;
       return { text: labels[n.qIndex] || "YOUR THINKING", color: "#FF9090" };
@@ -618,12 +616,53 @@ function CanvasInner() {
             })}
           </svg>
 
+          {/* DIMENSION COLUMN LINES */}
+          {dimensions.length > 0 && dimensions.map((_, i) => (
+            <div key={`col-${i}`} style={{
+              position: "absolute", left: 60 + i * 260 + 110, top: 290,
+              width: 1, height: 300,
+              borderLeft: "1px dashed rgba(0,3,50,0.06)",
+              pointerEvents: "none",
+            }} />
+          ))}
+
           {/* NOTES */}
           {notes.map(n => {
-            const isSel = selected.has(n.id);
+            const isDim = n.source === "dimension";
+            const isSel = !isDim && selected.has(n.id);
             const sl = sourceLabel(n);
             const isAi = n.aiInstruction;
             const actColor = n.action ? ACT[n.action].color : "#FF9090";
+
+            // Dimension header rendering
+            if (isDim) {
+              return (
+                <div
+                  key={n.id}
+                  className="cn"
+                  style={{
+                    position: "absolute", left: n.x, top: n.y,
+                    width: 220, padding: "14px 16px",
+                    borderRadius: 10,
+                    background: "#000332",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    zIndex: 2,
+                    cursor: "default",
+                  }}
+                >
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6 }}>
+                    DIMENSION {(n.dimIndex ?? 0) + 1}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#FAF7F0", marginBottom: 4, lineHeight: 1.3 }}>
+                    {n.dimLabel}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(250,247,240,0.5)", fontWeight: 300, lineHeight: 1.5 }}>
+                    {n.dimDesc}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={n.id}
@@ -632,7 +671,7 @@ function CanvasInner() {
                 onDoubleClick={e => { e.stopPropagation(); setEditId(n.id); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
-                  width: 200, minHeight: 60, padding: "10px 12px",
+                  width: dimensions.length > 0 ? 190 : 200, minHeight: 60, padding: "10px 12px",
                   borderRadius: 10,
                   background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
