@@ -633,7 +633,7 @@ export default function ExpansionRoom({
         <div
           ref={viewportRef}
           style={{
-            flex: 1, position: "relative", overflow: "hidden", cursor: activeTool === "select" ? "grab" : activeTool === "draw" ? "crosshair" : "cell",
+            flex: 1, position: "relative", overflow: "hidden", background: "#ffffff", cursor: activeTool === "select" ? "grab" : activeTool === "draw" ? "crosshair" : "cell",
           }}
         >
           {/* CANVAS (transformed) */}
@@ -649,7 +649,7 @@ export default function ExpansionRoom({
               transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
               transformOrigin: "0 0",
               background: "#ffffff",
-              backgroundImage: "radial-gradient(circle, rgba(0,3,50,0.08) 1px, transparent 1px)",
+              backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px)",
               backgroundSize: "24px 24px",
             }}
           >
