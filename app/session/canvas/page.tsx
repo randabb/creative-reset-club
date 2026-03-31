@@ -390,10 +390,37 @@ function CanvasInner() {
 
   const hasSelection = selected.size > 0;
 
-  // Get note center for arrows
-  const nc = (id: string) => {
-    const n = notes.find(n => n.id === id);
-    return n ? { x: n.x + 100, y: n.y + 30 } : { x: 0, y: 0 };
+  // Get arrow endpoints: right-edge center → left-edge center, or bottom→top if vertically aligned
+  const noteW = 200;
+  const noteH = 60;
+  const arrowPoints = (fromId: string, toId: string) => {
+    const f = notes.find(n => n.id === fromId);
+    const t = notes.find(n => n.id === toId);
+    if (!f || !t) return { x1: 0, y1: 0, x2: 0, y2: 0 };
+    const isVertical = Math.abs(f.x - t.x) < 50;
+    if (isVertical) {
+      // Bottom of source → top of target
+      return { x1: f.x + noteW / 2, y1: f.y + noteH, x2: t.x + noteW / 2, y2: t.y };
+    }
+    // Right edge of source → left edge of target
+    return { x1: f.x + noteW, y1: f.y + noteH / 2, x2: t.x, y2: t.y + noteH / 2 };
+  };
+
+  const arrowPath = (fromId: string, toId: string) => {
+    const { x1, y1, x2, y2 } = arrowPoints(fromId, toId);
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    // Slight curve via quadratic bezier
+    const cx = mx + (y2 - y1) * 0.15;
+    const cy = my - (x2 - x1) * 0.15;
+    return { d: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`, mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
+  };
+
+  // Delete a note and all its connections
+  const deleteNote = (id: string) => {
+    setNotes(ns => ns.filter(n => n.id !== id));
+    setConnections(cs => cs.filter(c => c.from !== id && c.to !== id));
+    setSelected(s => { const ns = new Set(s); ns.delete(id); return ns; });
   };
 
   const sourceLabel = (n: Note) => {
@@ -576,14 +603,16 @@ function CanvasInner() {
         >
           {/* ARROWS SVG */}
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}>
-            <defs><marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="rgba(0,3,50,0.3)" /></marker></defs>
+            <defs><marker id="ah" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="rgba(0,3,50,0.35)" /></marker></defs>
             {connections.map(c => {
-              const f = nc(c.from); const t = nc(c.to);
+              const ap = arrowPath(c.from, c.to);
               const col = c.color || "rgba(0,3,50,0.2)";
+              const isAiArrow = col !== "rgba(0,3,50,0.15)" && col !== "rgba(0,3,50,0.1)" && col !== "rgba(0,3,50,0.08)";
+              const lineOpacity = isAiArrow ? 0.45 : 0.25;
               return (
                 <g key={c.id}>
-                  <line x1={f.x} y1={f.y} x2={t.x} y2={t.y} stroke={col} strokeWidth="1.5" markerEnd="url(#ah)" />
-                  {c.label && <text x={(f.x + t.x) / 2} y={(f.y + t.y) / 2 - 6} textAnchor="middle" fill="rgba(0,3,50,0.4)" fontSize="10" fontFamily="'Codec Pro',sans-serif">{c.label}</text>}
+                  <path d={ap.d} fill="none" stroke={col} strokeWidth="1.5" markerEnd="url(#ah)" opacity={lineOpacity} />
+                  {c.label && <text x={ap.mx} y={ap.my - 6} textAnchor="middle" fill="rgba(0,3,50,0.35)" fontSize="10" fontFamily="'Codec Pro',sans-serif">{c.label}</text>}
                 </g>
               );
             })}
@@ -615,6 +644,23 @@ function CanvasInner() {
                   animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3" : isAi ? "noteIn 0.3s ease forwards" : undefined,
                 }}
               >
+                {n.source !== "goal" && (
+                  <button
+                    className="cn-del"
+                    onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute", top: -7, right: -7,
+                      width: 20, height: 20, borderRadius: "50%",
+                      background: "rgba(0,3,50,0.35)", color: "#fff",
+                      border: "none", fontSize: 11, lineHeight: 1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", opacity: 0,
+                      transition: "opacity 0.15s",
+                      zIndex: 5,
+                    }}
+                  >×</button>
+                )}
                 {sl && (
                   <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7 }}>
                     {sl.text}
@@ -650,6 +696,7 @@ function CanvasInner() {
 
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
+        .cn:hover .cn-del { opacity: 1 !important; }
         @keyframes noteIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
