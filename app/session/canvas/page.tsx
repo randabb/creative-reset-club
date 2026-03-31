@@ -217,13 +217,11 @@ function CanvasInner() {
   }, [panX, panY]);
 
   // Zoom
+  // Prevent scroll-to-zoom (scroll does nothing on canvas)
   useEffect(() => {
     const el = vpRef.current;
     if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      setZoom(z => Math.min(2, Math.max(0.3, z * (e.deltaY > 0 ? 0.92 : 1.08))));
-    };
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
