@@ -223,28 +223,28 @@ export default function Homepage() {
       {/* INTRO STRIP */}
       <div className={styles.introStrip}>
         <div className={styles.introStripLead}>
-          Creativity flows when the conditions are right.<br />
-          This is a daily practice for creating those conditions.
+          Every tool wants you to move faster.<br />
+          Primer asks you to think first.
         </div>
         <div className={styles.introStripSub}>
-          A structured daily practice that restores your access to creative flow. A few minutes a day, guided and grounded, until thinking feels easy again.
+          A 15-minute session that changes how you see the problem.
         </div>
       </div>
 
       {/* BENEFIT 1 */}
       <div className={styles.benefit}>
         <div>
-          <div className={styles.benefitNumber}>01 &mdash; the core shift</div>
+          <div className={styles.benefitNumber}>01 &mdash; capture</div>
           <h2 className={styles.benefitTitle}>
-            Your ideas,<br /><em>arriving on their own.</em>
+            Get the raw idea<br /><em>out of your head.</em>
           </h2>
           <p className={styles.benefitDesc}>
-            When generating from within becomes a daily habit, the pull toward external input naturally loosens. You hold thoughts longer, decisions feel more grounded, and your thinking starts to feel recognisably yours again.
+            Write what you&rsquo;re thinking through. No structure, no editing. Just get the messy thought onto the screen so you can see it.
           </p>
           <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>react, search, generate, tweak</span>
+            <span className={styles.shiftFrom}>scattered thoughts</span>
             <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>notice, think, feel, express</span>
+            <span className={styles.shiftTo}>one clear starting point</span>
           </div>
         </div>
         <div className={styles.benefitAnimWrap}>
@@ -272,17 +272,17 @@ export default function Homepage() {
       {/* BENEFIT 2 */}
       <div className={styles.benefit}>
         <div className={styles.benefitTextFlipped}>
-          <div className={styles.benefitNumber}>02 &mdash; the felt shift</div>
+          <div className={styles.benefitNumber}>02 &mdash; guided thinking</div>
           <h2 className={styles.benefitTitle}>
-            Quieter mind.<br /><em>Sharper focus.</em>
+            Four questions that<br /><em>take you deeper.</em>
           </h2>
           <p className={styles.benefitDesc}>
-            A few minutes of intentional practice rebuilds your capacity to stay with a single thought, fully. Until the noise settles, ideas start to feel whole and connected, and something real can come through.
+            Each question is adapted to your specific situation, grounded in expert thinking frameworks. You&rsquo;ll think things you didn&rsquo;t know you were thinking.
           </p>
           <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>scattered, overstimulated</span>
+            <span className={styles.shiftFrom}>surface-level ideas</span>
             <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>grounded, focused, in it</span>
+            <span className={styles.shiftTo}>thinking with depth</span>
           </div>
         </div>
         <div className={`${styles.benefitAnimWrap} ${styles.benefitAnimFlipped}`}>
@@ -304,17 +304,17 @@ export default function Homepage() {
       {/* BENEFIT 3 */}
       <div className={styles.benefit}>
         <div>
-          <div className={styles.benefitNumber}>03 &mdash; the identity shift</div>
+          <div className={styles.benefitNumber}>03 &mdash; the canvas</div>
           <h2 className={styles.benefitTitle}>
-            Your voice,<br /><em>fully alive.</em>
+            See your thinking.<br /><em>Move it around. Expand it.</em>
           </h2>
           <p className={styles.benefitDesc}>
-            Each practice is designed to get things moving before the inner editor shows up. Over time, a natural ease builds before sharing. Expression starts to sound fully, recognisably you &mdash; and ideas feel original and worth following.
+            Your ideas appear as moveable notes on a spatial canvas. Connect them, cluster them, then ask AI to clarify, expand, decide, or express your thinking further.
           </p>
           <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>waiting to feel confident</span>
+            <span className={styles.shiftFrom}>ideas stuck in your head</span>
             <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>moving while it&rsquo;s still forming</span>
+            <span className={styles.shiftTo}>a visual map you can use</span>
           </div>
         </div>
         <div className={styles.benefitAnimWrap}>
@@ -340,27 +340,20 @@ export default function Homepage() {
       {/* QUOTE BREAK */}
       <div className={styles.quoteBreak}>
         <p className={styles.quoteBreakText}>
-          The most valuable thing you bring to your work<br />
-          is <strong>how you think.</strong>
+          The most valuable thing you bring to your work is <strong>how you think.</strong><br />
+          Primer is where that thinking starts.
         </p>
       </div>
 
       {/* BOTTOM CTA */}
       <div className={styles.bottomCta}>
         <p className={styles.bottomCtaText}>
-          you don&rsquo;t need to be ready. you just need to start.
+          Your first three sessions are free. Just you, your ideas, and a space to develop them.
         </p>
         <Link href="/onboarding" className={styles.bottomBtn}>
-          start your first reset
+          Open your studio
           <span className={styles.ctaDot}>&rarr;</span>
         </Link>
-        <div className={styles.bottomMeta}>
-          <span>backed by behavioral science</span>
-          <span className={styles.dot}>&middot;</span>
-          <span>takes 2 minutes</span>
-          <span className={styles.dot}>&middot;</span>
-          <span>free to start</span>
-        </div>
       </div>
     </>
   );
