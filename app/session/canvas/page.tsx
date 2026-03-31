@@ -172,14 +172,12 @@ function CanvasInner() {
 
   useEffect(() => { if (!capture) router.push("/session/new"); }, [capture, router]);
 
-  // Coach card + Q4 pulse
+  // Coach card — shows once per canvas visit (session-local, not persistent)
   useEffect(() => {
-    const seen = localStorage.getItem("primer-canvas-coach-seen");
-    if (seen || coachDismissed) return;
+    if (coachDismissed) return;
     const t = setTimeout(() => {
       setShowCoach(true);
       setQ4Pulsing(true);
-      // Stop pulsing after ~6s (3 pulses at 2s each)
       setTimeout(() => setQ4Pulsing(false), 6000);
     }, 1500);
     return () => clearTimeout(t);
@@ -189,7 +187,6 @@ function CanvasInner() {
     setShowCoach(false);
     setCoachDismissed(true);
     setQ4Pulsing(false);
-    localStorage.setItem("primer-canvas-coach-seen", "true");
   };
 
   // Auto-dismiss coach when user selects a note or clicks an action
@@ -523,7 +520,7 @@ function CanvasInner() {
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 8 }}>
             WHERE TO START
           </div>
-          <p style={{ fontSize: 16, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
+          <p style={{ fontSize: 15, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
             {dimensions.length > 0 ? (
               <>Start with &ldquo;{dimensions[0].label}&rdquo; — select it and use <strong style={{ color: "#6B8AFE" }}>Clarify</strong> or <strong style={{ color: "#FF9090" }}>Expand</strong> to develop your thinking.</>
             ) : (
