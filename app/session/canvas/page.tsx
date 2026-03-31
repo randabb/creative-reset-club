@@ -598,6 +598,48 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* ZOOM CONTROLS */}
+      <div style={{
+        position: "fixed", bottom: 20, right: 20, zIndex: 25,
+        background: "#fff", borderRadius: 10, padding: 4,
+        boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        display: "flex", flexDirection: "column", gap: 2, alignItems: "center",
+      }}>
+        <button onClick={() => {
+          const nz = Math.min(2, zoom + 0.1);
+          if (vpRef.current) {
+            const r = vpRef.current.getBoundingClientRect();
+            const cx = r.width / 2, cy = r.height / 2;
+            setPanX(px => cx - (cx - px) * (nz / zoom));
+            setPanY(py => cy - (cy - py) * (nz / zoom));
+          }
+          setZoom(nz);
+        }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 16, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,3,50,0.04)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >+</button>
+        {Math.round(zoom * 100) !== 100 && (
+          <span style={{ fontSize: 9, color: "#94949E", lineHeight: 1 }}>{Math.round(zoom * 100)}%</span>
+        )}
+        <button onClick={() => {
+          const nz = Math.max(0.3, zoom - 0.1);
+          if (vpRef.current) {
+            const r = vpRef.current.getBoundingClientRect();
+            const cx = r.width / 2, cy = r.height / 2;
+            setPanX(px => cx - (cx - px) * (nz / zoom));
+            setPanY(py => cy - (cy - py) * (nz / zoom));
+          }
+          setZoom(nz);
+        }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 16, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,3,50,0.04)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >−</button>
+        <button onClick={() => { setZoom(1); setPanX(0); setPanY(0); }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 14, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,3,50,0.04)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >⟲</button>
+      </div>
+
       {/* CANVAS VIEWPORT */}
       <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: connecting ? "crosshair" : "grab", position: "relative" }}>
         <div
