@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 type Action = "clarify" | "expand" | "decide" | "express";
 
@@ -175,12 +176,99 @@ function CanvasInner() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  const [userId, setUserId] = useState<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyRef = useRef(false);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
   const vpRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (!capture) router.push("/session/new"); }, [capture, router]);
+  // Session init: create new or load existing
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+      const uid = user?.id;
+
+      // Load existing session
+      if (sessionId) {
+        try {
+          const res = await fetch(`/api/sessions?id=${sessionId}`);
+          const data = await res.json();
+          if (data.canvas_state?.notes) setNotes(data.canvas_state.notes);
+          if (data.canvas_state?.connections) setConnections(data.canvas_state.connections);
+          if (data.synthesis) setSynthesis(data.synthesis);
+        } catch { /* use initial state */ }
+        return;
+      }
+
+      // No capture and no session_id — redirect
+      if (!capture) { router.push("/session/new"); return; }
+
+      // Create new session
+      if (uid) {
+        try {
+          const res = await fetch("/api/sessions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: uid, goal: capture, mode, qas, dimensions,
+              canvas_state: { notes, connections },
+            }),
+          });
+          const data = await res.json();
+          if (data.id) setSessionId(data.id);
+        } catch { /* continue without session id */ }
+      }
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Autosave: debounced, triggers on changes
+  const saveCanvas = useCallback(async () => {
+    if (!sessionId) return;
+    setSaveStatus("saving");
+    try {
+      await fetch("/api/sessions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          canvas_state: { notes, connections },
+          synthesis: synthesis || undefined,
+        }),
+      });
+      setSaveStatus("saved");
+      dirtyRef.current = false;
+    } catch {
+      setSaveStatus("unsaved");
+    }
+  }, [sessionId, notes, connections, synthesis]);
+
+  const scheduleSave = useCallback(() => {
+    dirtyRef.current = true;
+    setSaveStatus("unsaved");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveCanvas(), 2000);
+  }, [saveCanvas]);
+
+  // Track changes for autosave
+  useEffect(() => {
+    if (sessionId) scheduleSave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notes, connections]);
+
+  // Periodic autosave every 30s if dirty
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (dirtyRef.current && sessionId) saveCanvas();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [sessionId, saveCanvas]);
 
   // Coach card — shows once per canvas visit (session-local, not persistent)
   useEffect(() => {
@@ -441,6 +529,7 @@ function CanvasInner() {
   };
 
   const saveToStudio = async () => {
+    await saveCanvas();
     setToast("✓ Saved to your Studio");
     setTimeout(() => { setToast(""); router.push("/studio"); }, 2500);
   };
@@ -567,6 +656,9 @@ function CanvasInner() {
       }}>
         <button onClick={addNote} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
         <button onClick={() => { setConnecting(!connecting); setConnectFrom(null); }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: connecting ? "rgba(0,3,50,0.08)" : "transparent", fontSize: 12, fontWeight: 600, color: connecting ? "#FF9090" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>Connect</button>
+        <button onClick={() => saveCanvas()} title="Save" style={{ padding: "6px 10px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, color: saveStatus === "saved" ? "rgba(0,3,50,0.25)" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>
+          {saveStatus === "saving" ? "..." : saveStatus === "saved" ? "✓" : "💾"}
+        </button>
         <div style={{ width: 1, height: 20, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
         {(Object.keys(ACT) as Action[]).map(a => (
           <button key={a} onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
@@ -722,6 +814,17 @@ function CanvasInner() {
           </div>
         </div>
       )}
+
+      {/* SAVE STATUS */}
+      <div style={{
+        position: "fixed", bottom: 20, left: 20, zIndex: 25,
+        fontSize: 11, fontFamily: "'Codec Pro',sans-serif",
+        color: "rgba(0,3,50,0.4)",
+        opacity: saveStatus === "saved" ? 0.3 : saveStatus === "saving" ? 0.5 : 0.6,
+        transition: "opacity 0.15s",
+      }}>
+        {saveStatus === "saved" ? "Saved" : saveStatus === "saving" ? "Saving..." : "Unsaved changes"}
+      </div>
 
       {/* ZOOM CONTROLS */}
       <div style={{

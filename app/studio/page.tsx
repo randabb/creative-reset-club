@@ -71,14 +71,21 @@ export default function Studio() {
       const name = profile?.username ?? meta?.username ?? user.email?.split("@")[0] ?? "";
       setFirstName(name.split(" ")[0]);
 
-      // Fetch canvases (sessions table) — gracefully handle missing table
+      // Fetch canvases via API (handles note_count extraction)
       try {
-        const { data: sessions } = await supabase
-          .from("sessions")
-          .select("id, goal, excerpt, mode, note_count, connection_count, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-        if (sessions) setCanvases(sessions as CanvasItem[]);
+        const res = await fetch(`/api/sessions?userId=${user.id}`);
+        const data = await res.json();
+        if (data.sessions) {
+          setCanvases(data.sessions.map((s: Record<string, unknown>) => ({
+            id: s.id,
+            goal: s.goal || "Untitled canvas",
+            excerpt: "",
+            mode: s.mode || "clarity",
+            note_count: s.note_count || 0,
+            connection_count: 0,
+            created_at: s.updated_at || s.created_at || "",
+          })));
+        }
       } catch { /* table may not exist yet */ }
 
       // Fetch arcs — gracefully handle missing table
@@ -276,6 +283,7 @@ export default function Studio() {
                 return (
                   <div
                     key={c.id}
+                    onClick={() => router.push(`/session/canvas?session_id=${c.id}`)}
                     style={{
                       background: "#fff", borderRadius: 16, padding: "24px 24px",
                       border: "1px solid rgba(0,3,50,0.06)",
