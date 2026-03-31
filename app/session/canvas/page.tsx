@@ -315,49 +315,29 @@ function CanvasInner() {
       clearTimeout(timer);
       const data = await res.json();
       const instructions: string[] = data.instructions || [];
-      const count = instructions.length;
 
-      // Determine branch direction based on source position
-      const isSecondLevel = selNote.aiInstruction;
-      const dist = isSecondLevel ? 180 : 220;
-      const cx = selNote.x + 100; // center of note
-      const cy = selNote.y + 30;
-      const branchRight = cx < 2000;
-      const branchDown = cy < 1500;
-
-      // Base angle: 0 = right, PI = left
-      let baseAngle = branchRight ? 0 : Math.PI;
-      if (cy < 300) baseAngle += branchDown ? 0.3 : 0;
-      if (cy > 2500) baseAngle -= branchDown ? 0 : 0.3;
-
-      // Fan angles
-      const fanSpread = count === 2 ? 0.35 : 0.44; // ~20° or ~25° in radians
-      const fanAngles = count === 2
-        ? [-fanSpread, fanSpread]
-        : [-fanSpread, 0, fanSpread];
-
-      // Calculate positions with collision detection
+      // Simple vertical stack to the RIGHT of source note
+      const srcW = dimensions.length > 0 ? 190 : 200;
+      let targetX = selNote.x + srcW + 80;
+      const startY = selNote.y;
       const newNotes: Note[] = [];
-      const noteW = 190;
-      const noteH = 60;
+      const allExisting = [...notes];
 
       instructions.forEach((inst, i) => {
-        const angle = baseAngle + fanAngles[i];
-        let tx = cx + Math.cos(angle) * dist - noteW / 2;
-        let ty = cy + Math.sin(angle) * dist - noteH / 2;
+        let tx = targetX;
+        let ty = startY + i * 150;
 
-        // Collision detection (max 5 attempts)
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const overlaps = [...notes, ...newNotes].some(n => {
+        // Collision check: shift right in 240px columns if blocked
+        for (let shift = 0; shift < 3; shift++) {
+          const blocked = [...allExisting, ...newNotes].some(n => {
             if (n.source === "dimension") return false;
-            return Math.abs(n.x - tx) < noteW + 20 && Math.abs(n.y - ty) < noteH + 20;
+            return Math.abs(n.x - tx) < 40 && Math.abs(n.y - ty) < 40;
           });
-          if (!overlaps) break;
-          tx += Math.cos(angle) * 30;
-          ty += Math.sin(angle) * 30;
+          if (!blocked) break;
+          tx += 240;
         }
 
-        // Keep on canvas
+        // Clamp to canvas
         tx = Math.max(10, Math.min(3800, tx));
         ty = Math.max(10, Math.min(2900, ty));
 
