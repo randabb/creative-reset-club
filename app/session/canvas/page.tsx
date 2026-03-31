@@ -375,7 +375,7 @@ function CanvasInner() {
           onMouseUp={onCanvasUp}
           onMouseLeave={onCanvasUp}
           onDoubleClick={onCanvasDoubleClick}
-          onClick={() => { if (!dragId) { setSelected(new Set()); setShowGoal(false); setShowExport(false); } }}
+          onClick={(e) => { const t = e.target as HTMLElement; if (!dragId && !t.closest(".cn")) { setSelected(new Set()); setShowGoal(false); setShowExport(false); } }}
           style={{
             width: 4000, height: 3000, position: "absolute",
             transform: `translate(${panX}px,${panY}px) scale(${zoom})`,
