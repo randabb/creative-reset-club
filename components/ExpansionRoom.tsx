@@ -78,7 +78,8 @@ export default function ExpansionRoom({
   const [panning, setPanning] = useState(false);
   const isPanningRef = useRef(false);
   const didPanRef = useRef(false);
-  const panStartRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const panStartXRef = useRef(0);
+  const panStartYRef = useRef(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -106,14 +107,37 @@ export default function ExpansionRoom({
     saveTimerRef.current = setTimeout(() => saveCanvas(els, pths), 1000);
   }, [saveCanvas]);
 
-  // Load canvas on mount
+  // Load canvas on mount and auto-fit if elements exist
   useEffect(() => {
     const loadCanvas = async () => {
       try {
         const res = await fetch(`/api/expansion/canvas?userId=${userId}`);
         const { canvasData } = await res.json();
-        if (canvasData?.elements) setElements(canvasData.elements);
-        if (canvasData?.paths) setPaths(canvasData.paths);
+        const loadedEls = canvasData?.elements || [];
+        const loadedPaths = canvasData?.paths || [];
+        if (loadedEls.length) setElements(loadedEls);
+        if (loadedPaths.length) setPaths(loadedPaths);
+        // Auto-fit to show all elements after a brief delay for DOM render
+        if (loadedEls.length > 0) {
+          setTimeout(() => {
+            if (!viewportRef.current) return;
+            const vp = viewportRef.current.getBoundingClientRect();
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            loadedEls.forEach((el: CanvasElement) => {
+              minX = Math.min(minX, el.x);
+              minY = Math.min(minY, el.y);
+              maxX = Math.max(maxX, el.x + el.w);
+              maxY = Math.max(maxY, el.y + el.h);
+            });
+            const pad = 60;
+            const bw = maxX - minX + pad * 2;
+            const bh = maxY - minY + pad * 2;
+            const nz = Math.max(0.25, Math.min(1, Math.min(vp.width / bw, vp.height / bh)));
+            setPanX((vp.width - bw * nz) / 2 - (minX - pad) * nz);
+            setPanY((vp.height - bh * nz) / 2 - (minY - pad) * nz);
+            setZoom(nz);
+          }, 100);
+        }
       } catch { /* start with empty canvas */ }
       setCanvasLoaded(true);
     };
@@ -233,8 +257,9 @@ export default function ExpansionRoom({
       if (target === viewportRef.current || target === canvasRef.current) {
         isPanningRef.current = true;
         didPanRef.current = false;
+        panStartXRef.current = e.clientX - panX;
+        panStartYRef.current = e.clientY - panY;
         setPanning(true);
-        panStartRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
       }
     }
   };
@@ -251,10 +276,10 @@ export default function ExpansionRoom({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isPanningRef.current && panStartRef.current) {
+    if (isPanningRef.current) {
       didPanRef.current = true;
-      setPanX(panStartRef.current.px + (e.clientX - panStartRef.current.x));
-      setPanY(panStartRef.current.py + (e.clientY - panStartRef.current.y));
+      setPanX(e.clientX - panStartXRef.current);
+      setPanY(e.clientY - panStartYRef.current);
       return;
     }
 
@@ -304,7 +329,6 @@ export default function ExpansionRoom({
     setErasing(false);
     isPanningRef.current = false;
     setPanning(false);
-    panStartRef.current = null;
     setCurrentPath([]);
     setDragState(null);
     setResizeState(null);
