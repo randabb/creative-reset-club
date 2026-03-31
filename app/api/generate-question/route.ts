@@ -70,9 +70,15 @@ export async function POST(req: Request) {
     console.error("[generate-question] Error:", err);
 
     // Return a mode-appropriate fallback question
-    const body = await req.clone().json().catch(() => ({}));
-    const mode = body.mode || "clarity";
-    const qNum = Math.min(Math.max(body.questionNumber || 1, 1), 4);
+    let mode = "clarity";
+    let qNum = 1;
+    try {
+      const body = await req.clone().json();
+      mode = body.mode || "clarity";
+      qNum = Math.min(Math.max(body.questionNumber || 1, 1), 4);
+    } catch {
+      // use defaults
+    }
     const validModes = ["clarity", "expansion", "decision", "expression"];
     const safeMode = validModes.includes(mode) ? mode : "clarity";
     const fallbacks = FALLBACK_QUESTIONS[safeMode] || FALLBACK_QUESTIONS.clarity;
