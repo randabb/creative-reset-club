@@ -20,7 +20,15 @@ interface Note {
   source?: "goal" | "thinking" | "ai" | "user";
   action?: Action;
   aiInstruction?: boolean;
+  qIndex?: number;
 }
+
+const THINKING_LABELS: Record<string, string[]> = {
+  clarity: ["YOUR SITUATION", "YOUR ASSUMPTION", "YOUR ROOT", "YOUR CORE THREAD"],
+  expansion: ["YOUR SEED", "YOUR SHIFT", "YOUR TRANSFORMATION", "YOUR STRONGEST ANGLE"],
+  decision: ["YOUR DECISION", "YOUR INTUITION", "YOUR RISK", "YOUR CRITERIA"],
+  expression: ["YOUR MESSAGE", "YOUR CORE POINT", "YOUR STRUCTURE", "YOUR OPPOSITION"],
+};
 
 interface Connection {
   id: string;
@@ -50,7 +58,7 @@ function CanvasInner() {
       notes.push({ id: uid(), x: 40, y: 40, text: capture, source: "goal" });
     }
     qas.forEach((qa, i) => {
-      notes.push({ id: uid(), x: 40, y: 200 + i * 130, text: qa.answer, source: "thinking" });
+      notes.push({ id: uid(), x: 40, y: 200 + i * 130, text: qa.answer, source: "thinking", qIndex: i });
     });
     return notes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -275,6 +283,10 @@ function CanvasInner() {
 
   const sourceLabel = (n: Note) => {
     if (n.source === "goal") return { text: "YOUR GOAL", color: "#000332" };
+    if (n.source === "thinking" && n.qIndex !== undefined) {
+      const labels = THINKING_LABELS[mode] || THINKING_LABELS.clarity;
+      return { text: labels[n.qIndex] || "YOUR THINKING", color: "#FF9090" };
+    }
     if (n.source === "thinking") return { text: "YOUR THINKING", color: "#FF9090" };
     if (n.source === "ai" && n.action) return { text: `${ACT[n.action].label} ↓`, color: ACT[n.action].color };
     return null;
