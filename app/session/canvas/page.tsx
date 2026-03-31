@@ -51,21 +51,65 @@ function CanvasInner() {
   let qas: QA[] = [];
   try { qas = JSON.parse(qasRaw); } catch { qas = []; }
 
-  // Build initial notes from session data
-  const buildInitial = useCallback((): Note[] => {
-    const notes: Note[] = [];
+  // Layout positions per mode: [goal, q1, q2, q3, q4]
+  const POSITIONS: Record<string, { x: number; y: number }[]> = {
+    clarity:    [{ x: 60, y: 60 }, { x: 60, y: 240 }, { x: 320, y: 180 }, { x: 580, y: 280 }, { x: 580, y: 60 }],
+    expansion:  [{ x: 60, y: 60 }, { x: 60, y: 240 }, { x: 320, y: 160 }, { x: 580, y: 260 }, { x: 580, y: 60 }],
+    decision:   [{ x: 60, y: 60 }, { x: 60, y: 240 }, { x: 320, y: 200 }, { x: 580, y: 300 }, { x: 580, y: 60 }],
+    expression: [{ x: 60, y: 60 }, { x: 60, y: 240 }, { x: 320, y: 170 }, { x: 580, y: 280 }, { x: 580, y: 60 }],
+  };
+
+  const ARROW_LABELS: Record<string, string[]> = {
+    clarity:    ["led to", "underneath", "deeper", "the real point"],
+    expansion:  ["started with", "then flipped", "which opened", "landing on"],
+    decision:   ["the choice", "gut says", "but what if", "so the real test is"],
+    expression: ["trying to say", "distilled to", "framed as", "tested against"],
+  };
+
+  // Build initial notes + connections from session data
+  const buildInitial = useCallback((): { notes: Note[]; conns: Connection[] } => {
+    const positions = POSITIONS[mode] || POSITIONS.clarity;
+    const labels = ARROW_LABELS[mode] || ARROW_LABELS.clarity;
+    const ns: Note[] = [];
+    const cs: Connection[] = [];
+
+    const goalId = uid();
     if (capture) {
-      notes.push({ id: uid(), x: 40, y: 40, text: capture, source: "goal" });
+      ns.push({ id: goalId, x: positions[0].x, y: positions[0].y, text: capture, source: "goal" });
     }
+
+    const noteIds = [goalId];
     qas.forEach((qa, i) => {
-      notes.push({ id: uid(), x: 40, y: 200 + i * 130, text: qa.answer, source: "thinking", qIndex: i });
+      const nid = uid();
+      const isQ4 = i === 3;
+      ns.push({
+        id: nid,
+        x: positions[i + 1]?.x || 40,
+        y: positions[i + 1]?.y || 200 + i * 130,
+        text: qa.answer,
+        source: "thinking",
+        qIndex: i,
+        ...(isQ4 ? { action: undefined } : {}),
+      });
+      // Arrow from previous note to this one
+      const fromId = noteIds[noteIds.length - 1];
+      cs.push({
+        id: uid(),
+        from: fromId,
+        to: nid,
+        label: labels[i] || "",
+        color: "rgba(0,3,50,0.15)",
+      });
+      noteIds.push(nid);
     });
-    return notes;
+
+    return { notes: ns, conns: cs };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [notes, setNotes] = useState<Note[]>(() => buildInitial());
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const initial = buildInitial();
+  const [notes, setNotes] = useState<Note[]>(initial.notes);
+  const [connections, setConnections] = useState<Connection[]>(initial.conns);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
@@ -428,8 +472,9 @@ function CanvasInner() {
                   position: "absolute", left: n.x, top: n.y,
                   width: 200, minHeight: 60, padding: "10px 12px",
                   borderRadius: 10,
-                  background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
-                  border: `1.5px solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
+                  background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
+                  border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
+                  borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
                   zIndex: dragId === n.id ? 20 : isSel ? 10 : 1,
