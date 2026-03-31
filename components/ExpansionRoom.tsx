@@ -551,7 +551,7 @@ export default function ExpansionRoom({
           background: "#fff", borderBottom: "1px solid #e2ddd8",
           zIndex: 20, position: "relative",
         }}>
-          <a href="/dashboard" style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", textDecoration: "none", marginRight: 16 }}>← dashboard</a>
+          <a href="/studio" style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,3,50,0.45)", textDecoration: "none", marginRight: 16 }}>← dashboard</a>
           <div style={{ width: 1, height: 24, background: "#e2ddd8", marginRight: 8 }} />
           {tools.map((t) => (
             <button

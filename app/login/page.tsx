@@ -27,7 +27,7 @@ export default function Login() {
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
+    router.push("/studio");
   };
 
   return (

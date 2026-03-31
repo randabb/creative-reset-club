@@ -87,8 +87,8 @@ export default function ProgramPage() {
           '.sidebar {$1background:#000332'
         );
 
-        // Fix 2: Inject ← Home link pointing to /dashboard
-        const homeLink = `<a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" ontouchend="window.top.location.href='/dashboard';return false;" style="display:block;padding:14px 12px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:13px;font-weight:700;color:rgba(255,255,255,0.65);cursor:pointer;touch-action:manipulation;position:relative;z-index:100;-webkit-tap-highlight-color:rgba(255,255,255,0.1);">← Home</a>`;
+        // Fix 2: Inject ← Home link pointing to /studio
+        const homeLink = `<a href="/studio" onclick="window.top.location.href='/studio';return false;" ontouchend="window.top.location.href='/studio';return false;" style="display:block;padding:14px 12px;margin-bottom:12px;border-radius:3px;text-decoration:none;font-size:13px;font-weight:700;color:rgba(255,255,255,0.65);cursor:pointer;touch-action:manipulation;position:relative;z-index:100;-webkit-tap-highlight-color:rgba(255,255,255,0.1);">← Home</a>`;
         html = html.replace(
           '.menu-toggle { display:none; position:fixed; top:14px; left:14px;',
           '.menu-toggle { display:none; position:fixed; top:16px; left:16px;'
@@ -275,7 +275,7 @@ export default function ProgramPage() {
             <div class="celebration-heading" id="celebrationHeading">Day done.</div>
             <div class="celebration-sub" id="celebrationSub"></div>
             <div class="celebration-btns">
-              <a href="/dashboard" onclick="window.top.location.href='/dashboard';return false;" ontouchend="window.top.location.href='/dashboard';return false;" class="celebration-btn-outline" style="cursor:pointer;touch-action:manipulation;">back to dashboard</a>
+              <a href="/studio" onclick="window.top.location.href='/studio';return false;" ontouchend="window.top.location.href='/studio';return false;" class="celebration-btn-outline" style="cursor:pointer;touch-action:manipulation;">back to dashboard</a>
               <a href="/expansion-room" onclick="window.top.location.href='/expansion-room';return false;" ontouchend="window.top.location.href='/expansion-room';return false;" class="celebration-btn-filled" id="celebrationExpBtn" style="cursor:pointer;touch-action:manipulation;background:#FF9090;color:#fff;">open expansion room →</a>
             </div>
           </div>
@@ -1773,7 +1773,7 @@ init = function() {
         <p style={{ fontFamily: "'Codec Pro',sans-serif", color: "#000332", fontSize: 18 }}>
           track not found.
         </p>
-        <a href="/dashboard" style={{
+        <a href="/studio" style={{
           fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700,
           color: "#000332", textDecoration: "underline", textUnderlineOffset: 3
         }}>

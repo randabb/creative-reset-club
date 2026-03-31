@@ -85,7 +85,7 @@ export default function ExpansionRoomPage() {
     return (
       <div style={{ minHeight: "100vh", background: "#FAF7F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <p style={{ fontFamily: "'Codec Pro',sans-serif", color: "#000332", fontSize: 16 }}>complete day 1 with a voice reflection to unlock the expansion room.</p>
-        <a href="/dashboard" style={{ fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, color: "#000332", textDecoration: "underline", textUnderlineOffset: 3 }}>← back to dashboard</a>
+        <a href="/studio" style={{ fontFamily: "'Codec Pro',sans-serif", fontSize: 14, fontWeight: 700, color: "#000332", textDecoration: "underline", textUnderlineOffset: 3 }}>← back to dashboard</a>
       </div>
     );
   }

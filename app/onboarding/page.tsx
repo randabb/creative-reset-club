@@ -115,7 +115,7 @@ export default function Onboarding() {
     } catch {
       // Continue even if save fails
     }
-    router.push("/dashboard");
+    router.push("/studio");
   };
 
   const qIdx = step - 1;
