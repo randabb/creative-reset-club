@@ -41,23 +41,22 @@ export default function Homepage() {
         {/* LEFT: copy */}
         <div className={styles.heroLeft}>
           <h1 className={styles.heroHeadline}>
-            your daily<br className={styles.brDesktop} />{" "}practice<br />
-            for <em>creative<br className={styles.brDesktop} />{" "}thinking,</em><br />
-            <span className={styles.hlCoral}>in the age of AI.</span>
+            Think <em className={styles.hlCoral}>clearly</em><br />
+            before you prompt.
           </h1>
           <p className={styles.heroSub}>
-            come play. you already know how to do this.
+            A guided thinking workspace for knowledge workers who want clarity, originality, and better decisions. Your ideas, developed by you, expanded by AI.
           </p>
           <Link href="/onboarding" className={styles.heroCta}>
-            start your first reset
+            Start your first canvas
             <span className={styles.ctaDot}>&rarr;</span>
           </Link>
           <div className={styles.heroProofRow}>
-            <span>backed by behavioral science</span>
+            <span>3 full sessions free</span>
             <span className={styles.dot}>&middot;</span>
-            <span>takes 2 minutes</span>
+            <span>No credit card</span>
             <span className={styles.dot}>&middot;</span>
-            <span>free to start</span>
+            <span>For marketers, founders, PMs, engineers, strategists, and creators</span>
           </div>
         </div>
 
