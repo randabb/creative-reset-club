@@ -351,23 +351,25 @@ function CanvasInner() {
         return { title: words.slice(0, 4).join(" "), text: str };
       });
 
-      // Place as vertical stack to the right
+      // Place as HORIZONTAL ROW to the right of source
       const srcW = dimensions.length > 0 ? 190 : 200;
-      let targetX = selNote.x + srcW + 80;
-      const startY = selNote.y;
+      const baseX = selNote.x + srcW + 80;
+      const baseY = selNote.y;
+      const noteSpacing = 220; // horizontal gap between instruction notes
       const newNotes: Note[] = [];
       const allExisting = [...notes];
 
       instructions.forEach((inst, i) => {
-        let tx = targetX;
-        let ty = startY + i * 160;
-        for (let shift = 0; shift < 3; shift++) {
+        let tx = baseX + i * noteSpacing;
+        let ty = baseY;
+        // Collision avoidance: shift down if blocked
+        for (let attempt = 0; attempt < 5; attempt++) {
           const blocked = [...allExisting, ...newNotes].some(n => {
             if (n.source === "dimension") return false;
             return Math.abs(n.x - tx) < 40 && Math.abs(n.y - ty) < 40;
           });
           if (!blocked) break;
-          tx += 240;
+          ty += 30;
         }
         tx = Math.max(10, Math.min(3800, tx));
         ty = Math.max(10, Math.min(2900, ty));
@@ -383,6 +385,18 @@ function CanvasInner() {
       }));
       setNotes(ns => [...ns, ...newNotes]);
       setConnections(cs => [...cs, ...newConns]);
+
+      // Auto-pan if new notes are off-screen to the right
+      if (vpRef.current && newNotes.length > 0) {
+        const vpRect = vpRef.current.getBoundingClientRect();
+        const rightmostX = Math.max(...newNotes.map(n => n.x + 200));
+        const visibleRight = (vpRect.width - panX) / zoom;
+        if (rightmostX > visibleRight - 40) {
+          const targetPanX = vpRect.width - (rightmostX + 80) * zoom;
+          // Smooth pan via transition
+          setPanX(targetPanX);
+        }
+      }
 
       // Start guided response flow
       setResponseFlow({
