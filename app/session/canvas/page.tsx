@@ -608,42 +608,35 @@ function CanvasInner() {
         return { title: words.slice(0, 4).join(" "), text: str };
       });
 
-      // Place as HORIZONTAL ROW below source with full collision detection
-      const cellW = 220; // width per note cell
-      const cellH = 200; // height per note cell (note + response card space)
+      // Place new notes in a HORIZONTAL ROW below the LOWEST point on the canvas
       const noteW = dimensions.length > 0 ? 190 : 200;
-      const collisionH = 120; // minimum collision height
-      const pad = 30; // padding around each note for collision
-      const newNotes: Note[] = [];
+      const estimateH = (text: string) => {
+        const len = text.length;
+        if (len < 50) return 80;
+        if (len < 100) return 100;
+        if (len < 200) return 140;
+        return 180;
+      };
 
-      // Build collision set from ALL existing notes
-      const occupied = notes.filter(n => n.source !== "dimension").map(n => ({
-        x: n.x, y: n.y, w: noteW, h: Math.max(collisionH, 60),
-      }));
-
-      instructions.forEach((inst, i) => {
-        // Start position: horizontal row below source
-        let tx = selNote.x + i * (cellW + 20);
-        let ty = selNote.y + collisionH + 40;
-
-        // Check collision against ALL existing + already-placed new notes
-        for (let shift = 0; shift < 5; shift++) {
-          const blocked = [...occupied, ...newNotes.map(n => ({ x: n.x, y: n.y, w: noteW, h: collisionH }))].some(o =>
-            tx < o.x + o.w + pad && tx + noteW + pad > o.x &&
-            ty < o.y + o.h + pad && ty + cellH + pad > o.y
-          );
-          if (!blocked) break;
-          ty += cellH; // shift entire cell height down
-        }
-
-        tx = Math.max(10, Math.min(3800, tx));
-        ty = Math.max(10, Math.min(2900, ty));
-        newNotes.push({
-          id: uid(), x: tx, y: ty, text: inst.text,
-          source: "ai" as const, action, aiInstruction: true,
-          aiTitle: inst.title,
-        });
+      // Find the lowest point across ALL existing notes
+      let bottomY = 0;
+      notes.forEach(n => {
+        const h = estimateH(n.text);
+        const bottom = n.y + h;
+        if (bottom > bottomY) bottomY = bottom;
       });
+
+      const startY = bottomY + 60;
+      const newNotes: Note[] = instructions.map((inst, i) => ({
+        id: uid(),
+        x: 60 + i * 240,
+        y: startY,
+        text: inst.text,
+        source: "ai" as const,
+        action,
+        aiInstruction: true,
+        aiTitle: inst.title,
+      }));
 
       const newConns: Connection[] = newNotes.map(n => ({
         id: uid(), from: selId, to: n.id, label: "", color: ACT[action].color,
@@ -651,19 +644,17 @@ function CanvasInner() {
       setNotes(ns => [...ns, ...newNotes]);
       setConnections(cs => [...cs, ...newConns]);
 
-      // Auto-pan if new notes are off-screen
+      // Auto-scroll to show new notes centered in viewport
       if (vpRef.current && newNotes.length > 0) {
         const vpRect = vpRef.current.getBoundingClientRect();
-        const rightmostX = Math.max(...newNotes.map(n => n.x + noteW));
-        const bottomY = Math.max(...newNotes.map(n => n.y + cellH));
-        const visibleRight = (vpRect.width - panX) / zoom;
-        const visibleBottom = (vpRect.height - panY) / zoom;
-        if (rightmostX > visibleRight - 40) {
-          setPanX(vpRect.width - (rightmostX + 80) * zoom);
-        }
-        if (bottomY > visibleBottom - 40) {
-          setPanY(vpRect.height - (bottomY + 80) * zoom);
-        }
+        const targetY = startY + 60;
+        const newPanY = vpRect.height / 2 - targetY * zoom;
+        setPanY(newPanY);
+        panYRef.current = newPanY;
+        const midX = newNotes[Math.floor(newNotes.length / 2)].x + noteW / 2;
+        const newPanX = vpRect.width / 2 - midX * zoom;
+        setPanX(newPanX);
+        panXRef.current = newPanX;
       }
 
       // Start guided response flow
@@ -747,7 +738,7 @@ function CanvasInner() {
     // Create response note below the instruction
     const respId = uid();
     const respNote: Note = {
-      id: respId, x: instNote.x, y: instNote.y + 120,
+      id: respId, x: instNote.x, y: instNote.y + 140,
       text: responseText.trim(), source: "user",
     };
     setNotes(ns => [...ns, respNote]);
@@ -1276,7 +1267,7 @@ function CanvasInner() {
             if (!instNote) return null;
             const mColor = ACT[responseFlow.action].color;
             const rcX = respCardPos ? respCardPos.x : instNote.x;
-            const rcY = respCardPos ? respCardPos.y : instNote.y + 120;
+            const rcY = respCardPos ? respCardPos.y : instNote.y + 140;
             return (
               <div
                 className="cn"
