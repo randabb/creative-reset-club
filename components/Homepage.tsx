@@ -1,9 +1,181 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import styles from "@/styles/homepage.module.css";
 import { supabase } from "@/lib/supabase";
+
+function useInView(threshold = 0.2) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
+const fadeUp = (visible: boolean, delay = 0) => ({
+  opacity: visible ? 1 : 0,
+  transform: visible ? "translateY(0)" : "translateY(16px)",
+  transition: `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`,
+});
+
+function CanvasVisual() {
+  const { ref, visible } = useInView();
+  const dims = ["Who you're really for", "The gap only you fill", "Why now matters", "The one-line pitch"];
+  const thinkingNotes = [
+    { label: "YOUR SEED", text: "Founders who are sick of tools that think for them instead of helping them think", sym: "◎", color: "#6B8AFE", x: 16, y: 210 },
+    { label: "YOUR SHIFT", text: "The real competition isn't other tools — it's the blank page and going in circles", sym: "✦", color: "#FF9090", x: 210, y: 220 },
+    { label: "YOUR ROOT", text: "People don't need more AI outputs. They need to know what to ask for.", sym: "⟁", color: "#7ED6A8", x: 410, y: 215 },
+  ];
+  const aiNotes = [
+    { label: "CLARIFY ↓", text: "List 3 people who tried other tools and gave up. Why?", color: "#6B8AFE", x: 30, y: 330 },
+    { label: "EXPAND ↓", text: "Write what your user says to a friend the day after using this", color: "#FF9090", x: 230, y: 340 },
+  ];
+  return (
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px", textAlign: "center" }}>
+      <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia,serif", fontSize: "clamp(22px,3vw,28px)", fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 10 }}>
+        See what a session looks like
+      </h2>
+      <p style={{ ...fadeUp(visible, 0.1), fontSize: 15, color: "rgba(0,3,50,0.45)", fontWeight: 300, marginBottom: 40 }}>
+        From messy thought to structured thinking in 15 minutes.
+      </p>
+      <div style={{ ...fadeUp(visible, 0.2), maxWidth: 750, margin: "0 auto", background: "#F5F2ED", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.06)", overflow: "hidden", position: "relative", height: 440, fontFamily: "'Codec Pro',sans-serif" }}>
+        {/* Mini toolbar */}
+        <div style={{ ...fadeUp(visible, 0.3), position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: 4, background: "#fff", borderRadius: 100, padding: "5px 10px", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", fontSize: 11, color: "#000332", fontWeight: 600 }}>
+          <span style={{ padding: "0 6px" }}>+ Note</span>
+          <span style={{ padding: "0 6px" }}>Connect</span>
+          <span style={{ width: 1, height: 14, background: "rgba(0,3,50,0.1)", margin: "0 2px" }} />
+          <span style={{ color: "#6B8AFE", fontSize: 13 }}>◎</span>
+          <span style={{ color: "#FF9090", fontSize: 13 }}>✦</span>
+          <span style={{ color: "#7ED6A8", fontSize: 13 }}>⟁</span>
+          <span style={{ color: "#C4A6FF", fontSize: 13 }}>◈</span>
+        </div>
+        <div style={{ ...fadeUp(visible, 0.3), position: "absolute", top: 12, right: 12, zIndex: 5, background: "#FF9090", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 700, color: "#000332" }}>
+          Ready to go? &rarr;
+        </div>
+        {/* Goal note */}
+        <div style={{ ...fadeUp(visible, 0.35), position: "absolute", top: 50, left: 16, width: 170, background: "rgba(0,3,50,0.05)", border: "1px solid rgba(0,3,50,0.1)", borderRadius: 8, padding: "8px 10px" }}>
+          <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: "0.1em", color: "#000332", marginBottom: 3, opacity: 0.6 }}>YOUR GOAL</div>
+          <div style={{ fontSize: 11, color: "#000332", lineHeight: 1.45, fontWeight: 400 }}>how do I position my product in a crowded market</div>
+        </div>
+        {/* Dimension headers */}
+        {dims.map((d, i) => (
+          <div key={i} style={{ ...fadeUp(visible, 0.4 + i * 0.08), position: "absolute", top: 130, left: 16 + i * 182, width: 165, background: "#000332", borderRadius: 8, padding: "8px 10px" }}>
+            <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: "0.1em", color: "#FF9090", marginBottom: 2 }}>DIMENSION {i + 1}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#FAF7F0", lineHeight: 1.3 }}>{d}</div>
+          </div>
+        ))}
+        {/* Thinking notes */}
+        {thinkingNotes.map((n, i) => (
+          <div key={i} style={{ ...fadeUp(visible, 0.65 + i * 0.1), position: "absolute", top: n.y, left: n.x, width: 175, background: "rgba(255,144,144,0.04)", border: "1px solid rgba(255,144,144,0.15)", borderRadius: 8, padding: "8px 10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+              <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: "0.1em", color: "#FF9090", opacity: 0.7 }}>{n.label}</div>
+              <span style={{ fontSize: 12, color: n.color, opacity: 0.6 }}>{n.sym}</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#000332", lineHeight: 1.45, fontWeight: 300 }}>{n.text}</div>
+          </div>
+        ))}
+        {/* AI instruction notes */}
+        {aiNotes.map((n, i) => (
+          <div key={i} style={{ ...fadeUp(visible, 0.9 + i * 0.1), position: "absolute", top: n.y, left: n.x, width: 175, background: `${n.color}08`, border: `1px solid ${n.color}30`, borderRadius: 8, padding: "8px 10px" }}>
+            <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: "0.1em", color: "#FF9090", marginBottom: 3 }}>YOUR TURN</div>
+            <div style={{ fontSize: 11, color: "#000332", lineHeight: 1.45, fontFamily: "Georgia,serif", fontStyle: "italic", opacity: 0.75 }}>{n.text}</div>
+          </div>
+        ))}
+        {/* SVG arrows */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}>
+          {/* goal → dim 1 */}
+          <path d="M 100 105 Q 80 120 90 130" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
+          {/* dim → thinking notes */}
+          <path d="M 90 175 Q 90 195 95 210" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
+          <path d="M 290 175 Q 290 200 295 220" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
+          <path d="M 490 175 Q 490 198 490 215" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
+          {/* thinking → AI notes */}
+          <path d="M 95 280 Q 80 310 95 330" fill="none" stroke="#6B8AFE" strokeWidth="1" opacity="0.25" />
+          <path d="M 300 290 Q 290 320 300 340" fill="none" stroke="#FF9090" strokeWidth="1" opacity="0.25" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function OutcomePreview() {
+  const { ref, visible } = useInView();
+  const cards = [
+    {
+      icon: "◎", label: "Clarity", color: "#6B8AFE", tag: "YOUR CLARITY BRIEF",
+      sections: [
+        { h: "The real problem", t: "You're not competing on features. You're competing on whether they trust you to understand their world." },
+        { h: "What was clouding it", t: "You kept comparing yourself to tools that solve a different problem." },
+        { h: "The move", t: "Write the landing page for the person who just spent 45 minutes going in circles with AI." },
+      ],
+    },
+    {
+      icon: "✦", label: "Expansion", color: "#FF9090", tag: "YOUR STRONGEST DIRECTIONS",
+      sections: [
+        { h: "Direction 1: The pre-meeting primer", t: "Position it as the 15 minutes before every important meeting." },
+        { h: "Direction 2: The AI prep layer", t: "The step before ChatGPT. People prime their thinking so their prompts are 10x better." },
+        { h: "The one to start with", t: "Direction 2. More specific, easier to demonstrate, and closer to the real value." },
+      ],
+    },
+    {
+      icon: "⟁", label: "Decision", color: "#7ED6A8", tag: "YOUR DECISION BRIEF",
+      sections: [
+        { h: "The decision", t: "Launch with solo founders first, not teams." },
+        { h: "Why this and not that", t: "Solo founders feel the pain more acutely. They don't have a team to bounce ideas off." },
+        { h: "The risk you're accepting", t: "Slower revenue growth. But the product-market signal will be clearer." },
+        { h: "First move by Friday", t: "Write 5 DMs to solo founders you know." },
+      ],
+    },
+    {
+      icon: "◈", label: "Expression", color: "#C4A6FF", tag: "YOUR ARTICULATED POSITION",
+      sections: [
+        { h: "The statement", t: "Every AI tool gives you answers. Primer makes you think first. In 15 minutes, you'll go from scattered thoughts to something you can act on." },
+        { h: "The headline version", t: "Think clearly before you prompt." },
+        { h: "The objection they should expect", t: "'I can just think on my own.' You can. But when's the last time you sat with an idea for 15 minutes without reaching for a tool?" },
+      ],
+    },
+  ];
+  return (
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px" }}>
+      <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia,serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, fontStyle: "italic", color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
+        In 15 minutes, you&rsquo;ll walk out with:
+      </h2>
+      <div style={{ maxWidth: 800, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
+        {cards.map((c, ci) => (
+          <div key={ci} style={{
+            ...fadeUp(visible, 0.1 + ci * 0.1),
+            background: "#fff", borderRadius: 14, padding: "24px 24px",
+            transition: "transform 0.2s, box-shadow 0.2s, opacity 0.5s, transform 0.5s",
+            cursor: "default",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.06)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = visible ? "translateY(0)" : "translateY(16px)"; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 18, color: c.color }}>{c.icon}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#000332" }}>{c.label}</span>
+            </div>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: c.color, marginBottom: 14 }}>{c.tag}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {c.sections.map((s, si) => (
+                <div key={si} style={{ borderLeft: `3px solid ${c.color}`, paddingLeft: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{s.h}</div>
+                  <div style={{ fontSize: 13, color: "rgba(0,3,50,0.55)", fontWeight: 300, lineHeight: 1.55 }}>{s.t}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Homepage() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -230,122 +402,11 @@ export default function Homepage() {
         <div className={styles.cp}></div>
       </div>
 
-      {/* INTRO STRIP */}
-      <div className={styles.introStrip}>
-        <div className={styles.introStripLead}>
-          Every tool wants you to move faster.<br />
-          Primer asks you to think first.
-        </div>
-        <div className={styles.introStripSub}>
-          A 15-minute session that changes how you see the problem.
-        </div>
-      </div>
+      {/* CANVAS VISUAL SECTION */}
+      <CanvasVisual />
 
-      {/* BENEFIT 1 */}
-      <div className={styles.benefit}>
-        <div>
-          <div className={styles.benefitNumber}>01 &mdash; capture</div>
-          <h2 className={styles.benefitTitle}>
-            Get the raw idea<br /><em>out of your head.</em>
-          </h2>
-          <p className={styles.benefitDesc}>
-            Write what you&rsquo;re thinking through. No structure, no editing. Just get the messy thought onto the screen so you can see it.
-          </p>
-          <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>scattered thoughts</span>
-            <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>one clear starting point</span>
-          </div>
-        </div>
-        <div className={styles.benefitAnimWrap}>
-          <svg className={styles.animSvg} viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-            <circle className={styles.animCore} cx="200" cy="160" r="10" fill="#FF9090" />
-            <circle className={styles.animCoreGlow} cx="200" cy="160" r="10" fill="none" stroke="#FF9090" strokeWidth="1" opacity="0.3" />
-            <circle cx="200" cy="160" r="58" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
-            <circle cx="200" cy="160" r="100" fill="none" stroke="rgba(0,3,50,0.05)" strokeWidth="1" strokeDasharray="4 6" />
-            <circle className={`${styles.thought} ${styles.t1}`} cx="60" cy="40" r="5" fill="#FF9090" opacity="0.7" />
-            <circle className={`${styles.thought} ${styles.t2}`} cx="340" cy="60" r="4" fill="#FF9090" opacity="0.55" />
-            <circle className={`${styles.thought} ${styles.t3}`} cx="30" cy="200" r="6" fill="#FFB8B8" opacity="0.6" />
-            <circle className={`${styles.thought} ${styles.t4}`} cx="360" cy="220" r="4" fill="#FF9090" opacity="0.5" />
-            <circle className={`${styles.thought} ${styles.t5}`} cx="180" cy="20" r="5" fill="#FFB8B8" opacity="0.65" />
-            <circle className={`${styles.thought} ${styles.t6}`} cx="310" cy="290" r="4" fill="#FF9090" opacity="0.5" />
-            <circle className={`${styles.thought} ${styles.t7}`} cx="80" cy="280" r="5" fill="#FFB8B8" opacity="0.55" />
-            <line className={`${styles.trail} ${styles.tr1}`} x1="60" y1="40" x2="200" y2="160" stroke="#FF9090" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
-            <line className={`${styles.trail} ${styles.tr2}`} x1="340" y1="60" x2="200" y2="160" stroke="#FF9090" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
-            <line className={`${styles.trail} ${styles.tr3}`} x1="30" y1="200" x2="200" y2="160" stroke="#FFB8B8" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
-            <line className={`${styles.trail} ${styles.tr4}`} x1="360" y1="220" x2="200" y2="160" stroke="#FF9090" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
-            <line className={`${styles.trail} ${styles.tr5}`} x1="180" y1="20" x2="200" y2="160" stroke="#FFB8B8" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
-          </svg>
-        </div>
-      </div>
-
-      {/* BENEFIT 2 */}
-      <div className={styles.benefit}>
-        <div className={styles.benefitTextFlipped}>
-          <div className={styles.benefitNumber}>02 &mdash; guided thinking</div>
-          <h2 className={styles.benefitTitle}>
-            Four questions that<br /><em>take you deeper.</em>
-          </h2>
-          <p className={styles.benefitDesc}>
-            Each question is adapted to your specific situation, grounded in expert thinking frameworks. You&rsquo;ll think things you didn&rsquo;t know you were thinking.
-          </p>
-          <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>surface-level ideas</span>
-            <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>thinking with depth</span>
-          </div>
-        </div>
-        <div className={`${styles.benefitAnimWrap} ${styles.benefitAnimFlipped}`}>
-          <svg className={styles.animSvg} viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-            <line className={`${styles.noiseLine} ${styles.nl1}`} x1="40" y1="80" x2="360" y2="95" stroke="#000332" strokeWidth="1.5" opacity="0.12" />
-            <line className={`${styles.noiseLine} ${styles.nl2}`} x1="40" y1="105" x2="360" y2="88" stroke="#000332" strokeWidth="1" opacity="0.09" />
-            <line className={`${styles.noiseLine} ${styles.nl3}`} x1="40" y1="125" x2="360" y2="140" stroke="#FF9090" strokeWidth="1.5" opacity="0.15" />
-            <line className={`${styles.noiseLine} ${styles.nl4}`} x1="40" y1="148" x2="360" y2="132" stroke="#000332" strokeWidth="1" opacity="0.08" />
-            <line className={`${styles.noiseLine} ${styles.nl5}`} x1="40" y1="168" x2="360" y2="178" stroke="#000332" strokeWidth="1.5" opacity="0.1" />
-            <line className={`${styles.noiseLine} ${styles.nl6}`} x1="40" y1="192" x2="360" y2="180" stroke="#FFB8B8" strokeWidth="1" opacity="0.12" />
-            <line className={`${styles.noiseLine} ${styles.nl7}`} x1="40" y1="212" x2="360" y2="225" stroke="#000332" strokeWidth="1.5" opacity="0.08" />
-            <line className={`${styles.noiseLine} ${styles.nl8}`} x1="40" y1="232" x2="360" y2="218" stroke="#000332" strokeWidth="1" opacity="0.07" />
-            <line className={styles.calmLine} x1="40" y1="160" x2="360" y2="160" stroke="#FF9090" strokeWidth="2.5" opacity="0" strokeLinecap="round" />
-            <circle className={styles.calmDot} cx="360" cy="160" r="5" fill="#FF9090" opacity="0" />
-          </svg>
-        </div>
-      </div>
-
-      {/* BENEFIT 3 */}
-      <div className={styles.benefit}>
-        <div>
-          <div className={styles.benefitNumber}>03 &mdash; the canvas</div>
-          <h2 className={styles.benefitTitle}>
-            See your thinking.<br /><em>Move it around. Expand it.</em>
-          </h2>
-          <p className={styles.benefitDesc}>
-            Your ideas appear as moveable notes on a spatial canvas. Connect them, cluster them, then ask AI to clarify, expand, decide, or express your thinking further.
-          </p>
-          <div className={styles.benefitShift}>
-            <span className={styles.shiftFrom}>ideas stuck in your head</span>
-            <span className={styles.shiftArrow}>&rarr;</span>
-            <span className={styles.shiftTo}>a visual map you can use</span>
-          </div>
-        </div>
-        <div className={styles.benefitAnimWrap}>
-          <svg className={styles.animSvg} viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-            <path
-              className={styles.formingPath}
-              d="M 60 160 C 90 80, 150 60, 200 100 C 250 140, 280 200, 320 180 C 350 165, 360 155, 370 150"
-              fill="none" stroke="#FF9090" strokeWidth="2.5" strokeLinecap="round"
-              strokeDasharray="400" strokeDashoffset="400"
-            />
-            <circle className={styles.pathDot} cx="60" cy="160" r="6" fill="#FF9090" opacity="0.9" />
-            <path
-              d="M 60 160 C 90 80, 150 60, 200 100 C 250 140, 280 200, 320 180 C 350 165, 360 155, 370 150"
-              fill="none" stroke="rgba(0,3,50,0.06)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 6"
-            />
-            <circle cx="200" cy="100" r="3" fill="#FFB8B8" opacity="0" className={`${styles.formDot} ${styles.fd1}`} />
-            <circle cx="260" cy="162" r="3" fill="#FFB8B8" opacity="0" className={`${styles.formDot} ${styles.fd2}`} />
-            <circle cx="320" cy="180" r="3" fill="#FF9090" opacity="0" className={`${styles.formDot} ${styles.fd3}`} />
-          </svg>
-        </div>
-      </div>
+      {/* OUTCOME PREVIEW SECTION */}
+      <OutcomePreview />
 
       {/* THINKING MODES */}
       <div className={styles.modesSection}>
