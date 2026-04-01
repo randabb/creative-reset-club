@@ -26,6 +26,7 @@ interface Note {
   dimLabel?: string;
   dimDesc?: string;
   aiTitle?: string;
+  discipline?: "design" | "systems" | "strategic" | "critical" | "creative";
 }
 
 interface ResponseFlow {
@@ -51,6 +52,15 @@ interface Connection {
 }
 
 interface QA { question: string; answer: string; }
+
+const DISC_COLORS: Record<string, { bg: string; border: string; label: string; desc: string }> = {
+  design:    { bg: "rgba(255,144,144,0.06)", border: "rgba(255,144,144,0.3)", label: "Design thinking", desc: "seeing it through their eyes" },
+  systems:   { bg: "rgba(107,138,254,0.06)", border: "rgba(107,138,254,0.3)", label: "Systems thinking", desc: "how the pieces connect" },
+  strategic: { bg: "rgba(126,214,168,0.06)", border: "rgba(126,214,168,0.3)", label: "Strategic thinking", desc: "where to focus and why" },
+  critical:  { bg: "rgba(196,166,255,0.06)", border: "rgba(196,166,255,0.3)", label: "Critical thinking", desc: "testing what you believe" },
+  creative:  { bg: "rgba(232,201,122,0.06)", border: "rgba(232,201,122,0.3)", label: "Creative thinking", desc: "breaking the pattern" },
+};
+const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE", strategic: "#7ED6A8", critical: "#C4A6FF", creative: "#E8C97A" };
 
 function uid() { return crypto.randomUUID(); }
 
@@ -189,7 +199,7 @@ function CanvasInner() {
   const [responseText, setResponseText] = useState("");
   const [respCardPos, setRespCardPos] = useState<{ x: number; y: number } | null>(null);
   const [respDragOff, setRespDragOff] = useState<{ x: number; y: number } | null>(null);
-  const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string } | null>(null);
+  const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string; thinking_approaches?: string } | null>(null);
   const [synthEditing, setSynthEditing] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
@@ -215,6 +225,7 @@ function CanvasInner() {
   const [exampleNoteId, setExampleNoteId] = useState<string | null>(null);
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
@@ -641,7 +652,7 @@ function CanvasInner() {
       const data = await res.json();
 
       // Parse the single instruction (API now returns { instruction } not { instructions })
-      const raw = data.instruction || (data.instructions && data.instructions[0]) || { title: "Your thinking", text: "Write what comes to mind." };
+      const raw = data.instruction || (data.instructions && data.instructions[0]) || { title: "Your thinking", text: "Write what comes to mind.", discipline: "strategic" };
       const cleanTitle = (t: string) => {
         let s = t.includes(":") ? t.split(":")[0].trim() : t;
         const words = s.split(/\s+/);
@@ -650,6 +661,7 @@ function CanvasInner() {
       };
       const title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
       const text = (raw.text || "").replace(/[`*_]/g, "");
+      const disc = (["design","systems","strategic","critical","creative"].includes(raw.discipline) ? raw.discipline : "strategic") as Note["discipline"];
 
       // Place directly below the source note (vertical chain, generous offset)
       const startY = selNote.y + charOffset(selNote.text);
@@ -657,7 +669,7 @@ function CanvasInner() {
       const instId = uid();
       const instNote: Note = {
         id: instId, x: selNote.x, y: startY,
-        text, source: "ai", action, aiInstruction: true, aiTitle: title,
+        text, source: "ai", action, aiInstruction: true, aiTitle: title, discipline: disc,
       };
       setNotes(ns => [...ns, instNote]);
       setConnections(cs => [...cs, { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color }]);
@@ -744,7 +756,7 @@ function CanvasInner() {
     const respId = uid();
     const respNote: Note = {
       id: respId, x: instNote.x, y: instNote.y + charOffset(instNote.text),
-      text: responseText.trim(), source: "user",
+      text: responseText.trim(), source: "user", discipline: instNote.discipline,
     };
     setNotes(ns => [...ns, respNote]);
     setConnections(cs => [...cs, {
@@ -1024,6 +1036,14 @@ function CanvasInner() {
               <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", fontStyle: "italic", marginTop: 12, fontWeight: 300 }}>
                 This is your thinking, sharpened. Edit anything, then take it with you.
               </p>
+              {synthesis.thinking_approaches && (
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 14, paddingTop: 12 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 6 }}>HOW YOU THOUGHT THROUGH THIS</div>
+                  <p style={{ fontSize: 13, color: "#000332", fontStyle: "italic", lineHeight: 1.55, fontWeight: 300 }}>
+                    {synthesis.thinking_approaches}
+                  </p>
+                </div>
+              )}
             </div>
           )}
           <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
@@ -1049,6 +1069,31 @@ function CanvasInner() {
           <span style={{ fontSize: 12, color: "rgba(0,3,50,0.5)" }}>Generating thinking branches...</span>
         </div>
       )}
+
+      {/* DISCIPLINE LEGEND */}
+      <div style={{ position: "fixed", bottom: 90, left: 20, zIndex: 25 }}>
+        {showLegend ? (
+          <div style={{ background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", width: 220, animation: "noteIn 0.2s ease-out forwards" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#000332" }}>How you&rsquo;re thinking</span>
+              <button onClick={() => setShowLegend(false)} style={{ background: "none", border: "none", fontSize: 14, color: "rgba(0,3,50,0.3)", cursor: "pointer", lineHeight: 1 }}>×</button>
+            </div>
+            {Object.entries(DISC_COLORS).map(([key, val]) => (
+              <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: DISC_DOT[key], flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#000332" }}>{val.label}</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>{val.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <button onClick={() => setShowLegend(true)} style={{ background: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", fontSize: 12, color: "rgba(0,3,50,0.4)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 14 }}>◇</span> Legend
+          </button>
+        )}
+      </div>
 
       {/* SYMBOL HINT */}
       {showSymbolHint && (
@@ -1308,8 +1353,8 @@ function CanvasInner() {
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
                   borderRadius: 10,
-                  background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
-                  border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
+                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
+                  border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].border : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",

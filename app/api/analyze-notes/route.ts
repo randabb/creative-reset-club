@@ -5,16 +5,25 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are analyzing a canvas of thinking notes. For each note, determine which thinking action would help it most right now:
+const SYSTEM = `You are analyzing a canvas of thinking notes. For each note, determine the best action AND which thinking discipline would help most:
+
+Actions:
 - clarify: the note is vague, messy, has multiple ideas tangled together, or has untested assumptions
 - expand: the note is clear but thin, obvious, or has unexplored angles
 - decide: the note contains a choice, tradeoff, or unresolved tension
 - express: the note has a good idea but it's poorly articulated or unstructured
 
-Analyze EVERY note provided. Each note needs exactly one suggestion. Assign the action that would help it most right now. Every note in the input must appear in the output.
+Disciplines:
+- design: empathy, reframing, user perspective
+- systems: connections, feedback loops, dependencies
+- strategic: tradeoffs, positioning, first principles
+- critical: testing assumptions, evidence, logic
+- creative: new combinations, breaking patterns, unexpected angles
 
-Respond with ONLY a JSON array, one entry per note:
-[{"id":"note-id","action":"clarify"},{"id":"note-id","action":"expand"}]`;
+Analyze EVERY note provided. Each note needs exactly one action and one discipline. Every note in the input must appear in the output.
+
+Respond with ONLY a JSON array:
+[{"id":"note-id","action":"clarify","discipline":"systems"}]`;
 
 interface NoteInput {
   id: string;
@@ -50,15 +59,19 @@ export async function POST(req: Request) {
     const text =
       message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
 
-    // Extract JSON array from response
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return NextResponse.json({ suggestions: [] });
 
     const parsed = JSON.parse(match[0]);
-    const valid = ["clarify", "expand", "decide", "express"];
-    const suggestions = parsed.filter(
-      (s: { id: string; action: string }) => s.id && valid.includes(s.action)
-    );
+    const validActions = ["clarify", "expand", "decide", "express"];
+    const validDisc = ["design", "systems", "strategic", "critical", "creative"];
+    const suggestions = parsed
+      .filter((s: { id: string; action: string }) => s.id && validActions.includes(s.action))
+      .map((s: { id: string; action: string; discipline?: string }) => ({
+        id: s.id,
+        action: s.action,
+        discipline: validDisc.includes(s.discipline || "") ? s.discipline : "strategic",
+      }));
 
     return NextResponse.json({ suggestions });
   } catch (err) {

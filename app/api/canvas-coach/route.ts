@@ -13,11 +13,11 @@ const ACTION_CONTEXT: Record<string, string> = {
   express: "Help them articulate clearly. Draw invisibly from Minto Pyramid, SCQA, Steelmanning.",
 };
 
-const FALLBACKS: Record<string, { title: string; text: string }> = {
-  clarify: { title: "The essential sentence", text: "Write the single most important sentence from this note." },
-  expand: { title: "The opposite", text: "Write the opposite of this — what would that look like?" },
-  decide: { title: "The failure scenario", text: "Write what happens if you choose this and it fails." },
-  express: { title: "One repeatable sentence", text: "Write this as one sentence someone could repeat back to you." },
+const FALLBACKS: Record<string, { discipline: string; title: string; text: string }> = {
+  clarify: { discipline: "critical", title: "The essential sentence", text: "Write the single most important sentence from this note." },
+  expand: { discipline: "creative", title: "The opposite", text: "Write the opposite of this — what would that look like?" },
+  decide: { discipline: "strategic", title: "The failure scenario", text: "Write what happens if you choose this and it fails." },
+  express: { discipline: "design", title: "One repeatable sentence", text: "Write this as one sentence someone could repeat back to you." },
 };
 
 const SYSTEM = `You are the AI thinking coach inside Primer's canvas. When the user selects a note and an action, generate ONE specific thinking instruction.
@@ -61,8 +61,15 @@ TITLE RULES:
 - BAD titles: "SPECIFIC FRUSTRATION MOMENTS", "YOUR THINKING DEPTH GAP", "CONTEXT CONTAMINATION ANALYSIS"
 - GOOD titles: "The frustration", "When it breaks", "Their first reaction", "The real competitor", "Why they'd pay"
 
+Also classify which thinking discipline this instruction draws from:
+- design: empathy, reframing, user perspective, walking in someone else's shoes
+- systems: connections, feedback loops, dependencies, seeing the whole picture
+- strategic: tradeoffs, positioning, first principles, where to focus and why
+- critical: testing assumptions, evidence, logic, opposing arguments
+- creative: new combinations, breaking patterns, divergent ideas, unexpected angles
+
 FORMAT — respond with ONLY one line:
-TITLE: Your actual title here | INSTRUCTION: Your actual instruction here
+DISCIPLINE: design|systems|strategic|critical|creative | TITLE: your title | INSTRUCTION: your instruction
 Do NOT include placeholder text. Write real, specific content.`;
 
 export async function POST(req: Request) {
@@ -107,27 +114,36 @@ export async function POST(req: Request) {
       return s;
     };
 
-    // Parse the single line
+    // Parse: DISCIPLINE: x | TITLE: y | INSTRUCTION: z
     const clean = line.replace(/[`*_]/g, "").trim();
-    let instruction: { title: string; text: string };
+    const validDisc = ["design", "systems", "strategic", "critical", "creative"];
+    let discipline = "strategic";
+    let title = "";
+    let instText = "";
 
-    if (clean.includes(" | ")) {
-      const parts = clean.split(" | ");
-      const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-      const inst = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
-      instruction = title && inst ? { title: cleanTitle(title), text: inst } : { title: cleanTitle(clean.slice(0, 30)), text: clean };
-    } else if (clean.includes("|")) {
-      const parts = clean.split("|");
-      const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-      const inst = parts.slice(1).join("|").trim();
-      instruction = title && inst ? { title: cleanTitle(title), text: inst } : { title: cleanTitle(clean.slice(0, 30)), text: clean };
-    } else {
-      const stripped = clean.replace(/^TITLE:\s*/i, "").replace(/^INSTRUCTION:\s*/i, "");
+    const parts = clean.split("|").map(p => p.trim());
+    for (const part of parts) {
+      if (/^DISCIPLINE:\s*/i.test(part)) {
+        const d = part.replace(/^DISCIPLINE:\s*/i, "").trim().toLowerCase();
+        if (validDisc.includes(d)) discipline = d;
+      } else if (/^TITLE:\s*/i.test(part)) {
+        title = cleanTitle(part.replace(/^TITLE:\s*/i, "").trim());
+      } else if (/^INSTRUCTION:\s*/i.test(part)) {
+        instText = part.replace(/^INSTRUCTION:\s*/i, "").trim();
+      } else if (!title) {
+        title = cleanTitle(part);
+      } else if (!instText) {
+        instText = part;
+      }
+    }
+    if (!title || !instText) {
+      const stripped = clean.replace(/^(DISCIPLINE|TITLE|INSTRUCTION):\s*\S+\s*\|?\s*/gi, "");
       const words = stripped.split(/\s+/);
-      instruction = { title: words.slice(0, 4).join(" "), text: stripped };
+      if (!title) title = words.slice(0, 4).join(" ");
+      if (!instText) instText = stripped;
     }
 
-    return NextResponse.json({ instruction });
+    return NextResponse.json({ instruction: { discipline, title, text: instText } });
   } catch (err) {
     console.error("[canvas-coach]", err);
     const body = await req.clone().json().catch(() => ({}));

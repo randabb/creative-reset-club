@@ -27,6 +27,9 @@ If the mode is DECISION, deliver a decision brief:
 If the mode is EXPRESSION, deliver a draft:
 {"deliverable_label":"Your articulated position","sections":[{"heading":"The statement","content":"A tight clear paragraph they could paste into a message or pitch. Written in their voice. 3-5 sentences max."},{"heading":"The headline version","content":"One sentence. If they only had 10 seconds."},{"heading":"The objection they should expect","content":"The strongest pushback and how their thinking already addresses it."}]}
 
+Also identify which thinking disciplines were used during this session based on the types of notes and instructions on the canvas. Add to your JSON response:
+"thinking_approaches": "This session drew from [list disciplines: design thinking, systems thinking, strategic thinking, critical thinking, creative thinking — only include ones actually used] to help you [what it achieved in one phrase]."
+
 CRITICAL: Every claim in the deliverable must trace back to something the user wrote. You are organizing and sharpening THEIR thinking. You are not generating new ideas.`;
 
 export async function POST(req: Request) {
