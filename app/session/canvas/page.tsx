@@ -57,14 +57,21 @@ function uid() { return crypto.randomUUID(); }
 function CanvasInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const capture = sp.get("capture") || "";
-  const mode = sp.get("mode") || "clarity";
+  const captureParam = sp.get("capture") || "";
+  const modeParam = sp.get("mode") || "clarity";
   const qasRaw = sp.get("qas") || "[]";
   const dimsRaw = sp.get("dimensions") || "[]";
-  let qas: QA[] = [];
-  try { qas = JSON.parse(qasRaw); } catch { qas = []; }
-  let dimensions: { label: string; description: string }[] = [];
-  try { dimensions = JSON.parse(dimsRaw); } catch { dimensions = []; }
+  let qasParam: QA[] = [];
+  try { qasParam = JSON.parse(qasRaw); } catch { qasParam = []; }
+  let dimsParam: { label: string; description: string }[] = [];
+  try { dimsParam = JSON.parse(dimsRaw); } catch { dimsParam = []; }
+
+  // Mutable state — populated from URL params or loaded session
+  const [capture, setCapture] = useState(captureParam);
+  const [mode, setMode] = useState(modeParam);
+  const [qas, setQas] = useState<QA[]>(qasParam);
+  const [dimensions, setDimensions] = useState(dimsParam);
+  const [canvasReady, setCanvasReady] = useState(!sp.get("session_id")); // ready immediately for new sessions
 
   // Layout positions per mode: [goal, q1, q2, q3, q4]
   const POSITIONS: Record<string, { x: number; y: number }[]> = {
@@ -195,18 +202,31 @@ function CanvasInner() {
 
       // Load existing session
       if (sessionId) {
+        console.log("[canvas] Loading session:", sessionId);
         try {
           const res = await fetch(`/api/sessions?id=${sessionId}`);
           const data = await res.json();
-          if (data.canvas_state?.notes) setNotes(data.canvas_state.notes);
-          if (data.canvas_state?.connections) setConnections(data.canvas_state.connections);
+          console.log("[canvas] Session data:", data);
+          if (data.goal) setCapture(data.goal);
+          if (data.mode) setMode(data.mode);
+          if (data.qas) setQas(data.qas);
+          if (data.dimensions) setDimensions(data.dimensions);
+          if (data.canvas_state?.notes?.length) {
+            setNotes(data.canvas_state.notes);
+          }
+          if (data.canvas_state?.connections?.length) {
+            setConnections(data.canvas_state.connections);
+          }
           if (data.synthesis) setSynthesis(data.synthesis);
-        } catch { /* use initial state */ }
+        } catch (err) {
+          console.error("[canvas] Load error:", err);
+        }
+        setCanvasReady(true);
         return;
       }
 
       // No capture and no session_id — redirect
-      if (!capture) { router.push("/session/new"); return; }
+      if (!captureParam) { router.push("/session/new"); return; }
 
       // Create new session
       if (uid) {
@@ -643,7 +663,15 @@ function CanvasInner() {
     return null;
   };
 
-  if (!capture) return null;
+  // Show loading state while session loads, or redirect if truly no data
+  if (!canvasReady) {
+    return (
+      <div style={{ height: "100vh", background: "#F5F2ED", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontFamily: "'Codec Pro',sans-serif", color: "rgba(0,3,50,0.4)", fontSize: 14 }}>Loading canvas...</p>
+      </div>
+    );
+  }
+  if (!capture && !sp.get("session_id")) return null;
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Codec Pro',sans-serif", position: "relative" }}>
