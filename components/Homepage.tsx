@@ -104,6 +104,103 @@ function CanvasVisual() {
   );
 }
 
+function BenefitSteps() {
+  const { ref, visible } = useInView();
+  return (
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "40px 24px" }}>
+      <div className="benefit-grid" style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
+        {/* 01 — Capture */}
+        <div style={{ ...fadeUp(visible, 0), background: "#fff", borderRadius: 14, padding: 28, border: "1px solid rgba(0,3,50,0.04)", transition: "transform 0.2s, box-shadow 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.05)"; }} onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
+          <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <svg viewBox="0 0 400 320" width="160" height="100" xmlns="http://www.w3.org/2000/svg">
+              <circle className={styles.animCore} cx="200" cy="160" r="10" fill="#FF9090" />
+              <circle className={styles.animCoreGlow} cx="200" cy="160" r="10" fill="none" stroke="#FF9090" strokeWidth="1" opacity="0.3" />
+              <circle cx="200" cy="160" r="58" fill="none" stroke="rgba(0,3,50,0.08)" strokeWidth="1" />
+              <circle cx="200" cy="160" r="100" fill="none" stroke="rgba(0,3,50,0.05)" strokeWidth="1" strokeDasharray="4 6" />
+              <circle className={`${styles.thought} ${styles.t1}`} cx="60" cy="40" r="5" fill="#FF9090" opacity="0.7" />
+              <circle className={`${styles.thought} ${styles.t2}`} cx="340" cy="60" r="4" fill="#FF9090" opacity="0.55" />
+              <circle className={`${styles.thought} ${styles.t3}`} cx="30" cy="200" r="6" fill="#FFB8B8" opacity="0.6" />
+              <circle className={`${styles.thought} ${styles.t4}`} cx="360" cy="220" r="4" fill="#FF9090" opacity="0.5" />
+              <circle className={`${styles.thought} ${styles.t5}`} cx="180" cy="20" r="5" fill="#FFB8B8" opacity="0.65" />
+              <line className={`${styles.trail} ${styles.tr1}`} x1="60" y1="40" x2="200" y2="160" stroke="#FF9090" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
+              <line className={`${styles.trail} ${styles.tr2}`} x1="340" y1="60" x2="200" y2="160" stroke="#FF9090" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
+              <line className={`${styles.trail} ${styles.tr3}`} x1="30" y1="200" x2="200" y2="160" stroke="#FFB8B8" strokeWidth="1" opacity="0" strokeDasharray="3 5" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#FF9090", marginBottom: 6 }}>01</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", marginBottom: 8, fontFamily: "'Codec Pro',sans-serif" }}>Capture</div>
+          <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", fontWeight: 300, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Codec Pro',sans-serif" }}>
+            Write what&rsquo;s on your mind. No structure, no editing. Just get the messy thought out so you can see it.
+          </p>
+          <div style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: "rgba(0,3,50,0.35)" }}>scattered thoughts</span>
+            <span style={{ color: "#FF9090", fontWeight: 700 }}>&rarr;</span>
+            <span style={{ color: "#000332", fontWeight: 600 }}>one clear starting point</span>
+          </div>
+        </div>
+
+        {/* 02 — Think deeper */}
+        <div style={{ ...fadeUp(visible, 0.1), background: "#fff", borderRadius: 14, padding: 28, border: "1px solid rgba(0,3,50,0.04)", transition: "transform 0.2s, box-shadow 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.05)"; }} onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
+          <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <svg viewBox="0 0 400 320" width="160" height="100" xmlns="http://www.w3.org/2000/svg">
+              <line className={`${styles.noiseLine} ${styles.nl1}`} x1="40" y1="80" x2="360" y2="95" stroke="#000332" strokeWidth="1.5" opacity="0.12" />
+              <line className={`${styles.noiseLine} ${styles.nl2}`} x1="40" y1="105" x2="360" y2="88" stroke="#000332" strokeWidth="1" opacity="0.09" />
+              <line className={`${styles.noiseLine} ${styles.nl3}`} x1="40" y1="125" x2="360" y2="140" stroke="#FF9090" strokeWidth="1.5" opacity="0.15" />
+              <line className={`${styles.noiseLine} ${styles.nl4}`} x1="40" y1="148" x2="360" y2="132" stroke="#000332" strokeWidth="1" opacity="0.08" />
+              <line className={`${styles.noiseLine} ${styles.nl5}`} x1="40" y1="168" x2="360" y2="178" stroke="#000332" strokeWidth="1.5" opacity="0.1" />
+              <line className={`${styles.noiseLine} ${styles.nl6}`} x1="40" y1="192" x2="360" y2="180" stroke="#FFB8B8" strokeWidth="1" opacity="0.12" />
+              <line className={`${styles.noiseLine} ${styles.nl7}`} x1="40" y1="212" x2="360" y2="225" stroke="#000332" strokeWidth="1.5" opacity="0.08" />
+              <line className={`${styles.noiseLine} ${styles.nl8}`} x1="40" y1="232" x2="360" y2="218" stroke="#000332" strokeWidth="1" opacity="0.07" />
+              <line className={styles.calmLine} x1="40" y1="160" x2="360" y2="160" stroke="#FF9090" strokeWidth="2.5" opacity="0" strokeLinecap="round" />
+              <circle className={styles.calmDot} cx="360" cy="160" r="5" fill="#FF9090" opacity="0" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#FF9090", marginBottom: 6 }}>02</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", marginBottom: 8, fontFamily: "'Codec Pro',sans-serif" }}>Think deeper</div>
+          <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", fontWeight: 300, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Codec Pro',sans-serif" }}>
+            AI asks you questions grounded in expert thinking frameworks. Each one builds on your last answer, taking you one layer deeper.
+          </p>
+          <div style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: "rgba(0,3,50,0.35)" }}>surface-level ideas</span>
+            <span style={{ color: "#FF9090", fontWeight: 700 }}>&rarr;</span>
+            <span style={{ color: "#000332", fontWeight: 600 }}>thinking with real depth</span>
+          </div>
+        </div>
+
+        {/* 03 — Develop */}
+        <div style={{ ...fadeUp(visible, 0.2), background: "#fff", borderRadius: 14, padding: 28, border: "1px solid rgba(0,3,50,0.04)", transition: "transform 0.2s, box-shadow 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.05)"; }} onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
+          <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <svg viewBox="0 0 400 320" width="160" height="100" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 60 160 C 90 80, 150 60, 200 100 C 250 140, 280 200, 320 180 C 350 165, 360 155, 370 150" fill="none" stroke="rgba(0,3,50,0.06)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 6" />
+              <path className={styles.formingPath} d="M 60 160 C 90 80, 150 60, 200 100 C 250 140, 280 200, 320 180 C 350 165, 360 155, 370 150" fill="none" stroke="#FF9090" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="400" strokeDashoffset="400" />
+              <circle className={styles.pathDot} cx="60" cy="160" r="6" fill="#FF9090" opacity="0.9" />
+              <circle cx="200" cy="100" r="3" fill="#FFB8B8" opacity="0" className={`${styles.formDot} ${styles.fd1}`} />
+              <circle cx="260" cy="162" r="3" fill="#FFB8B8" opacity="0" className={`${styles.formDot} ${styles.fd2}`} />
+              <circle cx="320" cy="180" r="3" fill="#FF9090" opacity="0" className={`${styles.formDot} ${styles.fd3}`} />
+            </svg>
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#FF9090", marginBottom: 6 }}>03</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", marginBottom: 8, fontFamily: "'Codec Pro',sans-serif" }}>Develop</div>
+          <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", fontWeight: 300, lineHeight: 1.6, marginBottom: 16, fontFamily: "'Codec Pro',sans-serif" }}>
+            Your ideas appear on a spatial canvas. Connect them, then use AI to clarify, expand, decide, or express your thinking further.
+          </p>
+          <div style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: "rgba(0,3,50,0.35)" }}>ideas in your head</span>
+            <span style={{ color: "#FF9090", fontWeight: 700 }}>&rarr;</span>
+            <span style={{ color: "#000332", fontWeight: 600 }}>a visual map you can use</span>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .benefit-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function OutcomePreview() {
   const { ref, visible } = useInView();
   const cards = [
@@ -393,6 +490,9 @@ export default function Homepage() {
 
       {/* CANVAS VISUAL SECTION */}
       <CanvasVisual />
+
+      {/* BENEFIT STEPS */}
+      <BenefitSteps />
 
       {/* OUTCOME PREVIEW SECTION */}
       <OutcomePreview />
