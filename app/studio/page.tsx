@@ -63,12 +63,11 @@ export default function Studio() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username")
+        .select("name")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      const meta = (user as unknown as { user_metadata?: Record<string, string> }).user_metadata;
-      const name = profile?.username ?? meta?.username ?? user.email?.split("@")[0] ?? "";
+      const name = profile?.name || "";
       setFirstName(name.split(" ")[0]);
 
       // Fetch canvases via API (handles note_count extraction)
@@ -156,7 +155,7 @@ export default function Studio() {
             color: "#000332", fontStyle: "italic", letterSpacing: "-0.02em",
             lineHeight: 1.2, marginBottom: 8,
           }}>
-            Good {getGreeting()}, {firstName || "there"}.
+            Good {getGreeting()}{firstName ? `, ${firstName}` : ""}.
           </h1>
           <p style={{ fontSize: 15, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>
             Your studio has {canvases.length} canvas{canvases.length !== 1 ? "es" : ""} and {arcs.length} active arc{arcs.length !== 1 ? "s" : ""}.
