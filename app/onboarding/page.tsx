@@ -28,14 +28,31 @@ export default function Onboarding() {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          name: name.trim() || null,
-          onboarding_completed: true,
-        }, { onConflict: "id" });
+      if (!user) { router.push("/auth"); return; }
+
+      const trimmed = name.trim() || null;
+
+      // Try upsert first (works if row exists or if insert is allowed)
+      const { error: upsertErr } = await supabase.from("profiles").upsert({
+        id: user.id,
+        name: trimmed,
+        onboarding_completed: true,
+      }, { onConflict: "id" });
+
+      if (upsertErr) {
+        console.error("[onboarding] upsert failed:", upsertErr);
+        // Fallback: try update in case upsert is blocked by RLS
+        const { error: updateErr } = await supabase
+          .from("profiles")
+          .update({ name: trimmed, onboarding_completed: true })
+          .eq("id", user.id);
+        if (updateErr) {
+          console.error("[onboarding] update also failed:", updateErr);
+        }
       }
-    } catch { /* continue */ }
+    } catch (err) {
+      console.error("[onboarding] unexpected error:", err);
+    }
     router.push("/studio");
   };
 

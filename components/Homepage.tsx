@@ -84,17 +84,13 @@ export default function Homepage() {
             before you prompt.
           </h1>
           <p className={styles.heroSub}>
-            A guided thinking workspace for knowledge workers who want clarity, originality, and better decisions. Your ideas, developed by you, expanded by AI.
+            Expert thinking frameworks, adapted to what you&rsquo;re working through. Your ideas, developed on a canvas you can actually use.
           </p>
           <Link href="/auth" className={styles.heroCta}>
             Start your first canvas
             <span className={styles.ctaDot}>&rarr;</span>
           </Link>
           <div className={styles.heroProofRow}>
-            <span>3 full sessions free</span>
-            <span className={styles.dot}>&middot;</span>
-            <span>No credit card</span>
-            <span className={styles.dot}>&middot;</span>
             <span>For marketers, founders, PMs, engineers, strategists, and creators</span>
           </div>
         </div>
@@ -385,60 +381,10 @@ export default function Homepage() {
         </p>
       </div>
 
-      {/* PRICING */}
-      <div className={styles.pricingSection}>
-        <h2 className={styles.pricingHeading}>Pricing</h2>
-        <p className={styles.pricingSub}>Try it. If it makes you think better, keep going.</p>
-        <div className={styles.pricingGrid}>
-          {/* Free */}
-          <div className={styles.priceCard}>
-            <div className={styles.priceLabel}>Free</div>
-            <div className={styles.priceAmount}>$0</div>
-            <div className={styles.pricePeriod}>&nbsp;</div>
-            <ul className={styles.priceFeatures}>
-              <li className={styles.priceFeature}>3 full sessions</li>
-              <li className={styles.priceFeature}>All four thinking modes</li>
-              <li className={styles.priceFeature}>Canvas with AI thought partner</li>
-              <li className={styles.priceFeature}>Voice reflection</li>
-              <li className={styles.priceFeature}>Complete experience, nothing held back</li>
-            </ul>
-            <Link href="/auth" className={styles.priceBtnOutline}>Try 3 sessions</Link>
-          </div>
-          {/* Starter */}
-          <div className={`${styles.priceCard} ${styles.priceCardPrimary}`}>
-            <div className={`${styles.priceLabel} ${styles.priceLabelPrimary}`}>Starter</div>
-            <div className={`${styles.priceAmount} ${styles.priceAmountPrimary}`}>$15</div>
-            <div className={`${styles.pricePeriod} ${styles.pricePeriodPrimary}`}>/month</div>
-            <ul className={styles.priceFeatures}>
-              <li className={`${styles.priceFeature} ${styles.priceFeaturePrimary}`}>Unlimited sessions</li>
-              <li className={`${styles.priceFeature} ${styles.priceFeaturePrimary}`}>One active thinking arc</li>
-              <li className={`${styles.priceFeature} ${styles.priceFeaturePrimary}`}>Full session history</li>
-              <li className={`${styles.priceFeature} ${styles.priceFeaturePrimary}`}>Canvas export</li>
-              <li className={`${styles.priceFeature} ${styles.priceFeaturePrimary}`}>$120/year (save $60)</li>
-            </ul>
-            <button className={styles.priceBtnFilled}>Start thinking</button>
-          </div>
-          {/* Pro */}
-          <div className={styles.priceCard}>
-            <div className={styles.priceLabel}>Pro</div>
-            <div className={styles.priceAmount}>$25</div>
-            <div className={styles.pricePeriod}>/month</div>
-            <ul className={styles.priceFeatures}>
-              <li className={styles.priceFeature}>Everything in Starter</li>
-              <li className={styles.priceFeature}>Multiple simultaneous arcs</li>
-              <li className={styles.priceFeature}>Cross-arc pattern insights</li>
-              <li className={styles.priceFeature}>Priority AI</li>
-              <li className={styles.priceFeature}>$200/year (save $100)</li>
-            </ul>
-            <button className={styles.priceBtnOutline}>Get started</button>
-          </div>
-        </div>
-      </div>
-
       {/* BOTTOM CTA */}
       <div className={styles.bottomCta}>
         <p className={styles.bottomCtaText}>
-          Your first three sessions are free. Just you, your ideas, and a space to develop them.
+          Your ideas, developed by you, expanded by AI.
         </p>
         <Link href="/auth" className={styles.bottomBtn}>
           Open your studio

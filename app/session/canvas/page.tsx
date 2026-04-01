@@ -190,6 +190,8 @@ function CanvasInner() {
   const dirtyRef = useRef(false);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
+  const panXRef = useRef(panX);
+  const panYRef = useRef(panY);
   const vpRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -313,7 +315,11 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  // Pan
+  // Keep pan refs in sync with state (so native listeners always have current values)
+  useEffect(() => { panXRef.current = panX; }, [panX]);
+  useEffect(() => { panYRef.current = panY; }, [panY]);
+
+  // Pan — registered once (refs keep handlers current, no re-registration needed)
   useEffect(() => {
     const el = vpRef.current;
     if (!el) return;
@@ -321,13 +327,17 @@ function CanvasInner() {
       const t = e.target as HTMLElement;
       if (t.closest(".cn")) return;
       isPanning.current = true;
-      panStart.current = { x: e.clientX - panX, y: e.clientY - panY };
+      panStart.current = { x: e.clientX - panXRef.current, y: e.clientY - panYRef.current };
       el.style.cursor = "grabbing";
     };
     const move = (e: MouseEvent) => {
       if (!isPanning.current) return;
-      setPanX(e.clientX - panStart.current.x);
-      setPanY(e.clientY - panStart.current.y);
+      const nx = e.clientX - panStart.current.x;
+      const ny = e.clientY - panStart.current.y;
+      panXRef.current = nx;
+      panYRef.current = ny;
+      setPanX(nx);
+      setPanY(ny);
     };
     const up = () => { isPanning.current = false; el.style.cursor = "grab"; };
     el.addEventListener("mousedown", down);
@@ -335,7 +345,8 @@ function CanvasInner() {
     el.addEventListener("mouseup", up);
     el.addEventListener("mouseleave", up);
     return () => { el.removeEventListener("mousedown", down); el.removeEventListener("mousemove", move); el.removeEventListener("mouseup", up); el.removeEventListener("mouseleave", up); };
-  }, [panX, panY]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Zoom
   // Prevent scroll-to-zoom (scroll does nothing on canvas)
@@ -946,7 +957,7 @@ function CanvasInner() {
           }}
         >
           {/* ARROWS SVG */}
-          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }}>
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}>
             <defs><marker id="ah" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="rgba(0,3,50,0.35)" /></marker></defs>
             {connections.map(c => {
               const ap = arrowPath(c.from, c.to);
@@ -993,7 +1004,7 @@ function CanvasInner() {
                     borderRadius: 10,
                     background: "#000332",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    zIndex: 2,
+                    zIndex: 10,
                     cursor: "default",
                   }}
                 >
@@ -1025,7 +1036,7 @@ function CanvasInner() {
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
-                  zIndex: dragId === n.id ? 20 : isSel ? 10 : 1,
+                  zIndex: dragId === n.id ? 20 : isSel ? 15 : 10,
                   transition: isAi ? "none" : "box-shadow 0.15s, opacity 0.3s",
                   animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3"
                     : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
