@@ -111,13 +111,13 @@ function GuidedInner() {
     setCaptureOpen(false);
 
     if (questionNumber >= 4) {
-      // Done — navigate to voice step
+      // Done — navigate to session plan
       const params = new URLSearchParams({
         capture,
         mode,
         qas: JSON.stringify(updatedQAs),
       });
-      router.push(`/session/voice?${params.toString()}`);
+      router.push(`/session/plan?${params.toString()}`);
       return;
     }
 
