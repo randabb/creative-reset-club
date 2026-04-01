@@ -83,8 +83,11 @@ export default function Homepage() {
             <br />
             before you prompt.
           </h1>
-          <p className={styles.heroSub}>
-            Expert thinking frameworks, adapted to what you&rsquo;re working through. Your ideas, developed on a canvas you can actually use.
+          <p className={styles.heroSub} style={{ fontSize: 16, opacity: 0.7, marginBottom: 8 }}>
+            Before you write the strategy doc, make the decision, or open Claude, use Primer to think it through properly.
+          </p>
+          <p className={styles.heroSub} style={{ fontSize: 14, opacity: 0.45, marginBottom: 28 }}>
+            Expert thinking frameworks. Questions that adapt to you. A canvas where your ideas take shape.
           </p>
           <Link href="/auth" className={styles.heroCta}>
             Start your first canvas
