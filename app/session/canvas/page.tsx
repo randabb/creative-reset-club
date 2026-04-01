@@ -88,6 +88,16 @@ function CanvasInner() {
     expression: ["trying to say", "distilled to", "framed as", "tested against"],
   };
 
+  // Character-count-based vertical offset — intentionally generous
+  const charOffset = (text: string) => {
+    const c = text.length;
+    if (c < 100) return 150;
+    if (c < 200) return 220;
+    if (c < 400) return 320;
+    if (c < 600) return 420;
+    return 520;
+  };
+
   // Build initial notes + connections from session data
   const buildInitial = useCallback((): { notes: Note[]; conns: Connection[] } => {
     const positions = POSITIONS[mode] || POSITIONS.clarity;
@@ -119,17 +129,17 @@ function CanvasInner() {
         dimIds.push(dimId);
       });
       // Place Q&A notes below their dimension column with generous spacing
-      // Track how many notes are in each column to stack vertically
-      const colCount: Record<number, number> = {};
+      // Track the bottom Y of each column to stack vertically without overlap
+      const colBottomY: Record<number, number> = {};
       qas.forEach((qa, i) => {
         const dimIdx = Math.min(i, dimensions.length - 1);
-        const stackIdx = colCount[dimIdx] || 0;
-        colCount[dimIdx] = stackIdx + 1;
+        const topY = colBottomY[dimIdx] ?? 500; // first note starts at y=500 (below dim headers)
+        colBottomY[dimIdx] = topY + charOffset(qa.answer);
         const nid = uid();
         ns.push({
           id: nid,
           x: 65 + dimIdx * 260,
-          y: 420 + stackIdx * 160,
+          y: topY,
           text: qa.answer,
           source: "thinking",
           qIndex: i,
@@ -657,10 +667,8 @@ function CanvasInner() {
       const title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
       const text = (raw.text || "").replace(/[`*_]/g, "");
 
-      // Place directly below the source note (vertical chain)
-      const estimateH = (t: string) => { const l = t.length; return l < 50 ? 80 : l < 100 ? 100 : l < 200 ? 140 : 180; };
-      const sourceBottom = selNote.y + estimateH(selNote.text);
-      const startY = sourceBottom + 30;
+      // Place directly below the source note (vertical chain, generous offset)
+      const startY = selNote.y + charOffset(selNote.text);
 
       const instId = uid();
       const instNote: Note = {
@@ -751,7 +759,7 @@ function CanvasInner() {
     // Create response note below the instruction
     const respId = uid();
     const respNote: Note = {
-      id: respId, x: instNote.x, y: instNote.y + 140,
+      id: respId, x: instNote.x, y: instNote.y + charOffset(instNote.text),
       text: responseText.trim(), source: "user",
     };
     setNotes(ns => [...ns, respNote]);
@@ -842,11 +850,11 @@ function CanvasInner() {
   // Note height estimation for arrow routing
   const noteW = dimensions.length > 0 ? 190 : 200;
   const estH = (text: string) => {
-    const len = text.length;
-    if (len < 50) return 60;
-    if (len < 100) return 80;
-    if (len < 200) return 110;
-    return 140;
+    const c = text.length;
+    if (c < 100) return 100;
+    if (c < 200) return 160;
+    if (c < 400) return 240;
+    return 320;
   };
 
   // Arrow path: determines edge attachment based on relative position
@@ -1517,7 +1525,7 @@ function CanvasInner() {
             if (!instNote) return null;
             const mColor = ACT[responseFlow.action].color;
             const rcX = respCardPos ? respCardPos.x : instNote.x;
-            const rcY = respCardPos ? respCardPos.y : instNote.y + 140;
+            const rcY = respCardPos ? respCardPos.y : instNote.y + charOffset(instNote.text);
             return (
               <div
                 className="cn"
