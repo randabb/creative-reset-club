@@ -210,7 +210,6 @@ function CanvasInner() {
     nextActionReason?: string;
     firstNoteLabel?: string;
   }>({ type: "landing" });
-  const suggestAbortRef = useRef<AbortController | null>(null);
   const [symbolHintShown, setSymbolHintShown] = useState(false);
   const [showSymbolHint, setShowSymbolHint] = useState(false);
   const [exampleNoteId, setExampleNoteId] = useState<string | null>(null);
@@ -339,38 +338,23 @@ function CanvasInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
 
-  // Suggest action when user selects a note
+  // Show suggestion from analyze-notes when user selects a note
   useEffect(() => {
     if (selected.size !== 1 || responseFlow || aiLoading) return;
     const selId = [...selected][0];
     const selNote = notes.find(n => n.id === selId);
     if (!selNote || selNote.source === "dimension" || selNote.source === "goal") return;
-
-    // Abort previous suggestion request
-    if (suggestAbortRef.current) suggestAbortRef.current.abort();
-    const controller = new AbortController();
-    suggestAbortRef.current = controller;
-
-    const dim = findNoteDim(selNote);
-    fetch("/api/suggest-action", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ noteText: selNote.text, goal: capture, dimensionLabel: dim.label }),
-      signal: controller.signal,
-    }).then(r => r.json()).then(data => {
-      if (controller.signal.aborted) return;
-      const actionKey = (data.action || "clarify") as Action;
+    const sug = noteSuggestions[selId];
+    if (sug) {
       setStatusState({
         type: "suggesting",
-        nextAction: actionKey,
-        nextActionReason: data.reason || "",
-        actionColor: ACT[actionKey].color,
+        nextAction: sug,
+        nextActionReason: `This note could use ${ACT[sug].label.toLowerCase()}.`,
+        actionColor: ACT[sug].color,
       });
-    }).catch(() => { /* aborted or failed — ignore */ });
-
-    return () => controller.abort();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
+  }, [selected, noteSuggestions]);
 
   // Periodic autosave every 30s if dirty
   useEffect(() => {
