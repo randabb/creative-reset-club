@@ -456,7 +456,7 @@ function CanvasInner() {
     // If editing, finish edit first and don't start panning
     if (editId) { finishEdit(editId); return; }
     isPanning.current = true;
-    panStart.current = { x: e.clientX - panXRef.current, y: e.clientY - panYRef.current };
+    panStart.current = { x: 0, y: e.clientY - panYRef.current };
     e.preventDefault();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
@@ -470,11 +470,8 @@ function CanvasInner() {
 
     const handleMouseMove = (e: MouseEvent) => {
       if (isPanning.current) {
-        const nx = e.clientX - panStart.current.x;
         const ny = e.clientY - panStart.current.y;
-        panXRef.current = nx;
         panYRef.current = ny;
-        setPanX(nx);
         setPanY(ny);
         return;
       }
@@ -643,12 +640,10 @@ function CanvasInner() {
       const title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
       const text = (raw.text || "").replace(/[`*_]/g, "");
 
-      // Place below the lowest point on canvas
+      // Place directly below the source note (vertical chain)
       const estimateH = (t: string) => { const l = t.length; return l < 50 ? 80 : l < 100 ? 100 : l < 200 ? 140 : 180; };
-      let bottomY = 0;
-      notes.forEach(n => { const b = n.y + estimateH(n.text); if (b > bottomY) bottomY = b; });
-      const startY = bottomY + 60;
-      const noteW = dimensions.length > 0 ? 190 : 200;
+      const sourceBottom = selNote.y + estimateH(selNote.text);
+      const startY = sourceBottom + 30;
 
       const instId = uid();
       const instNote: Note = {
@@ -658,20 +653,18 @@ function CanvasInner() {
       setNotes(ns => [...ns, instNote]);
       setConnections(cs => [...cs, { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color }]);
 
-      // Auto-scroll to new note
+      // Auto-scroll vertically to show new note
       if (vpRef.current) {
         const vpRect = vpRef.current.getBoundingClientRect();
         const newPanY = vpRect.height / 2 - (startY + 60) * zoom;
         setPanY(newPanY); panYRef.current = newPanY;
-        const newPanX = vpRect.width / 2 - (selNote.x + noteW / 2) * zoom;
-        setPanX(newPanX); panXRef.current = newPanX;
       }
 
       // Start single-instruction response flow
       setResponseFlow({ instructionIds: [instId], currentIdx: 0, sourceId: selId, action });
       setResponseText("");
       setSelected(new Set());
-      setStatusState({ type: "working", dimName: dim.label, actionColor: ACT[action].color });
+      setStatusState({ type: "working", dimName: dim.label });
     } catch { /* handled by API fallback */ }
     setAiLoading(false);
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
@@ -758,16 +751,17 @@ function CanvasInner() {
 
     // Assess dimension progression
     if (dimensions.length > 0) {
+      setStatusState({ type: "loading" });
       const dim = findNoteDim(instNote);
       const dimNotes = notes.filter(n => n.source !== "dimension");
       const dimHeaders = notes.filter(n => n.source === "dimension");
-      // Gather notes under this dimension
       const notesUnderDim = dimNotes.filter(n => {
         let closest = dimHeaders[0];
         let closestDist = Math.abs(n.x - dimHeaders[0].x);
         dimHeaders.forEach(d => { const dist = Math.abs(n.x - d.x); if (dist < closestDist) { closestDist = dist; closest = d; } });
         return (closest.dimLabel || "") === dim.label;
       });
+      const responseCount = [...notesUnderDim, respNote].filter(n => n.source === "user").length;
 
       try {
         const assessRes = await fetch("/api/assess-dimension", {
@@ -779,30 +773,39 @@ function CanvasInner() {
             dimensionNotes: [...notesUnderDim, respNote].map(n => n.text).join("\n\n"),
             allDimensions: dimensions.map(d => `${d.label} — ${d.description}`).join("\n"),
             mode,
-            lastNote: responseText.trim(),
+            lastNote: respNote.text,
           }),
         });
         const assessData = await assessRes.json();
         const recAction = (assessData.next_action || "clarify") as Action;
         const recReason = assessData.next_action_reason || "";
 
+        // 1-second delay so result doesn't flash
+        await new Promise(r => setTimeout(r, 1000));
+
         if (assessData.status === "ready_to_move") {
           setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
+          const completedCount = Object.values(dimStatus).filter(s => s === "complete").length + 1;
           const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
           if (nextDimEntry) {
             const nextIdx = dimensions.indexOf(nextDimEntry);
+            const remaining = dimensions.length - completedCount;
             setNudgeDimIdx(nextIdx);
             setTimeout(() => setNudgeDimIdx(null), 8000);
-            setStatusState({ type: "ready_to_move", dimName: dim.label, nextDimName: nextDimEntry.label });
+            let reassurance = "";
+            if (completedCount >= 3 && completedCount < dimensions.length) reassurance = " Your thinking is really taking shape.";
+            setStatusState({ type: "ready_to_move", dimName: dim.label, nextDimName: nextDimEntry.label, nextActionReason: `${remaining} left.${reassurance}` });
           } else {
             setAllDimsComplete(true);
             setStatusState({ type: "all_done" });
           }
         } else {
-          setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason, actionColor: ACT[recAction].color });
+          let reassurance = "";
+          if (responseCount >= 2) reassurance = " You're building real depth here.";
+          setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason + reassurance, actionColor: ACT[recAction].color });
         }
       } catch {
-        // Silent — dimension assessment is optional
+        setStatusState({ type: "keep_going", dimName: dim.label });
       }
     }
   };
@@ -1053,14 +1056,14 @@ function CanvasInner() {
             : statusState.type === "ready_to_move" ? "#7ED6A8"
             : "#FF9090"
           }`,
-          transition: "border-color 0.3s",
+          transition: "border-color 0.3s, opacity 0.3s",
           fontFamily: "'Codec Pro',sans-serif",
         }}>
           <div style={{ fontSize: 13, color: "#000332", lineHeight: 1.55, fontWeight: 300 }}>
             {statusState.type === "loading" && (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 14, height: 14, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", flexShrink: 0 }} />
-                Thinking...
+                {responseFlow ? "Thinking..." : "Analyzing your thinking..."}
               </span>
             )}
             {statusState.type === "landing" && (
@@ -1073,7 +1076,7 @@ function CanvasInner() {
               <span>Try <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> on this note. {statusState.nextActionReason}</span>
             )}
             {statusState.type === "working" && (
-              <span>Working on <strong>{statusState.dimName}</strong>. Fill in your response, then keep going or try another action.</span>
+              <span>Fill in your response below.</span>
             )}
             {statusState.type === "keep_going" && (() => {
               const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
@@ -1091,9 +1094,8 @@ function CanvasInner() {
               );
             })()}
             {statusState.type === "ready_to_move" && (() => {
-              const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
               return (
-                <span><strong>{statusState.dimName}</strong> &#10003; done. Now working on <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>. Select a note under it to start. <span style={{ color: "rgba(0,3,50,0.35)" }}>{remaining > 0 ? `${remaining} more to go.` : ""}</span></span>
+                <span><strong>{statusState.dimName}</strong> &#10003; Great work. Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong> — select a note under it to start. <span style={{ color: "rgba(0,3,50,0.35)" }}>{statusState.nextActionReason}</span></span>
               );
             })()}
             {statusState.type === "all_done" && (
