@@ -162,6 +162,7 @@ function CanvasInner() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
   const [editId, setEditId] = useState<string | null>(null);
+  const editPreHeight = useRef(0);
   const [connecting, setConnecting] = useState(false);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [connLabel, setConnLabel] = useState("");
@@ -1152,7 +1153,7 @@ function CanvasInner() {
                 key={n.id}
                 className="cn"
                 onMouseDown={e => startDrag(n.id, e)}
-                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); setDragId(null); setEditId(n.id); }}
+                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); setDragId(null); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; setEditId(n.id); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
@@ -1188,62 +1189,64 @@ function CanvasInner() {
                     }}
                   >×</button>
                 )}
+                {/* Top-right icon row: pencil + mode symbol */}
                 {editId !== n.id && (
-                  <button
-                    className="cn-edit"
-                    onClick={(e) => { e.stopPropagation(); setDragId(null); setEditId(n.id); }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    style={{
-                      position: "absolute", top: 8, right: 8,
-                      background: "none", border: "none",
-                      fontSize: 14, color: "#94949E", lineHeight: 1,
-                      cursor: "pointer", opacity: 0,
-                      transition: "opacity 0.15s",
-                      zIndex: 4, padding: 0,
-                    }}
-                  >&#9998;</button>
-                )}
-                {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
-                  const sugAction = noteSuggestions[n.id];
-                  const sugColor = ACT[sugAction].color;
-                  const sugIcon = ACT[sugAction].icon;
-                  const isFresh = freshSuggestions.has(n.id);
-                  const tipTexts: Record<Action, string> = {
-                    clarify: "Try clarifying this",
-                    expand: "Try expanding this",
-                    decide: "Try deciding on this",
-                    express: "Try expressing this",
-                  };
-                  return (
-                    <div
-                      className="sug-dot-wrap"
-                      style={{ position: "absolute", top: 6, right: 6, zIndex: 5 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelected(new Set([n.id]));
-                        setNoteSuggestions(prev => { const next = { ...prev }; delete next[n.id]; return next; });
-                        setTimeout(() => runAction(sugAction), 100);
-                      }}
+                  <div style={{ position: "absolute", top: 6, right: 6, zIndex: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                    <button
+                      className="cn-edit"
+                      onClick={(e) => { e.stopPropagation(); setDragId(null); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; setEditId(n.id); }}
                       onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      <div style={{
-                        fontSize: 14, color: sugColor, opacity: 0.5,
-                        cursor: "pointer", lineHeight: 1,
+                      style={{
+                        background: "none", border: "none",
+                        fontSize: 14, color: "#94949E", lineHeight: 1,
+                        cursor: "pointer", opacity: 0,
                         transition: "opacity 0.15s",
-                        animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : undefined,
-                      }} className="sug-dot">{sugIcon}</div>
-                      <div className="sug-tip" style={{
-                        position: "absolute", top: "100%", right: 0,
-                        marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
-                        padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap",
-                        pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
-                        fontWeight: 400,
-                      }}>
-                        {tipTexts[sugAction]}
-                      </div>
-                    </div>
-                  );
-                })()}
+                        padding: 0,
+                      }}
+                    >&#9998;</button>
+                    {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
+                      const sugAction = noteSuggestions[n.id];
+                      const sugColor = ACT[sugAction].color;
+                      const sugIcon = ACT[sugAction].icon;
+                      const isFresh = freshSuggestions.has(n.id);
+                      const tipTexts: Record<Action, string> = {
+                        clarify: "Try clarifying this",
+                        expand: "Try expanding this",
+                        decide: "Try deciding on this",
+                        express: "Try expressing this",
+                      };
+                      return (
+                        <div
+                          className="sug-dot-wrap"
+                          style={{ position: "relative" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelected(new Set([n.id]));
+                            setNoteSuggestions(prev => { const next = { ...prev }; delete next[n.id]; return next; });
+                            setTimeout(() => runAction(sugAction), 100);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          <div style={{
+                            fontSize: 14, color: sugColor, opacity: 0.5,
+                            cursor: "pointer", lineHeight: 1,
+                            transition: "opacity 0.15s",
+                            animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : undefined,
+                          }} className="sug-dot">{sugIcon}</div>
+                          <div className="sug-tip" style={{
+                            position: "absolute", top: "100%", right: 0,
+                            marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
+                            padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap",
+                            pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
+                            fontWeight: 400,
+                          }}>
+                            {tipTexts[sugAction]}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
                 {sl && (
                   <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7 }}>
                     {sl.text}
@@ -1262,7 +1265,7 @@ function CanvasInner() {
                     onBlur={() => finishEdit(n.id)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishEdit(n.id); } }}
                     onMouseDown={e => e.stopPropagation()}
-                    ref={el => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    ref={el => { if (el) { const preH = editPreHeight.current; el.style.height = "auto"; const scrollH = el.scrollHeight; el.style.height = Math.max(scrollH, preH > 0 ? preH - 20 : 30) + "px"; } }}
                     style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
                   />
                 ) : (
