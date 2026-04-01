@@ -379,8 +379,9 @@ export default function Homepage() {
       {/* QUOTE BREAK */}
       <div className={styles.quoteBreak}>
         <p className={styles.quoteBreakText}>
-          The most valuable thing you bring to your work is <strong>how you think.</strong><br />
-          Primer is where that thinking starts.
+          Most people use AI to think for them.<br />
+          The best use it after they&rsquo;ve done the thinking.<br />
+          <strong style={{ color: "#FF9090" }}>Primer is where that happens.</strong>
         </p>
       </div>
 
