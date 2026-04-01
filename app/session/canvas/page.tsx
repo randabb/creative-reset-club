@@ -306,15 +306,19 @@ function CanvasInner() {
     return () => clearInterval(interval);
   }, [sessionId, saveCanvas]);
 
-  // First-time tour check
+  // First-time tour check — slight delay to ensure canvas is rendered
   useEffect(() => {
     if (tourCheckedRef.current || !canvasReady) return;
     tourCheckedRef.current = true;
-    const toured = localStorage.getItem("primer_canvas_toured");
-    if (!toured) {
-      setTourWelcome(true);
-      setCoachDismissed(true); // suppress coach card during/after tour
-    }
+    const t = setTimeout(() => {
+      const toured = localStorage.getItem("primer_canvas_toured");
+      console.log("[canvas] primer_canvas_toured:", toured);
+      if (!toured) {
+        setTourWelcome(true);
+        setCoachDismissed(true); // suppress coach card during/after tour
+      }
+    }, 500);
+    return () => clearTimeout(t);
   }, [canvasReady]);
 
   const startTour = () => { setTourWelcome(false); setTourStep(0); };
@@ -595,21 +599,35 @@ function CanvasInner() {
       const rawInstructions: ({ title: string; text: string } | string)[] = data.instructions || [];
 
       // Normalize and parse: handle {title,text}, plain strings, and unparsed "TITLE: x | INSTRUCTION: y" lines
+      const parseInst = (line: string): { title: string; text: string } => {
+        const clean = line.replace(/[`*_]/g, "").trim();
+        // Try "TITLE: xxx | INSTRUCTION: xxx"
+        if (clean.includes(" | ")) {
+          const parts = clean.split(" | ");
+          const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+          const instruction = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
+          if (title && instruction) return { title, text: instruction };
+        }
+        // Try "xxx | xxx"
+        if (clean.includes("|")) {
+          const parts = clean.split("|");
+          const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+          const instruction = parts.slice(1).join("|").trim();
+          if (title && instruction) return { title, text: instruction };
+        }
+        // Strip any leftover TITLE:/INSTRUCTION: prefixes
+        const stripped = clean.replace(/^TITLE:\s*/i, "").replace(/^INSTRUCTION:\s*/i, "");
+        const words = stripped.split(/\s+/);
+        return { title: words.slice(0, 4).join(" "), text: stripped };
+      };
       const instructions = rawInstructions.map((raw) => {
         const str = typeof raw === "string" ? raw : (raw.text || "");
         const titleRaw = typeof raw === "string" ? "" : (raw.title || "");
-        // Try parsing "TITLE: x | INSTRUCTION: y" format from the text
-        const pipeMatch = str.match(/^(?:TITLE:\s*)?(.+?)\s*\|\s*(?:INSTRUCTION:\s*)?(.+)$/i);
-        if (pipeMatch) {
-          return { title: pipeMatch[1].trim(), text: pipeMatch[2].trim() };
+        // If API already parsed cleanly and text doesn't contain pipe formatting
+        if (titleRaw && !str.includes("|") && !str.startsWith("TITLE:")) {
+          return { title: titleRaw.replace(/[`*_]/g, ""), text: str.replace(/[`*_]/g, "") };
         }
-        // If API already parsed title and text cleanly
-        if (titleRaw && !str.includes(" | ")) {
-          return { title: titleRaw, text: str };
-        }
-        // Fallback: first 4 words as title
-        const words = str.split(/\s+/);
-        return { title: words.slice(0, 4).join(" "), text: str };
+        return parseInst(str);
       });
 
       // Place new notes in a HORIZONTAL ROW below the LOWEST point on the canvas

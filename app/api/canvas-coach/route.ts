@@ -48,8 +48,8 @@ CRITICAL RULES:
 
 For each instruction, also generate a short response title (2-5 words) that labels what the user will write. This title should name the OUTPUT, not the instruction. For example if the instruction is 'List 5 creators who feel authentic', the title is 'Your 5 authentic creators'.
 
-Format each line as: TITLE: [title] | INSTRUCTION: [instruction text]
-One per line, nothing else.`;
+Format each line as: TITLE: Your actual title here | INSTRUCTION: Your actual instruction here
+One per line, nothing else. Do NOT include placeholder text like "[title]" or "[instruction text]". Write real, specific content for both the title and instruction.`;
 
 export async function POST(req: Request) {
   try {
@@ -82,13 +82,28 @@ export async function POST(req: Request) {
 
     if (lines.length === 0) throw new Error("Empty");
 
-    // Parse TITLE: ... | INSTRUCTION: ... format
+    // Parse TITLE: ... | INSTRUCTION: ... format with robust fallbacks
     const instructions = lines.map((line: string) => {
-      const match = line.match(/TITLE:\s*(.+?)\s*\|\s*INSTRUCTION:\s*(.+)/i);
-      if (match) return { title: match[1].trim(), text: match[2].trim() };
+      // Strip markdown formatting
+      const clean = line.replace(/[`*_]/g, "").trim();
+      // Try "TITLE: xxx | INSTRUCTION: xxx"
+      if (clean.includes(" | ")) {
+        const parts = clean.split(" | ");
+        const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+        const instruction = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
+        if (title && instruction) return { title, text: instruction };
+      }
+      // Try "TITLE: xxx | xxx" (no INSTRUCTION: prefix)
+      if (clean.includes("|")) {
+        const parts = clean.split("|");
+        const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+        const instruction = parts.slice(1).join("|").trim();
+        if (title && instruction) return { title, text: instruction };
+      }
       // Fallback: use first 4 words as title
-      const words = line.split(/\s+/);
-      return { title: words.slice(0, 4).join(" "), text: line };
+      const stripped = clean.replace(/^TITLE:\s*/i, "").replace(/^INSTRUCTION:\s*/i, "");
+      const words = stripped.split(/\s+/);
+      return { title: words.slice(0, 4).join(" "), text: stripped };
     });
 
     return NextResponse.json({ instructions });
