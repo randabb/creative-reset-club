@@ -197,6 +197,9 @@ function CanvasInner() {
     firstNoteLabel?: string;
   }>({ type: "landing" });
   const suggestAbortRef = useRef<AbortController | null>(null);
+  const [exampleNoteId, setExampleNoteId] = useState<string | null>(null);
+  const [exampleText, setExampleText] = useState("");
+  const [exampleLoading, setExampleLoading] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
@@ -1072,14 +1075,27 @@ function CanvasInner() {
             {statusState.type === "working" && (
               <span>Working on <strong>{statusState.dimName}</strong>. Fill in your response, then keep going or try another action.</span>
             )}
-            {statusState.type === "keep_going" && statusState.nextAction ? (
-              <span>Click on the note you just wrote and <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> it. {statusState.nextActionReason}</span>
-            ) : statusState.type === "keep_going" && (
-              <span>Keep going on <strong>{statusState.dimName}</strong>. Select another note and develop it further.</span>
-            )}
-            {statusState.type === "ready_to_move" && (
-              <span><strong>{statusState.dimName}</strong> &#10003; — Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>. Select a note under it to start.</span>
-            )}
+            {statusState.type === "keep_going" && (() => {
+              const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
+              const isLast = remaining === 0;
+              return statusState.nextAction ? (
+                <span>
+                  You&rsquo;re developing <strong>{statusState.dimName}</strong>. Click on the note you just wrote and <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> it. {statusState.nextActionReason}{" "}
+                  <span style={{ color: "rgba(0,3,50,0.35)" }}>{isLast ? "Last dimension — finish this and you're ready." : `${remaining} more dimension${remaining > 1 ? "s" : ""} after this.`}</span>
+                </span>
+              ) : (
+                <span>
+                  You&rsquo;re developing <strong>{statusState.dimName}</strong>. Select another note and develop it further.{" "}
+                  <span style={{ color: "rgba(0,3,50,0.35)" }}>{isLast ? "Last dimension — finish this and you're ready." : `${remaining} more dimension${remaining > 1 ? "s" : ""} after this.`}</span>
+                </span>
+              );
+            })()}
+            {statusState.type === "ready_to_move" && (() => {
+              const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
+              return (
+                <span><strong>{statusState.dimName}</strong> &#10003; done. Now working on <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>. Select a note under it to start. <span style={{ color: "rgba(0,3,50,0.35)" }}>{remaining > 0 ? `${remaining} more to go.` : ""}</span></span>
+              );
+            })()}
             {statusState.type === "all_done" && (
               <span>All dimensions explored. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> for your deliverable. Or keep refining.</span>
             )}
@@ -1397,6 +1413,62 @@ function CanvasInner() {
                     whiteSpace: "pre-wrap", wordBreak: "break-word",
                   }}>
                     {n.text || <span style={{ color: "rgba(0,3,50,0.25)" }}>Double-click to edit</span>}
+                  </div>
+                )}
+                {/* Show me an example — AI instruction notes only */}
+                {isAi && editId !== n.id && (
+                  <div style={{ position: "relative", marginTop: 8 }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (exampleNoteId === n.id) { setExampleNoteId(null); return; }
+                        setExampleNoteId(n.id);
+                        setExampleText("");
+                        setExampleLoading(true);
+                        const dim = findNoteDim(n);
+                        fetch("/api/instruction-example", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ instruction: n.text, goal: capture, dimensionLabel: dim.label }),
+                        }).then(r => r.json()).then(d => {
+                          setExampleText(d.example || "");
+                          setExampleLoading(false);
+                        }).catch(() => { setExampleLoading(false); setExampleNoteId(null); });
+                      }}
+                      onMouseDown={e => e.stopPropagation()}
+                      style={{
+                        background: "none", border: "none", fontSize: 11,
+                        color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit",
+                        textDecoration: "underline", textUnderlineOffset: 2, padding: 0,
+                      }}
+                    >Show me an example</button>
+                    {exampleNoteId === n.id && (
+                      <div
+                        onClick={e => e.stopPropagation()}
+                        onMouseDown={e => e.stopPropagation()}
+                        style={{
+                          marginTop: 6, background: "rgba(0,3,50,0.03)", borderRadius: 8,
+                          padding: 12, maxWidth: 250,
+                        }}
+                      >
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 4 }}>EXAMPLE</div>
+                        {exampleLoading ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ width: 12, height: 12, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite" }} />
+                            <span style={{ fontSize: 11, color: "rgba(0,3,50,0.35)" }}>Loading...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 12, color: "#000332", fontStyle: "italic", lineHeight: 1.55, marginBottom: 6 }}>{exampleText}</div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExampleNoteId(null); }}
+                              onMouseDown={e => e.stopPropagation()}
+                              style={{ background: "none", border: "none", fontSize: 10, color: "rgba(0,3,50,0.3)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline", textUnderlineOffset: 2, padding: 0 }}
+                            >Got it</button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
