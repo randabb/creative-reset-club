@@ -196,6 +196,12 @@ function CanvasInner() {
   const panStart = useRef({ x: 0, y: 0 });
   const panXRef = useRef(panX);
   const panYRef = useRef(panY);
+  const zoomRef = useRef(zoom);
+  const dragIdRef = useRef<string | null>(null);
+  const dragOffRef = useRef({ x: 0, y: 0 });
+  const notesRef = useRef(notes);
+  const respDragOffRef = useRef<{ x: number; y: number } | null>(null);
+  const respCardPosRef = useRef<{ x: number; y: number } | null>(null);
   const vpRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -360,36 +366,71 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
 
-  // Keep pan refs in sync with state (so native listeners always have current values)
+  // Keep refs in sync with state (so window-level listeners always have current values)
   useEffect(() => { panXRef.current = panX; }, [panX]);
   useEffect(() => { panYRef.current = panY; }, [panY]);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
+  useEffect(() => { dragOffRef.current = dragOff; }, [dragOff]);
+  useEffect(() => { notesRef.current = notes; }, [notes]);
+  useEffect(() => { respDragOffRef.current = respDragOff; }, [respDragOff]);
+  useEffect(() => { respCardPosRef.current = respCardPos; }, [respCardPos]);
 
-  // Pan — registered once (refs keep handlers current, no re-registration needed)
+  // Pan + drag: window-level mousemove/mouseup so dragging works even when cursor leaves canvas
+  const startPan = useCallback((e: React.MouseEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.closest(".cn")) return;
+    isPanning.current = true;
+    panStart.current = { x: e.clientX - panXRef.current, y: e.clientY - panYRef.current };
+    e.preventDefault();
+  }, []);
+
   useEffect(() => {
-    const el = vpRef.current;
-    if (!el) return;
-    const down = (e: MouseEvent) => {
-      const t = e.target as HTMLElement;
-      if (t.closest(".cn")) return;
-      isPanning.current = true;
-      panStart.current = { x: e.clientX - panXRef.current, y: e.clientY - panYRef.current };
-      el.style.cursor = "grabbing";
+    const s2cRef = (cx: number, cy: number) => {
+      if (!vpRef.current) return { x: 0, y: 0 };
+      const r = vpRef.current.getBoundingClientRect();
+      return { x: (cx - r.left - panXRef.current) / zoomRef.current, y: (cy - r.top - panYRef.current) / zoomRef.current };
     };
-    const move = (e: MouseEvent) => {
-      if (!isPanning.current) return;
-      const nx = e.clientX - panStart.current.x;
-      const ny = e.clientY - panStart.current.y;
-      panXRef.current = nx;
-      panYRef.current = ny;
-      setPanX(nx);
-      setPanY(ny);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isPanning.current) {
+        const nx = e.clientX - panStart.current.x;
+        const ny = e.clientY - panStart.current.y;
+        panXRef.current = nx;
+        panYRef.current = ny;
+        setPanX(nx);
+        setPanY(ny);
+        return;
+      }
+      if (respDragOffRef.current) {
+        const pt = s2cRef(e.clientX, e.clientY);
+        const np = { x: pt.x - respDragOffRef.current.x, y: pt.y - respDragOffRef.current.y };
+        respCardPosRef.current = np;
+        setRespCardPos(np);
+        return;
+      }
+      if (dragIdRef.current) {
+        const pt = s2cRef(e.clientX, e.clientY);
+        const off = dragOffRef.current;
+        const did = dragIdRef.current;
+        setNotes(ns => ns.map(n => n.id === did ? { ...n, x: pt.x - off.x, y: pt.y - off.y } : n));
+      }
     };
-    const up = () => { isPanning.current = false; el.style.cursor = "grab"; };
-    el.addEventListener("mousedown", down);
-    el.addEventListener("mousemove", move);
-    el.addEventListener("mouseup", up);
-    el.addEventListener("mouseleave", up);
-    return () => { el.removeEventListener("mousedown", down); el.removeEventListener("mousemove", move); el.removeEventListener("mouseup", up); el.removeEventListener("mouseleave", up); };
+
+    const handleMouseUp = () => {
+      isPanning.current = false;
+      setDragId(null);
+      dragIdRef.current = null;
+      setRespDragOff(null);
+      respDragOffRef.current = null;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -421,24 +462,15 @@ function CanvasInner() {
       return;
     }
     const pt = s2c(e.clientX, e.clientY);
+    const off = { x: pt.x - n.x, y: pt.y - n.y };
     setDragId(id);
-    setDragOff({ x: pt.x - n.x, y: pt.y - n.y });
+    dragIdRef.current = id;
+    setDragOff(off);
+    dragOffRef.current = off;
     if (!e.shiftKey) setSelected(new Set([id]));
     else setSelected(s => { const ns = new Set(s); ns.has(id) ? ns.delete(id) : ns.add(id); return ns; });
   };
 
-  const onCanvasMove = (e: React.MouseEvent) => {
-    if (respDragOff) {
-      const pt = s2c(e.clientX, e.clientY);
-      setRespCardPos({ x: pt.x - respDragOff.x, y: pt.y - respDragOff.y });
-      return;
-    }
-    if (!dragId) return;
-    const pt = s2c(e.clientX, e.clientY);
-    setNotes(ns => ns.map(n => n.id === dragId ? { ...n, x: pt.x - dragOff.x, y: pt.y - dragOff.y } : n));
-  };
-
-  const onCanvasUp = () => { setDragId(null); setRespDragOff(null); };
 
   const onCanvasDoubleClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
@@ -1003,12 +1035,10 @@ function CanvasInner() {
       </div>
 
       {/* CANVAS VIEWPORT */}
-      <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: connecting ? "crosshair" : "grab", position: "relative" }}>
+      <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: connecting ? "crosshair" : isPanning.current ? "grabbing" : "grab", position: "relative" }}>
         <div
           ref={canvasRef}
-          onMouseMove={onCanvasMove}
-          onMouseUp={onCanvasUp}
-          onMouseLeave={onCanvasUp}
+          onMouseDown={startPan}
           onDoubleClick={onCanvasDoubleClick}
           onClick={(e) => { const t = e.target as HTMLElement; if (!dragId && !t.closest(".cn")) { setSelected(new Set()); setShowGoal(false); setShowExport(false); } }}
           style={{
@@ -1215,7 +1245,9 @@ function CanvasInner() {
                   if (t.tagName === "TEXTAREA" || t.tagName === "BUTTON") return;
                   e.stopPropagation();
                   const pt = s2c(e.clientX, e.clientY);
-                  setRespDragOff({ x: pt.x - rcX, y: pt.y - rcY });
+                  const rd = { x: pt.x - rcX, y: pt.y - rcY };
+                  setRespDragOff(rd);
+                  respDragOffRef.current = rd;
                 }}
                 style={{
                 position: "absolute",
