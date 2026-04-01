@@ -37,7 +37,7 @@ function CanvasVisual() {
     { label: "EXPAND ↓", text: "Write what your user says to a friend the day after using this", color: "#FF9090", x: 230, y: 340 },
   ];
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px", textAlign: "center" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "60px 24px 40px", textAlign: "center" }}>
       <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,28px)", fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 10 }}>
         See what a session looks like
       </h2>
@@ -142,7 +142,7 @@ function OutcomePreview() {
     },
   ];
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "40px 24px 40px" }}>
       <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, fontStyle: "italic", color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
         In 15 minutes, you&rsquo;ll walk out with:
       </h2>

@@ -335,7 +335,7 @@
 /* quote break */
 .quoteBreak {
   background: var(--navy);
-  padding: 72px 52px;
+  padding: 40px 52px;
   text-align: center;
   position: relative; overflow: hidden;
 }
@@ -351,7 +351,7 @@
 /* bottom cta */
 .bottomCta {
   background: var(--cream);
-  padding: 80px 52px 100px;
+  padding: 40px 52px 60px;
   display: flex; flex-direction: column;
   align-items: center; gap: 28px;
   text-align: center;
@@ -399,7 +399,7 @@
 /* thinking modes section */
 .modesSection {
   background: var(--navy);
-  padding: 100px 52px;
+  padding: 60px 52px 40px;
   text-align: center;
   position: relative; overflow: hidden;
 }
@@ -415,7 +415,7 @@
 }
 .modesSub {
   font-size: 15px; color: var(--cream); opacity: .45;
-  font-weight: 300; margin-bottom: 56px; line-height: 1.6;
+  font-weight: 300; margin-bottom: 32px; line-height: 1.6;
 }
 .modesGrid {
   display: grid;
@@ -462,7 +462,7 @@
   .modesGrid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 768px) {
-  .modesSection { padding: 72px 24px; }
+  .modesSection { padding: 48px 24px 32px; }
   .modesGrid { grid-template-columns: 1fr; gap: 12px; }
 }
 
@@ -834,10 +834,10 @@
   .benefitShift { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
 
   /* QUOTE BREAK */
-  .quoteBreak { padding: 48px 24px; }
+  .quoteBreak { padding: 32px 24px; }
 
   /* BOTTOM CTA */
-  .bottomCta { padding: 56px 24px 72px; }
+  .bottomCta { padding: 32px 24px 48px; }
   .bottomCtaText { font-size: 16px; }
   .bottomMeta { flex-wrap: wrap; justify-content: center; gap: 8px; }
 }
