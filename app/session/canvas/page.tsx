@@ -1155,7 +1155,7 @@ function CanvasInner() {
                 onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); setDragId(null); setEditId(n.id); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
-                  width: dimensions.length > 0 ? 190 : 200, minHeight: n.aiInstruction ? 100 : 60, padding: "10px 12px",
+                  width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
                   borderRadius: 10,
                   background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
@@ -1254,11 +1254,16 @@ function CanvasInner() {
                   <textarea
                     autoFocus
                     value={n.text}
-                    onChange={e => updateText(n.id, e.target.value)}
+                    onChange={e => {
+                      updateText(n.id, e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
                     onBlur={() => finishEdit(n.id)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishEdit(n.id); } }}
                     onMouseDown={e => e.stopPropagation()}
-                    style={{ width: "100%", minHeight: 40, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332" }}
+                    ref={el => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
                   />
                 ) : (
                   <div style={{
