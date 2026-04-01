@@ -355,7 +355,7 @@ function CanvasInner() {
 
   // Note drag
   const startDrag = (id: string, e: React.MouseEvent) => {
-    if (editId === id) return;
+    if (editId === id || justFinishedEditRef.current) return;
     e.stopPropagation();
     const n = notes.find(n => n.id === id);
     if (!n || n.source === "dimension") return;
@@ -403,8 +403,11 @@ function CanvasInner() {
 
   const updateText = (id: string, text: string) => setNotes(ns => ns.map(n => n.id === id ? { ...n, text } : n));
 
+  const justFinishedEditRef = useRef(false);
   const finishEdit = (id: string) => {
     setEditId(null);
+    justFinishedEditRef.current = true;
+    setTimeout(() => { justFinishedEditRef.current = false; }, 300);
     setNotes(ns => ns.filter(n => n.id !== id || n.text.trim()));
   };
 
@@ -995,7 +998,7 @@ function CanvasInner() {
                 key={n.id}
                 className="cn"
                 onMouseDown={e => startDrag(n.id, e)}
-                onDoubleClick={e => { e.stopPropagation(); setEditId(n.id); }}
+                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); setDragId(null); setEditId(n.id); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, minHeight: n.aiInstruction ? 100 : 60, padding: "10px 12px",
