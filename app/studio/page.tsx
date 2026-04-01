@@ -58,7 +58,7 @@ export default function Studio() {
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+      if (!user) { router.push("/auth"); return; }
       setUser(user);
 
       const { data: profile } = await supabase
@@ -141,6 +141,10 @@ export default function Studio() {
           }}>
             {firstName ? firstName[0].toUpperCase() : "?"}
           </div>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push("/"); }} style={{
+            background: "none", border: "none", fontSize: 11,
+            color: "rgba(0,3,50,0.3)", cursor: "pointer", fontFamily: "inherit",
+          }}>Sign out</button>
         </div>
       </nav>
 

@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "@/styles/homepage.module.css";
+import { supabase } from "@/lib/supabase";
 
 export default function Homepage() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => { if (user) setLoggedIn(true); });
+  }, []);
+
   useEffect(() => {
     const nav = document.getElementById("nav");
     const handleScroll = () => {
@@ -37,7 +44,11 @@ export default function Homepage() {
       {/* NAV */}
       <nav className={styles.nav} id="nav">
         <div className={styles.navLogo}>primer</div>
-        <Link href="/login" className={styles.navSign}>sign in</Link>
+        {loggedIn ? (
+          <Link href="/studio" className={styles.navSign}>studio</Link>
+        ) : (
+          <Link href="/auth" className={styles.navSign}>sign in</Link>
+        )}
       </nav>
 
       {/* HERO */}
@@ -75,7 +86,7 @@ export default function Homepage() {
           <p className={styles.heroSub}>
             A guided thinking workspace for knowledge workers who want clarity, originality, and better decisions. Your ideas, developed by you, expanded by AI.
           </p>
-          <Link href="/onboarding" className={styles.heroCta}>
+          <Link href="/auth" className={styles.heroCta}>
             Start your first canvas
             <span className={styles.ctaDot}>&rarr;</span>
           </Link>
@@ -391,7 +402,7 @@ export default function Homepage() {
               <li className={styles.priceFeature}>Voice reflection</li>
               <li className={styles.priceFeature}>Complete experience, nothing held back</li>
             </ul>
-            <Link href="/onboarding" className={styles.priceBtnOutline}>Try 3 sessions</Link>
+            <Link href="/auth" className={styles.priceBtnOutline}>Try 3 sessions</Link>
           </div>
           {/* Starter */}
           <div className={`${styles.priceCard} ${styles.priceCardPrimary}`}>
@@ -429,7 +440,7 @@ export default function Homepage() {
         <p className={styles.bottomCtaText}>
           Your first three sessions are free. Just you, your ideas, and a space to develop them.
         </p>
-        <Link href="/onboarding" className={styles.bottomBtn}>
+        <Link href="/auth" className={styles.bottomBtn}>
           Open your studio
           <span className={styles.ctaDot}>&rarr;</span>
         </Link>

@@ -32,7 +32,7 @@ export default function NewSession() {
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+      if (!user) { router.push("/auth"); return; }
 
       // Fetch user's default mode
       const { data: profile } = await supabase

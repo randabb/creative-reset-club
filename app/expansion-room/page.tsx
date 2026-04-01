@@ -18,7 +18,7 @@ export default function ExpansionRoomPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/login");
+        router.push("/auth");
         return;
       }
 
