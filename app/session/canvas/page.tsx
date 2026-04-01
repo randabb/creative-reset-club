@@ -460,26 +460,34 @@ function CanvasInner() {
         return { title: words.slice(0, 4).join(" "), text: str };
       });
 
-      // Place as HORIZONTAL ROW to the right of source
-      const srcW = dimensions.length > 0 ? 190 : 200;
-      const baseX = selNote.x + srcW + 80;
-      const baseY = selNote.y;
-      const noteSpacing = 220; // horizontal gap between instruction notes
+      // Place as HORIZONTAL ROW below source with full collision detection
+      const cellW = 220; // width per note cell
+      const cellH = 200; // height per note cell (note + response card space)
+      const noteW = dimensions.length > 0 ? 190 : 200;
+      const collisionH = 120; // minimum collision height
+      const pad = 30; // padding around each note for collision
       const newNotes: Note[] = [];
-      const allExisting = [...notes];
+
+      // Build collision set from ALL existing notes
+      const occupied = notes.filter(n => n.source !== "dimension").map(n => ({
+        x: n.x, y: n.y, w: noteW, h: Math.max(collisionH, 60),
+      }));
 
       instructions.forEach((inst, i) => {
-        let tx = baseX + i * noteSpacing;
-        let ty = baseY;
-        // Collision avoidance: shift down if blocked
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const blocked = [...allExisting, ...newNotes].some(n => {
-            if (n.source === "dimension") return false;
-            return Math.abs(n.x - tx) < 40 && Math.abs(n.y - ty) < 40;
-          });
+        // Start position: horizontal row below source
+        let tx = selNote.x + i * (cellW + 20);
+        let ty = selNote.y + collisionH + 40;
+
+        // Check collision against ALL existing + already-placed new notes
+        for (let shift = 0; shift < 5; shift++) {
+          const blocked = [...occupied, ...newNotes.map(n => ({ x: n.x, y: n.y, w: noteW, h: collisionH }))].some(o =>
+            tx < o.x + o.w + pad && tx + noteW + pad > o.x &&
+            ty < o.y + o.h + pad && ty + cellH + pad > o.y
+          );
           if (!blocked) break;
-          ty += 30;
+          ty += cellH; // shift entire cell height down
         }
+
         tx = Math.max(10, Math.min(3800, tx));
         ty = Math.max(10, Math.min(2900, ty));
         newNotes.push({
@@ -495,15 +503,18 @@ function CanvasInner() {
       setNotes(ns => [...ns, ...newNotes]);
       setConnections(cs => [...cs, ...newConns]);
 
-      // Auto-pan if new notes are off-screen to the right
+      // Auto-pan if new notes are off-screen
       if (vpRef.current && newNotes.length > 0) {
         const vpRect = vpRef.current.getBoundingClientRect();
-        const rightmostX = Math.max(...newNotes.map(n => n.x + 200));
+        const rightmostX = Math.max(...newNotes.map(n => n.x + noteW));
+        const bottomY = Math.max(...newNotes.map(n => n.y + cellH));
         const visibleRight = (vpRect.width - panX) / zoom;
+        const visibleBottom = (vpRect.height - panY) / zoom;
         if (rightmostX > visibleRight - 40) {
-          const targetPanX = vpRect.width - (rightmostX + 80) * zoom;
-          // Smooth pan via transition
-          setPanX(targetPanX);
+          setPanX(vpRect.width - (rightmostX + 80) * zoom);
+        }
+        if (bottomY > visibleBottom - 40) {
+          setPanY(vpRect.height - (bottomY + 80) * zoom);
         }
       }
 
