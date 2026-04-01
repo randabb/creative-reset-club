@@ -233,6 +233,7 @@ function CanvasInner() {
   const [zoom, setZoom] = useState(1);
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
   const sessionIdRef = useRef<string | null>(sp.get("session_id"));
+  const sessionCreatedRef = useRef(!!sp.get("session_id"));
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -285,8 +286,11 @@ function CanvasInner() {
       // No capture and no session_id — redirect
       if (!captureParam) { router.push("/session/new"); return; }
 
-      // Create new session
-      if (uid) {
+      // Create new session — guard against duplicates (React StrictMode, double mount)
+      if (sessionCreatedRef.current || sessionIdRef.current) {
+        console.log("[canvas] Session already created, skipping POST");
+      } else if (uid) {
+        sessionCreatedRef.current = true;
         try {
           const res = await fetch("/api/sessions", {
             method: "POST",
@@ -301,11 +305,17 @@ function CanvasInner() {
             console.log("[canvas] New session created:", data.id);
             setSessionId(data.id);
             sessionIdRef.current = data.id;
+            // Add session_id to URL so refreshes load instead of creating new
+            const url = new URL(window.location.href);
+            url.searchParams.set("session_id", data.id);
+            window.history.replaceState({}, "", url.toString());
           } else {
             console.error("[canvas] Session creation returned no ID:", data);
+            sessionCreatedRef.current = false;
           }
         } catch (err) {
           console.error("[canvas] Session creation failed:", err);
+          sessionCreatedRef.current = false;
         }
       }
     };
