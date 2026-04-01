@@ -186,6 +186,8 @@ function CanvasInner() {
   const tourCheckedRef = useRef(false);
   const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
+  const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
+  const [allDimsComplete, setAllDimsComplete] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
@@ -552,30 +554,29 @@ function CanvasInner() {
     setConnModal(null);
   };
 
-  // AI action
+  // Find which dimension a note belongs to (closest x position)
+  const findNoteDim = (note: Note) => {
+    const dimNotes = notes.filter(n => n.source === "dimension");
+    if (dimNotes.length === 0) return { label: "", desc: "", idx: -1 };
+    let closest = dimNotes[0];
+    let closestDist = Math.abs(note.x - dimNotes[0].x);
+    dimNotes.forEach(d => {
+      const dist = Math.abs(note.x - d.x);
+      if (dist < closestDist) { closestDist = dist; closest = d; }
+    });
+    return { label: closest.dimLabel || "", desc: closest.dimDesc || "", idx: closest.dimIndex ?? 0 };
+  };
+
+  // AI action — generates ONE instruction
   const runAction = async (action: Action) => {
     if (selected.size === 0) return;
     const selId = [...selected][0];
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
-    // Clear suggestion dot for this note
     setNoteSuggestions(prev => { const n = { ...prev }; delete n[selId]; return n; });
-    // Dismiss coach card immediately
     if (showCoach) dismissCoach();
-    // Find which dimension this note belongs to (closest x position)
-    const dimNotes = notes.filter(n => n.source === "dimension");
-    let dimLabel = "";
-    let dimDesc = "";
-    if (dimNotes.length > 0) {
-      let closestDim = dimNotes[0];
-      let closestDist = Math.abs(selNote.x - dimNotes[0].x);
-      dimNotes.forEach(d => {
-        const dist = Math.abs(selNote.x - d.x);
-        if (dist < closestDist) { closestDist = dist; closestDim = d; }
-      });
-      dimLabel = closestDim.dimLabel || "";
-      dimDesc = closestDim.dimDesc || "";
-    }
+
+    const dim = findNoteDim(selNote);
 
     setAiLoading(true);
     try {
@@ -589,110 +590,55 @@ function CanvasInner() {
           goal: capture,
           selectedNoteText: selNote.text,
           allNotesText: notes.filter(n => n.source !== "dimension").map(n => n.text).join("\n\n"),
-          dimensionLabel: dimLabel,
-          dimensionDescription: dimDesc,
+          dimensionLabel: dim.label,
+          dimensionDescription: dim.desc,
         }),
         signal: controller.signal,
       });
       clearTimeout(timer);
       const data = await res.json();
-      const rawInstructions: ({ title: string; text: string } | string)[] = data.instructions || [];
 
-      // Normalize and parse: handle {title,text}, plain strings, and unparsed "TITLE: x | INSTRUCTION: y" lines
-      const parseInst = (line: string): { title: string; text: string } => {
-        const clean = line.replace(/[`*_]/g, "").trim();
-        // Try "TITLE: xxx | INSTRUCTION: xxx"
-        if (clean.includes(" | ")) {
-          const parts = clean.split(" | ");
-          const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-          const instruction = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
-          if (title && instruction) return { title, text: instruction };
-        }
-        // Try "xxx | xxx"
-        if (clean.includes("|")) {
-          const parts = clean.split("|");
-          const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-          const instruction = parts.slice(1).join("|").trim();
-          if (title && instruction) return { title, text: instruction };
-        }
-        // Strip any leftover TITLE:/INSTRUCTION: prefixes
-        const stripped = clean.replace(/^TITLE:\s*/i, "").replace(/^INSTRUCTION:\s*/i, "");
-        const words = stripped.split(/\s+/);
-        return { title: words.slice(0, 4).join(" "), text: stripped };
+      // Parse the single instruction (API now returns { instruction } not { instructions })
+      const raw = data.instruction || (data.instructions && data.instructions[0]) || { title: "Your thinking", text: "Write what comes to mind." };
+      const cleanTitle = (t: string) => {
+        let s = t.includes(":") ? t.split(":")[0].trim() : t;
+        const words = s.split(/\s+/);
+        if (words.length > 5) s = words.slice(0, 4).join(" ");
+        return s;
       };
-      const instructions = rawInstructions.map((raw) => {
-        const str = typeof raw === "string" ? raw : (raw.text || "");
-        const titleRaw = typeof raw === "string" ? "" : (raw.title || "");
-        // If API already parsed cleanly and text doesn't contain pipe formatting
-        if (titleRaw && !str.includes("|") && !str.startsWith("TITLE:")) {
-          return { title: titleRaw.replace(/[`*_]/g, ""), text: str.replace(/[`*_]/g, "") };
-        }
-        return parseInst(str);
-      });
+      const title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
+      const text = (raw.text || "").replace(/[`*_]/g, "");
 
-      // Place new notes in a HORIZONTAL ROW below the LOWEST point on the canvas
-      const noteW = dimensions.length > 0 ? 190 : 200;
-      const estimateH = (text: string) => {
-        const len = text.length;
-        if (len < 50) return 80;
-        if (len < 100) return 100;
-        if (len < 200) return 140;
-        return 180;
-      };
-
-      // Find the lowest point across ALL existing notes
+      // Place below the lowest point on canvas
+      const estimateH = (t: string) => { const l = t.length; return l < 50 ? 80 : l < 100 ? 100 : l < 200 ? 140 : 180; };
       let bottomY = 0;
-      notes.forEach(n => {
-        const h = estimateH(n.text);
-        const bottom = n.y + h;
-        if (bottom > bottomY) bottomY = bottom;
-      });
-
+      notes.forEach(n => { const b = n.y + estimateH(n.text); if (b > bottomY) bottomY = b; });
       const startY = bottomY + 60;
-      const newNotes: Note[] = instructions.map((inst, i) => ({
-        id: uid(),
-        x: 60 + i * 240,
-        y: startY,
-        text: inst.text,
-        source: "ai" as const,
-        action,
-        aiInstruction: true,
-        aiTitle: inst.title,
-      }));
+      const noteW = dimensions.length > 0 ? 190 : 200;
 
-      const newConns: Connection[] = newNotes.map(n => ({
-        id: uid(), from: selId, to: n.id, label: "", color: ACT[action].color,
-      }));
-      setNotes(ns => [...ns, ...newNotes]);
-      setConnections(cs => [...cs, ...newConns]);
+      const instId = uid();
+      const instNote: Note = {
+        id: instId, x: selNote.x, y: startY,
+        text, source: "ai", action, aiInstruction: true, aiTitle: title,
+      };
+      setNotes(ns => [...ns, instNote]);
+      setConnections(cs => [...cs, { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color }]);
 
-      // Auto-scroll to show new notes centered in viewport
-      if (vpRef.current && newNotes.length > 0) {
+      // Auto-scroll to new note
+      if (vpRef.current) {
         const vpRect = vpRef.current.getBoundingClientRect();
-        const targetY = startY + 60;
-        const newPanY = vpRect.height / 2 - targetY * zoom;
-        setPanY(newPanY);
-        panYRef.current = newPanY;
-        const midX = newNotes[Math.floor(newNotes.length / 2)].x + noteW / 2;
-        const newPanX = vpRect.width / 2 - midX * zoom;
-        setPanX(newPanX);
-        panXRef.current = newPanX;
+        const newPanY = vpRect.height / 2 - (startY + 60) * zoom;
+        setPanY(newPanY); panYRef.current = newPanY;
+        const newPanX = vpRect.width / 2 - (selNote.x + noteW / 2) * zoom;
+        setPanX(newPanX); panXRef.current = newPanX;
       }
 
-      // Start guided response flow
-      setResponseFlow({
-        instructionIds: newNotes.map(n => n.id),
-        currentIdx: 0,
-        sourceId: selId,
-        action,
-      });
+      // Start single-instruction response flow
+      setResponseFlow({ instructionIds: [instId], currentIdx: 0, sourceId: selId, action });
       setResponseText("");
       setSelected(new Set());
-    } catch {
-      // handled by API fallback
-    }
+    } catch { /* handled by API fallback */ }
     setAiLoading(false);
-    // Re-analyze after coaching completes
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
     analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
   };
@@ -750,8 +696,8 @@ function CanvasInner() {
 
   const hasSelection = selected.size > 0;
 
-  // Response flow: complete current instruction
-  const completeResponse = () => {
+  // Response flow: complete the instruction
+  const completeResponse = async () => {
     if (!responseFlow) return;
     const instId = responseFlow.instructionIds[responseFlow.currentIdx];
     const instNote = notes.find(n => n.id === instId);
@@ -768,19 +714,72 @@ function CanvasInner() {
       id: uid(), from: instId, to: respId, label: "", color: "rgba(0,3,50,0.1)",
     }]);
     setResponseText("");
-
-    // Advance to next instruction
-    const nextIdx = responseFlow.currentIdx + 1;
     setRespCardPos(null);
-    if (nextIdx < responseFlow.instructionIds.length) {
-      setResponseFlow({ ...responseFlow, currentIdx: nextIdx });
-    } else {
-      setResponseFlow(null);
-      setToast("Nice. You've worked through all the branches. Select another note to keep going.");
-      setTimeout(() => setToast(""), 3500);
-      // Re-analyze after completing all responses
-      if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-      analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
+    setResponseFlow(null);
+
+    // Re-analyze notes
+    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
+
+    // Assess dimension progression
+    if (dimensions.length > 0) {
+      const dim = findNoteDim(instNote);
+      const dimNotes = notes.filter(n => n.source !== "dimension");
+      const dimHeaders = notes.filter(n => n.source === "dimension");
+      // Gather notes under this dimension
+      const notesUnderDim = dimNotes.filter(n => {
+        let closest = dimHeaders[0];
+        let closestDist = Math.abs(n.x - dimHeaders[0].x);
+        dimHeaders.forEach(d => { const dist = Math.abs(n.x - d.x); if (dist < closestDist) { closestDist = dist; closest = d; } });
+        return (closest.dimLabel || "") === dim.label;
+      });
+
+      try {
+        const assessRes = await fetch("/api/assess-dimension", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal: capture,
+            currentDimension: `${dim.label} — ${dim.desc}`,
+            dimensionNotes: [...notesUnderDim, respNote].map(n => n.text).join("\n\n"),
+            allDimensions: dimensions.map(d => `${d.label} — ${d.description}`).join("\n"),
+            mode,
+          }),
+        });
+        const assessData = await assessRes.json();
+
+        if (assessData.status === "ready_to_move") {
+          // Find next unexplored dimension
+          const dimNoteCounts = dimensions.map((d, i) => {
+            const count = dimNotes.filter(n => {
+              let closest = dimHeaders[0];
+              let closestDist = Math.abs(n.x - dimHeaders[0].x);
+              dimHeaders.forEach(dh => { const dist = Math.abs(n.x - dh.x); if (dist < closestDist) { closestDist = dist; closest = dh; } });
+              return (closest.dimLabel || "") === d.label;
+            }).length;
+            return { idx: i, count };
+          });
+          const currentCount = dimNoteCounts.find(d => dimensions[d.idx].label === dim.label)?.count || 0;
+          const nextDim = dimNoteCounts.find(d => d.count < currentCount && d.idx !== dim.idx);
+
+          if (nextDim) {
+            setNudgeDimIdx(nextDim.idx);
+            setTimeout(() => setNudgeDimIdx(null), 8000);
+            setToast(`Nice work on "${dim.label}". "${dimensions[nextDim.idx].label}" is ready for you.`);
+            setTimeout(() => setToast(""), 4000);
+          } else {
+            // All dimensions explored
+            setAllDimsComplete(true);
+            setToast("You've explored all dimensions. Your brief is ready whenever you are.");
+            setTimeout(() => setToast(""), 5000);
+          }
+        } else {
+          setToast("Keep developing this dimension. Select a note and choose an action.");
+          setTimeout(() => setToast(""), 3000);
+        }
+      } catch {
+        // Silent — dimension assessment is optional
+      }
     }
   };
 
@@ -941,7 +940,7 @@ function CanvasInner() {
             if (data.deliverable_label || data.sections) setSynthesis(data);
           } catch { /* use without synthesis */ }
           setSynthLoading(false);
-        }} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Ready to go? →</button>
+        }} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>Ready to go? →</button>
       </div>
 
       {/* GOAL DROPDOWN */}
@@ -1194,6 +1193,7 @@ function CanvasInner() {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     zIndex: 10,
                     cursor: "default",
+                    animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : undefined,
                   }}
                 >
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6 }}>
@@ -1205,6 +1205,11 @@ function CanvasInner() {
                   <div style={{ fontSize: 11, color: "rgba(250,247,240,0.5)", fontWeight: 300, lineHeight: 1.5 }}>
                     {n.dimDesc}
                   </div>
+                  {nudgeDimIdx === (n.dimIndex ?? 0) && (
+                    <div style={{ fontSize: 11, color: "#FF9090", fontWeight: 600, marginTop: 6, animation: "noteIn 0.3s ease-out forwards" }}>
+                      Explore this next &rarr;
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -1230,7 +1235,7 @@ function CanvasInner() {
                     : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
                     : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
                   animationDelay: isAi && !responseFlow ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
-                  opacity: responseFlow && n.aiInstruction && responseFlow.instructionIds.includes(n.id) && responseFlow.instructionIds.indexOf(n.id) !== responseFlow.currentIdx ? 0.4 : isAi && !responseFlow ? undefined : undefined,
+                  opacity: undefined,
                 }}
               >
                 {n.source !== "goal" && (
@@ -1577,6 +1582,7 @@ function CanvasInner() {
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
         @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes dimNudge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.25), 0 2px 8px rgba(0,0,0,0.1); } }
       `}</style>
     </div>
   );

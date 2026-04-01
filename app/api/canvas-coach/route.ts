@@ -13,43 +13,31 @@ const ACTION_CONTEXT: Record<string, string> = {
   express: "Help them articulate clearly. Draw invisibly from Minto Pyramid, SCQA, Steelmanning.",
 };
 
-const FALLBACKS: Record<string, { title: string; text: string }[]> = {
-  clarify: [
-    { title: "The essential sentence", text: "Write the single most important sentence from this note." },
-    { title: "What you'd cut", text: "Name what you'd cut if you could only keep one idea." },
-    { title: "Zero-context version", text: "Rewrite this as if explaining to someone with zero context." },
-  ],
-  expand: [
-    { title: "The opposite", text: "Write the opposite of this — what would that look like?" },
-    { title: "Outside perspective", text: "Who outside your field would find this interesting, and why?" },
-    { title: "The 10x version", text: "What's the version of this that's ten times bigger?" },
-  ],
-  decide: [
-    { title: "The failure scenario", text: "Write what happens if you choose this and it fails." },
-    { title: "Your confidence test", text: "Name the one thing that would make you confident in this choice." },
-    { title: "What you're optimizing for", text: "What are you actually optimizing for here?" },
-  ],
-  express: [
-    { title: "One repeatable sentence", text: "Write this as one sentence someone could repeat back to you." },
-    { title: "The unexpected tension", text: "What's the tension you're introducing that your audience doesn't expect?" },
-    { title: "The uncomfortable version", text: "Say the uncomfortable version of this out loud." },
-  ],
+const FALLBACKS: Record<string, { title: string; text: string }> = {
+  clarify: { title: "The essential sentence", text: "Write the single most important sentence from this note." },
+  expand: { title: "The opposite", text: "Write the opposite of this — what would that look like?" },
+  decide: { title: "The failure scenario", text: "Write what happens if you choose this and it fails." },
+  express: { title: "One repeatable sentence", text: "Write this as one sentence someone could repeat back to you." },
 };
 
-const SYSTEM = `You are the AI thinking coach inside Primer's canvas. When the user selects a note and an action, you generate 2-3 SPECIFIC THINKING INSTRUCTIONS that branch out from that note.
+const SYSTEM = `You are the AI thinking coach inside Primer's canvas. When the user selects a note and an action, generate ONE specific thinking instruction.
 
-CRITICAL RULES:
-1. Generate exactly 2-3 instructions. Each is a separate sticky note that branches off the selected note.
-2. Each instruction tells the user WHAT TO WRITE in that note. They replace your instruction with their own thinking.
-3. Reference the user's EXACT language from their goal and the selected note.
-4. Keep each instruction under 20 words.
-5. NEVER do the thinking for them. Give them a specific prompt to fill in.
+RULES:
+1. ONE instruction only. Nothing else.
+2. This instruction tells the user WHAT TO WRITE in a response note. They will replace your instruction with their own thinking.
+3. Reference the user's EXACT language from their goal, the dimension, and the selected note.
+4. Keep the instruction under 25 words. Be specific, not generic.
+5. NEVER do the thinking for them.
 6. NEVER name any framework.
+7. NEVER ask "What if..." questions. They are suggestions, not thinking prompts.
+8. Consider what has ALREADY been written on the canvas. Don't repeat ground that's been covered.
+9. Pick the single most important thing this person needs to think about RIGHT NOW for this dimension.
 
-For each instruction, also generate a short response title (2-5 words) that labels what the user will write. This title should name the OUTPUT, not the instruction. For example if the instruction is 'List 5 creators who feel authentic', the title is 'Your 5 authentic creators'.
+Also generate a short response title (2-5 words) that names what the user will write.
 
-Format each line as: TITLE: Your actual title here | INSTRUCTION: Your actual instruction here
-One per line, nothing else. Do NOT include placeholder text like "[title]" or "[instruction text]". Write real, specific content for both the title and instruction.`;
+FORMAT — respond with ONLY one line:
+TITLE: Your actual title here | INSTRUCTION: Your actual instruction here
+Do NOT include placeholder text. Write real, specific content.`;
 
 export async function POST(req: Request) {
   try {
@@ -61,57 +49,61 @@ export async function POST(req: Request) {
     const ctx = ACTION_CONTEXT[action] || ACTION_CONTEXT.clarify;
     let userMsg = `ACTION: ${action.toUpperCase()}\n${ctx}\n\nUSER'S GOAL:\n${goal || "Not specified"}\n\n`;
     if (dimensionLabel) {
-      userMsg += `CURRENT DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\nKeep all instructions anchored to this specific dimension. Every instruction should help the user think deeper about THIS dimension specifically, not drift to the general goal or other dimensions.\n\n`;
+      userMsg += `CURRENT DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\nKeep the instruction anchored to this specific dimension.\n\n`;
     }
-    userMsg += `SELECTED NOTE:\n${selectedNoteText}\n\nALL NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
+    userMsg += `SELECTED NOTE:\n${selectedNoteText}\n\nNOTES ALREADY ON CANVAS:\n${allNotesText || selectedNoteText}`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 200,
-      system: SYSTEM + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nUse the intellectual layer to generate more specific, framework-grounded thinking instructions. Match the instruction to the user's situation type and thinking challenge.",
+      max_tokens: 100,
+      system: SYSTEM + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nUse the intellectual layer to generate a more specific, framework-grounded thinking instruction.",
       messages: [{ role: "user", content: userMsg }],
     });
 
     clearTimeout(timer);
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
-    const lines = text.split("\n").map((l: string) => l.replace(/^\d+[\.\)]\s*/, "").trim()).filter((l: string) => l.length > 0).slice(0, 3);
+    const line = text.split("\n").map((l: string) => l.replace(/^\d+[\.\)]\s*/, "").trim()).find((l: string) => l.length > 0);
 
-    if (lines.length === 0) throw new Error("Empty");
+    if (!line) throw new Error("Empty");
 
-    // Parse TITLE: ... | INSTRUCTION: ... format with robust fallbacks
-    const instructions = lines.map((line: string) => {
-      // Strip markdown formatting
-      const clean = line.replace(/[`*_]/g, "").trim();
-      // Try "TITLE: xxx | INSTRUCTION: xxx"
-      if (clean.includes(" | ")) {
-        const parts = clean.split(" | ");
-        const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-        const instruction = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
-        if (title && instruction) return { title, text: instruction };
-      }
-      // Try "TITLE: xxx | xxx" (no INSTRUCTION: prefix)
-      if (clean.includes("|")) {
-        const parts = clean.split("|");
-        const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
-        const instruction = parts.slice(1).join("|").trim();
-        if (title && instruction) return { title, text: instruction };
-      }
-      // Fallback: use first 4 words as title
+    // Clean title: keep only part before colon, max 5 words
+    const cleanTitle = (t: string) => {
+      let s = t.includes(":") ? t.split(":")[0].trim() : t;
+      const words = s.split(/\s+/);
+      if (words.length > 5) s = words.slice(0, 4).join(" ");
+      return s;
+    };
+
+    // Parse the single line
+    const clean = line.replace(/[`*_]/g, "").trim();
+    let instruction: { title: string; text: string };
+
+    if (clean.includes(" | ")) {
+      const parts = clean.split(" | ");
+      const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+      const inst = parts.slice(1).join(" | ").replace(/^INSTRUCTION:\s*/i, "").trim();
+      instruction = title && inst ? { title: cleanTitle(title), text: inst } : { title: cleanTitle(clean.slice(0, 30)), text: clean };
+    } else if (clean.includes("|")) {
+      const parts = clean.split("|");
+      const title = parts[0].replace(/^TITLE:\s*/i, "").trim();
+      const inst = parts.slice(1).join("|").trim();
+      instruction = title && inst ? { title: cleanTitle(title), text: inst } : { title: cleanTitle(clean.slice(0, 30)), text: clean };
+    } else {
       const stripped = clean.replace(/^TITLE:\s*/i, "").replace(/^INSTRUCTION:\s*/i, "");
       const words = stripped.split(/\s+/);
-      return { title: words.slice(0, 4).join(" "), text: stripped };
-    });
+      instruction = { title: words.slice(0, 4).join(" "), text: stripped };
+    }
 
-    return NextResponse.json({ instructions });
+    return NextResponse.json({ instruction });
   } catch (err) {
     console.error("[canvas-coach]", err);
     const body = await req.clone().json().catch(() => ({}));
     const action = body.action || "clarify";
     const fb = FALLBACKS[action] || FALLBACKS.clarify;
-    return NextResponse.json({ instructions: fb, fallback: true });
+    return NextResponse.json({ instruction: fb, fallback: true });
   }
 }
