@@ -188,6 +188,13 @@ function CanvasInner() {
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
+  const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
+  const [statusState, setStatusState] = useState<{
+    type: "landing" | "working" | "keep_going" | "ready_to_move" | "all_done" | "loading";
+    dimName?: string;
+    nextDimName?: string;
+    actionColor?: string;
+  }>({ type: "landing" });
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
@@ -299,6 +306,16 @@ function CanvasInner() {
     if (sessionId) scheduleSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notes, connections]);
+
+  // Initialize dimension tracking and landing status
+  useEffect(() => {
+    if (!canvasReady || dimensions.length === 0) return;
+    const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
+    dimensions.forEach(d => { initial[d.label] = "unexplored"; });
+    setDimStatus(initial);
+    setStatusState({ type: "landing", dimName: dimensions[0]?.label });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasReady]);
 
   // Periodic autosave every 30s if dirty
   useEffect(() => {
@@ -577,7 +594,10 @@ function CanvasInner() {
     if (showCoach) dismissCoach();
 
     const dim = findNoteDim(selNote);
-
+    if (dim.label) {
+      setDimStatus(prev => ({ ...prev, [dim.label]: prev[dim.label] === "complete" ? "complete" : "in_progress" }));
+    }
+    setStatusState({ type: "loading" });
     setAiLoading(true);
     try {
       const controller = new AbortController();
@@ -637,6 +657,7 @@ function CanvasInner() {
       setResponseFlow({ instructionIds: [instId], currentIdx: 0, sourceId: selId, action });
       setResponseText("");
       setSelected(new Set());
+      setStatusState({ type: "working", dimName: dim.label, actionColor: ACT[action].color });
     } catch { /* handled by API fallback */ }
     setAiLoading(false);
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
@@ -749,33 +770,20 @@ function CanvasInner() {
         const assessData = await assessRes.json();
 
         if (assessData.status === "ready_to_move") {
-          // Find next unexplored dimension
-          const dimNoteCounts = dimensions.map((d, i) => {
-            const count = dimNotes.filter(n => {
-              let closest = dimHeaders[0];
-              let closestDist = Math.abs(n.x - dimHeaders[0].x);
-              dimHeaders.forEach(dh => { const dist = Math.abs(n.x - dh.x); if (dist < closestDist) { closestDist = dist; closest = dh; } });
-              return (closest.dimLabel || "") === d.label;
-            }).length;
-            return { idx: i, count };
-          });
-          const currentCount = dimNoteCounts.find(d => dimensions[d.idx].label === dim.label)?.count || 0;
-          const nextDim = dimNoteCounts.find(d => d.count < currentCount && d.idx !== dim.idx);
-
-          if (nextDim) {
-            setNudgeDimIdx(nextDim.idx);
+          setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
+          // Find next unexplored or in_progress dimension
+          const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
+          if (nextDimEntry) {
+            const nextIdx = dimensions.indexOf(nextDimEntry);
+            setNudgeDimIdx(nextIdx);
             setTimeout(() => setNudgeDimIdx(null), 8000);
-            setToast(`Nice work on "${dim.label}". "${dimensions[nextDim.idx].label}" is ready for you.`);
-            setTimeout(() => setToast(""), 4000);
+            setStatusState({ type: "ready_to_move", dimName: dim.label, nextDimName: nextDimEntry.label });
           } else {
-            // All dimensions explored
             setAllDimsComplete(true);
-            setToast("You've explored all dimensions. Your brief is ready whenever you are.");
-            setTimeout(() => setToast(""), 5000);
+            setStatusState({ type: "all_done" });
           }
         } else {
-          setToast("Keep developing this dimension. Select a note and choose an action.");
-          setTimeout(() => setToast(""), 3000);
+          setStatusState({ type: "keep_going", dimName: dim.label });
         }
       } catch {
         // Silent — dimension assessment is optional
@@ -1038,10 +1046,45 @@ function CanvasInner() {
         </div>
       )}
 
-      {/* SELECTION HINT */}
-      {hasSelection && !aiLoading && (
-        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 25, fontSize: 12, color: "rgba(0,3,50,0.35)", background: "#fff", padding: "8px 18px", borderRadius: 100, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-          {selected.size} note{selected.size > 1 ? "s" : ""} selected — choose Clarify, Expand, Decide, or Express above
+      {/* STATUS BAR */}
+      {dimensions.length > 0 && (
+        <div style={{
+          position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 30,
+          maxWidth: 560, width: "calc(100% - 48px)",
+          background: "#fff", borderRadius: 12, padding: "14px 20px",
+          boxShadow: "0 4px 20px rgba(0,3,50,0.08)",
+          borderLeft: `3px solid ${
+            statusState.type === "loading" ? "rgba(0,3,50,0.15)"
+            : statusState.type === "working" ? (statusState.actionColor || "#FF9090")
+            : statusState.type === "ready_to_move" ? "#7ED6A8"
+            : "#FF9090"
+          }`,
+          transition: "border-color 0.3s",
+          fontFamily: "'Codec Pro',sans-serif",
+        }}>
+          <div style={{ fontSize: 13, color: "#000332", lineHeight: 1.55, fontWeight: 300 }}>
+            {statusState.type === "loading" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 14, height: 14, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", flexShrink: 0 }} />
+                Thinking...
+              </span>
+            )}
+            {statusState.type === "landing" && (
+              <span>Start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Select a note under it and choose an action above.</span>
+            )}
+            {statusState.type === "working" && (
+              <span>Working on <strong>{statusState.dimName}</strong>. Fill in your response, then keep going or try another action.</span>
+            )}
+            {statusState.type === "keep_going" && (
+              <span>Keep going on <strong>{statusState.dimName}</strong>. Select another note and develop it further.</span>
+            )}
+            {statusState.type === "ready_to_move" && (
+              <span><strong>{statusState.dimName}</strong> &#10003; — Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>. Select a note under it to start.</span>
+            )}
+            {statusState.type === "all_done" && (
+              <span>All dimensions explored. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> for your deliverable. Or keep refining.</span>
+            )}
+          </div>
         </div>
       )}
 
