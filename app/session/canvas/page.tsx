@@ -833,49 +833,71 @@ function CanvasInner() {
       });
       const responseCount = [...notesUnderDim, respNote].filter(n => n.source === "user").length;
 
-      try {
-        const assessRes = await fetch("/api/assess-dimension", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            goal: capture,
-            currentDimension: `${dim.label} — ${dim.desc}`,
-            dimensionNotes: [...notesUnderDim, respNote].map(n => n.text).join("\n\n"),
-            allDimensions: dimensions.map(d => `${d.label} — ${d.description}`).join("\n"),
-            mode,
-            lastNote: respNote.text,
-          }),
-        });
-        const assessData = await assessRes.json();
-        const recAction = (assessData.next_action || "clarify") as Action;
-        const recReason = assessData.next_action_reason || "";
-
-        // 1-second delay so result doesn't flash
-        await new Promise(r => setTimeout(r, 1000));
-
-        if (assessData.status === "ready_to_move") {
-          setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
-          const completedCount = Object.values(dimStatus).filter(s => s === "complete").length + 1;
-          const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
-          if (nextDimEntry) {
-            const nextIdx = dimensions.indexOf(nextDimEntry);
-            const remaining = dimensions.length - completedCount;
-            setNudgeDimIdx(nextIdx);
-            setTimeout(() => setNudgeDimIdx(null), 8000);
-            let reassurance = "";
-            if (completedCount >= 3 && completedCount < dimensions.length) reassurance = " Your thinking is really taking shape.";
-            setStatusState({ type: "ready_to_move", dimName: dim.label, nextDimName: nextDimEntry.label, nextActionReason: `${remaining} left.${reassurance}` });
-          } else {
-            setAllDimsComplete(true);
-            setStatusState({ type: "all_done" });
+      // Helper to handle "ready to move"
+      const handleReadyToMove = () => {
+        setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
+        const completedCount = Object.values(dimStatus).filter(s => s === "complete").length + 1;
+        const currentDimIdx = dimensions.findIndex(d => d.label === dim.label);
+        const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
+        if (nextDimEntry) {
+          const nextIdx = dimensions.indexOf(nextDimEntry);
+          const remaining = dimensions.length - completedCount;
+          setNudgeDimIdx(nextIdx);
+          setTimeout(() => setNudgeDimIdx(null), 8000);
+          // Find first thinking note under next dimension
+          const nextDimHeader = dimHeaders.find(h => h.dimLabel === nextDimEntry.label);
+          const nextThinkingNote = nextDimHeader ? dimNotes.find(n => n.source === "thinking" && Math.abs(n.x - nextDimHeader.x) < 130) : null;
+          let reassurance = completedCount >= 3 && completedCount < dimensions.length ? " Your thinking is really taking shape." : "";
+          setStatusState({
+            type: "ready_to_move",
+            dimName: dim.label,
+            nextDimName: nextDimEntry.label,
+            nextActionReason: `${remaining} left.${reassurance}`,
+            firstNoteLabel: nextThinkingNote ? (THINKING_LABELS[mode]?.[nextThinkingNote.qIndex ?? 0] || undefined) : undefined,
+          });
+          // Auto-scroll to show dimension headers
+          if (vpRef.current) {
+            const newPanY = -100 * zoom;
+            setPanY(newPanY); panYRef.current = newPanY;
           }
         } else {
-          let reassurance = "";
-          if (responseCount >= 2) reassurance = " You're building real depth here.";
-          setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason + reassurance, actionColor: ACT[recAction].color });
+          setAllDimsComplete(true);
+          setStatusState({ type: "all_done" });
         }
-      } catch {
-        setStatusState({ type: "keep_going", dimName: dim.label });
+      };
+
+      // Hard limit: 3+ responses = always ready to move (skip API call)
+      if (responseCount >= 3) {
+        await new Promise(r => setTimeout(r, 800));
+        handleReadyToMove();
+      } else {
+        try {
+          const assessRes = await fetch("/api/assess-dimension", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              goal: capture,
+              currentDimension: `${dim.label} — ${dim.desc}`,
+              dimensionNotes: [...notesUnderDim, respNote].map(n => n.text).join("\n\n"),
+              allDimensions: dimensions.map(d => `${d.label} — ${d.description}`).join("\n"),
+              mode,
+              lastNote: respNote.text,
+            }),
+          });
+          const assessData = await assessRes.json();
+          const recAction = (assessData.next_action || "clarify") as Action;
+          const recReason = assessData.next_action_reason || "";
+
+          await new Promise(r => setTimeout(r, 1000));
+
+          if (assessData.status === "ready_to_move" || responseCount >= 2) {
+            handleReadyToMove();
+          } else {
+            setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason, actionColor: ACT[recAction].color });
+          }
+        } catch {
+          setStatusState({ type: "keep_going", dimName: dim.label });
+        }
       }
     }
   };
@@ -1177,6 +1199,16 @@ function CanvasInner() {
           transition: "border-color 0.3s, opacity 0.3s",
           fontFamily: "'Codec Pro',sans-serif",
         }}>
+          {/* Progress dots */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            {dimensions.map((d, i) => (
+              <div key={i} style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: dimStatus[d.label] === "complete" ? "#FF9090" : "rgba(0,3,50,0.1)",
+                transition: "background 0.3s",
+              }} />
+            ))}
+          </div>
           <div style={{ fontSize: 13, color: "#000332", lineHeight: 1.55, fontWeight: 300 }}>
             {statusState.type === "loading" && (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1211,11 +1243,16 @@ function CanvasInner() {
                 </span>
               );
             })()}
-            {statusState.type === "ready_to_move" && (() => {
-              return (
-                <span><strong>{statusState.dimName}</strong> &#10003; Great work. Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong> — select a note under it to start. <span style={{ color: "rgba(0,3,50,0.35)" }}>{statusState.nextActionReason}</span></span>
-              );
-            })()}
+            {statusState.type === "ready_to_move" && (
+              <span>
+                &#10003; <strong>{statusState.dimName}</strong> done. Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>.{" "}
+                {statusState.firstNoteLabel
+                  ? <>Select <strong style={{ color: "#FF9090" }}>{statusState.firstNoteLabel}</strong> to start.</>
+                  : <>Select a note under it to start.</>
+                }{" "}
+                <span style={{ color: "rgba(0,3,50,0.35)" }}>{statusState.nextActionReason}</span>
+              </span>
+            )}
             {statusState.type === "all_done" && (
               <span>All dimensions explored. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> for your deliverable. Or keep refining.</span>
             )}

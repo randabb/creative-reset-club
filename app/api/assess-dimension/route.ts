@@ -7,23 +7,21 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM = `You are assessing whether a thinking dimension has been sufficiently explored.
 
-Look at the user's goal, the current dimension, and all the notes written under this dimension. Determine:
-1. Has the user explored this dimension with enough depth? (at least 2 substantive notes that go beyond surface level)
-2. Is there an obvious gap in this dimension that needs one more prompt?
+RULES:
+- After 2 substantive responses (more than a few words each), the dimension is READY TO MOVE. Don't ask for more.
+- After 3 responses of ANY kind, ALWAYS return ready_to_move. No exceptions.
+- The goal is BREADTH across dimensions, not infinite depth in one. The user has 4-5 dimensions to explore.
+- "keep_going" should ONLY be returned if the user has written 0-1 responses in this dimension.
+- Be biased toward moving forward. Progress feels good. Getting stuck feels bad.
 
 Also analyze the LAST note the user just wrote and determine which action would help it most:
-- clarify: if it's vague, has untested assumptions, or multiple ideas tangled together
-- expand: if it's clear but thin, obvious, or has unexplored angles
-- decide: if it contains a choice, tradeoff, or unresolved tension
-- express: if it has a good idea but needs better articulation or structure
+- clarify: vague, untested assumptions, tangled ideas
+- expand: clear but thin, needs new angles
+- decide: contains a choice or tension
+- express: good idea but poorly articulated
 
 Respond with ONLY a JSON object:
-{"status": "keep_going" | "ready_to_move", "reason": "one sentence", "next_action": "clarify" | "expand" | "decide" | "express", "next_action_reason": "short reason using the user's exact words, under 20 words"}
-
-"keep_going" means: suggest another prompt in this dimension
-"ready_to_move" means: this dimension is well explored, nudge to the next one
-
-Be honest. If they've only written surface-level notes, say keep_going. If they've genuinely developed the thinking with 2-3 substantive notes, say ready_to_move.`;
+{"status": "keep_going" | "ready_to_move", "reason": "one sentence", "next_action": "clarify" | "expand" | "decide" | "express", "next_action_reason": "short reason using the user's words, under 20 words"}`;
 
 export async function POST(req: Request) {
   try {
