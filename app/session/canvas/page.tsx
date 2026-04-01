@@ -1158,7 +1158,7 @@ function CanvasInner() {
                   width: dimensions.length > 0 ? 190 : 200, minHeight: n.aiInstruction ? 100 : 60, padding: "10px 12px",
                   borderRadius: 10,
                   background: isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
-                  border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
+                  border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
@@ -1187,6 +1187,21 @@ function CanvasInner() {
                       zIndex: 5,
                     }}
                   >×</button>
+                )}
+                {editId !== n.id && (
+                  <button
+                    className="cn-edit"
+                    onClick={(e) => { e.stopPropagation(); setDragId(null); setEditId(n.id); }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute", top: 8, right: 8,
+                      background: "none", border: "none",
+                      fontSize: 14, color: "#94949E", lineHeight: 1,
+                      cursor: "pointer", opacity: 0,
+                      transition: "opacity 0.15s",
+                      zIndex: 4, padding: 0,
+                    }}
+                  >&#9998;</button>
                 )}
                 {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
                   const sugAction = noteSuggestions[n.id];
@@ -1469,6 +1484,8 @@ function CanvasInner() {
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
+        .cn:hover .cn-edit { opacity: 0.5 !important; }
+        .cn-edit:hover { opacity: 1 !important; }
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-dot { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-tip { opacity: 1 !important; }
