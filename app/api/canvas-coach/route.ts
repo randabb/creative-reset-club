@@ -56,6 +56,8 @@ GOOD instructions (simple, direct, still deep):
 
 The sophistication comes from WHAT you ask, not HOW you phrase it. A simple question can be devastatingly insightful. A complex question just confuses people. Read your instruction out loud — if it sounds like something you'd say to a friend, it's good. If it sounds like a consulting document, rewrite it.
 
+The instruction must be a specific prompt that tells the user what to WRITE. It should start with a verb. If your instruction is under 5 words or doesn't tell the user what to produce, it's not specific enough. Rewrite it.
+
 TITLE RULES:
 - Response titles should be 2-4 words. Conversational. Like a label you'd scribble on a sticky note.
 - BAD titles: "SPECIFIC FRUSTRATION MOMENTS", "YOUR THINKING DEPTH GAP", "CONTEXT CONTAMINATION ANALYSIS"
@@ -143,7 +145,23 @@ export async function POST(req: Request) {
       if (!instText) instText = stripped;
     }
 
-    return NextResponse.json({ instruction: { discipline, title, text: instText } });
+    // Validation: prevent discipline name leaking into title
+    if (validDisc.includes(title.toLowerCase())) {
+      title = instText.split(/\s+/).slice(0, 3).join(" ");
+    }
+    // Validation: if instruction is too short, it's probably the title leaking — swap
+    if (instText.split(/\s+/).length < 5 && title.split(/\s+/).length >= 5) {
+      const tmp = instText;
+      instText = title;
+      title = cleanTitle(tmp);
+    }
+    // Strip any discipline prefix that leaked into title or instruction
+    for (const d of validDisc) {
+      title = title.replace(new RegExp(`^${d}\\s*[-:]?\\s*`, "i"), "");
+      instText = instText.replace(new RegExp(`^${d}\\s*[-:]?\\s*`, "i"), "");
+    }
+
+    return NextResponse.json({ instruction: { discipline, title: cleanTitle(title), text: instText } });
   } catch (err) {
     console.error("[canvas-coach]", err);
     const body = await req.clone().json().catch(() => ({}));
