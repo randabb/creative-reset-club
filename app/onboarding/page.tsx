@@ -122,10 +122,11 @@ export default function Onboarding() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#000332",
+      minHeight: "100vh", background: step <= 4 ? "#FAF7F0" : "#000332",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "40px 24px",
       fontFamily: "'Codec Pro', sans-serif",
+      transition: "background 0.3s ease",
     }}>
       <div style={{
         maxWidth: 560, width: "100%", textAlign: "center",
@@ -142,29 +143,24 @@ export default function Onboarding() {
         {/* QUIZ QUESTIONS */}
         {step >= 1 && step <= 4 && (
           <>
-            {/* Logo + pulsing core */}
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#FAF7F0", letterSpacing: "-0.01em", marginBottom: 20 }}>
+            {/* Logo */}
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em", marginBottom: 20 }}>
               primer
-            </div>
-            <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 24px" }}>
-              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#FF9090", position: "absolute", top: 15, left: 15, animation: "corePulse 3s ease-in-out infinite" }} />
-              <div style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid rgba(255,144,144,0.3)", position: "absolute", top: 7, left: 7, animation: "ringExpand 3s ease-in-out infinite" }} />
-              <div style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,144,144,0.15)", position: "absolute", top: 0, left: 0, animation: "ringExpand 3s ease-in-out infinite 0.5s" }} />
             </div>
 
             {/* Subtitle on Q1 only */}
             {step === 1 && (
-              <div style={{ fontSize: 13, color: "rgba(250,247,240,0.35)", fontWeight: 300, marginBottom: 28 }}>
+              <div style={{ fontSize: 13, color: "rgba(0,3,50,0.35)", fontWeight: 300, marginBottom: 28 }}>
                 A few quick questions to set up your thinking space.
               </div>
             )}
 
             {/* Progress bar */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 56, justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 48, justifyContent: "center" }}>
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} style={{
                   width: 48, height: 3, borderRadius: 2,
-                  background: i < step ? "#FF9090" : "rgba(250,247,240,0.12)",
+                  background: i < step ? "#FF9090" : "rgba(0,3,50,0.08)",
                   transition: "background 0.3s ease",
                 }} />
               ))}
@@ -172,7 +168,7 @@ export default function Onboarding() {
 
             <div style={{
               fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 400,
-              color: "#FAF7F0", lineHeight: 1.35, marginBottom: 40,
+              color: "#000332", lineHeight: 1.35, marginBottom: 40,
               fontStyle: "italic", letterSpacing: "-0.01em",
             }}>
               {QUESTIONS[qIdx].text}
@@ -185,9 +181,9 @@ export default function Onboarding() {
                   onClick={() => handleAnswer(opt.mode, qIdx)}
                   style={{
                     width: "100%", padding: "18px 24px", textAlign: "left",
-                    background: "transparent",
-                    border: "1.5px solid rgba(250,247,240,0.12)",
-                    borderRadius: 14, color: "#FAF7F0",
+                    background: "#fff",
+                    border: "1.5px solid rgba(0,3,50,0.1)",
+                    borderRadius: 14, color: "#000332",
                     fontSize: 15, fontWeight: 400, cursor: "pointer",
                     fontFamily: "'Codec Pro', sans-serif",
                     transition: "all 0.2s ease",
@@ -195,11 +191,13 @@ export default function Onboarding() {
                   }}
                   onMouseEnter={(e) => {
                     (e.target as HTMLElement).style.borderColor = "#FF9090";
-                    (e.target as HTMLElement).style.background = "rgba(255,144,144,0.06)";
+                    (e.target as HTMLElement).style.transform = "translateY(-2px)";
+                    (e.target as HTMLElement).style.boxShadow = "0 4px 12px rgba(0,0,0,0.04)";
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLElement).style.borderColor = "rgba(250,247,240,0.12)";
-                    (e.target as HTMLElement).style.background = "transparent";
+                    (e.target as HTMLElement).style.borderColor = "rgba(0,3,50,0.1)";
+                    (e.target as HTMLElement).style.transform = "";
+                    (e.target as HTMLElement).style.boxShadow = "";
                   }}
                 >
                   {opt.label}
