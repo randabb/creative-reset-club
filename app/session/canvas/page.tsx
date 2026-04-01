@@ -118,14 +118,18 @@ function CanvasInner() {
         });
         dimIds.push(dimId);
       });
-      // Place Q&A notes below their dimension column
+      // Place Q&A notes below their dimension column with generous spacing
+      // Track how many notes are in each column to stack vertically
+      const colCount: Record<number, number> = {};
       qas.forEach((qa, i) => {
         const dimIdx = Math.min(i, dimensions.length - 1);
+        const stackIdx = colCount[dimIdx] || 0;
+        colCount[dimIdx] = stackIdx + 1;
         const nid = uid();
         ns.push({
           id: nid,
           x: 65 + dimIdx * 260,
-          y: 340,
+          y: 420 + stackIdx * 160,
           text: qa.answer,
           source: "thinking",
           qIndex: i,
@@ -197,6 +201,8 @@ function CanvasInner() {
     firstNoteLabel?: string;
   }>({ type: "landing" });
   const suggestAbortRef = useRef<AbortController | null>(null);
+  const [symbolHintShown, setSymbolHintShown] = useState(false);
+  const [showSymbolHint, setShowSymbolHint] = useState(false);
   const [exampleNoteId, setExampleNoteId] = useState<string | null>(null);
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
@@ -427,6 +433,12 @@ function CanvasInner() {
         setNoteSuggestions(map);
         setFreshSuggestions(ids);
         setTimeout(() => setFreshSuggestions(new Set()), 1500);
+        // Show first-time symbol hint
+        if (ids.size > 0 && !symbolHintShown && !localStorage.getItem("primer_symbol_hint_shown")) {
+          setSymbolHintShown(true);
+          setShowSymbolHint(true);
+          setTimeout(() => setShowSymbolHint(false), 5000);
+        }
       }
     } catch { /* silent */ }
   }, [notes, capture]);
@@ -1041,6 +1053,21 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* SYMBOL HINT */}
+      {showSymbolHint && (
+        <div style={{
+          position: "fixed", top: 80, right: 40, zIndex: 40,
+          background: "#fff", borderRadius: 10, padding: "12px 16px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxWidth: 240,
+          animation: "noteIn 0.3s ease-out forwards",
+          borderLeft: "3px solid #FF9090",
+        }}>
+          <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.55, fontWeight: 300, fontFamily: "'Codec Pro',sans-serif" }}>
+            These icons suggest what to do next. Click one to start.
+          </p>
+        </div>
+      )}
+
       {/* STATUS BAR */}
       {dimensions.length > 0 && (
         <div style={{
@@ -1334,13 +1361,9 @@ function CanvasInner() {
                       const sugAction = noteSuggestions[n.id];
                       const sugColor = ACT[sugAction].color;
                       const sugIcon = ACT[sugAction].icon;
+                      const sugLabel = ACT[sugAction].label.toLowerCase();
                       const isFresh = freshSuggestions.has(n.id);
-                      const tipTexts: Record<Action, string> = {
-                        clarify: "Try clarifying this",
-                        expand: "Try expanding this",
-                        decide: "Try deciding on this",
-                        express: "Try expressing this",
-                      };
+                      const isSuggested = statusState.type === "suggesting" && statusState.nextAction === sugAction && selected.has(n.id);
                       return (
                         <div
                           className="sug-dot-wrap"
@@ -1349,24 +1372,29 @@ function CanvasInner() {
                             e.stopPropagation();
                             setSelected(new Set([n.id]));
                             setNoteSuggestions(prev => { const next = { ...prev }; delete next[n.id]; return next; });
+                            localStorage.setItem("primer_symbol_hint_shown", "true");
                             setTimeout(() => runAction(sugAction), 100);
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
                         >
-                          <div style={{
-                            fontSize: 14, color: sugColor, opacity: 0.5,
-                            cursor: "pointer", lineHeight: 1,
-                            transition: "opacity 0.15s",
-                            animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : undefined,
-                          }} className="sug-dot">{sugIcon}</div>
+                          <div className="sug-dot" style={{
+                            width: 28, height: 28, borderRadius: "50%",
+                            background: `${sugColor}18`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                            animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : isSuggested ? "sugPulse 0.8s ease-in-out infinite" : undefined,
+                          }}>
+                            <span style={{ fontSize: 18, color: sugColor, opacity: 0.7, lineHeight: 1 }}>{sugIcon}</span>
+                          </div>
                           <div className="sug-tip" style={{
-                            position: "absolute", top: "100%", right: 0,
-                            marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
+                            position: "absolute", bottom: "100%", right: 0,
+                            marginBottom: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
                             padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap",
                             pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
                             fontWeight: 400,
                           }}>
-                            {tipTexts[sugAction]}
+                            Click to {sugLabel} this note
                           </div>
                         </div>
                       );
@@ -1689,9 +1717,10 @@ function CanvasInner() {
         .cn:hover .cn-edit { opacity: 0.5 !important; }
         .cn-edit:hover { opacity: 1 !important; }
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
-        .sug-dot-wrap:hover .sug-dot { opacity: 1 !important; }
+        .sug-dot-wrap:hover .sug-dot { transform: scale(1.1); }
+        .sug-dot-wrap:hover .sug-dot span { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-tip { opacity: 1 !important; }
-        @keyframes sugPulse { 0%,100% { transform:scale(1); opacity:0.5; } 50% { transform:scale(1.3); opacity:1; } }
+        @keyframes sugPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.15); } }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
