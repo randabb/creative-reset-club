@@ -520,11 +520,16 @@ function CanvasInner() {
   }, []);
 
   // Zoom
-  // Prevent scroll-to-zoom (scroll does nothing on canvas)
+  // Scroll = vertical pan, block horizontal scroll
   useEffect(() => {
     const el = vpRef.current;
     if (!el) return;
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const ny = panYRef.current - e.deltaY;
+      panYRef.current = ny;
+      setPanY(ny);
+    };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
