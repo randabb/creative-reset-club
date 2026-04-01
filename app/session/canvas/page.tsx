@@ -928,19 +928,19 @@ function CanvasInner() {
       <div style={{ position: "absolute", top: 14, right: 20, zIndex: 30, display: "flex", gap: 8 }}>
         <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "8px 16px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.1)", background: "#fff", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
         <button onClick={async () => {
-          setShowExport(!showExport);
-          if (!showExport && !synthesis && !synthLoading) {
-            setSynthLoading(true);
-            try {
-              const res = await fetch("/api/session-synthesis", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
-              });
-              const data = await res.json();
-              if (data.deliverable_label || data.sections) setSynthesis(data);
-            } catch { /* use without synthesis */ }
-            setSynthLoading(false);
-          }
+          if (showExport) { setShowExport(false); return; }
+          setShowExport(true);
+          setSynthesis(null);
+          setSynthLoading(true);
+          try {
+            const res = await fetch("/api/session-synthesis", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
+            });
+            const data = await res.json();
+            if (data.deliverable_label || data.sections) setSynthesis(data);
+          } catch { /* use without synthesis */ }
+          setSynthLoading(false);
         }} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Ready to go? →</button>
       </div>
 
