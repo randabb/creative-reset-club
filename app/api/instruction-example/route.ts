@@ -5,15 +5,22 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `The user doesn't understand a thinking instruction and wants an example of what a good response looks like.
-
-Write ONE short example response (2-3 sentences max) that shows what kind of thinking the instruction is asking for.
+const SYSTEM = `The user wants an example of what to write. Give them ONE short example using a DIFFERENT topic than theirs.
 
 RULES:
-- Use a DIFFERENT topic than the user's goal so they don't just copy it
-- Make it concrete and specific
-- The example should make the user think "oh, THAT'S what they're asking for"
-- Keep it under 40 words
+- 1-2 sentences MAX. Under 25 words.
+- Use casual, everyday language. Like you're texting a friend.
+- Be concrete and specific. Real names, real situations.
+- The example should make them think "oh, got it" instantly.
+- NEVER use formal or consulting language.
+
+BAD (too long, too formal):
+"Perfectionist founders who spent months crafting detailed product specs but struggle with messy, iterative user acquisition because AI gives them polished frameworks when they need scrappy, experimental tactics."
+
+GOOD (short, clear, instant understanding):
+"Freelance designers who ask ChatGPT for client proposals but the tone never sounds like them."
+"First-time managers who use AI for feedback scripts but they come out robotic."
+"Solo consultants who get AI strategy decks that look smart but miss their client's real problem."
 
 Respond with ONLY the example text, nothing else.`;
 
