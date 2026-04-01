@@ -396,9 +396,9 @@ function CanvasInner() {
 
 
   // Note analysis: suggest actions for notes
-  const analyzeNotes = useCallback(async () => {
+  const analyzeNotes = useCallback(async (force = false) => {
     const now = Date.now();
-    if (now - lastAnalyzeRef.current < 15000) return;
+    if (!force && now - lastAnalyzeRef.current < 8000) return;
     lastAnalyzeRef.current = now;
     const eligible = notes.filter(n =>
       n.source !== "dimension" && n.source !== "goal" && !n.aiInstruction && n.text.trim().length > 5
@@ -570,9 +570,9 @@ function CanvasInner() {
     justFinishedEditRef.current = true;
     setTimeout(() => { justFinishedEditRef.current = false; }, 300);
     setNotes(ns => ns.filter(n => n.id !== id || n.text.trim()));
-    // Re-analyze after editing
+    // Re-analyze after editing (force bypass debounce)
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
   };
 
   const finishConnection = () => {
@@ -672,7 +672,7 @@ function CanvasInner() {
     } catch { /* handled by API fallback */ }
     setAiLoading(false);
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
   };
 
   // Export helpers
@@ -749,9 +749,9 @@ function CanvasInner() {
     setRespCardPos(null);
     setResponseFlow(null);
 
-    // Re-analyze notes
+    // Re-analyze notes (force bypass debounce)
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
 
     // Assess dimension progression
     if (dimensions.length > 0) {
