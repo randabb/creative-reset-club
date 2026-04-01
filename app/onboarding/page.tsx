@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -64,6 +64,23 @@ export default function Onboarding() {
   const [visible, setVisible] = useState(true);
   const [resultMode, setResultMode] = useState<Mode | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Redirect already-onboarded users to studio
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return; // allow unauthenticated through to see quiz (they'll auth after)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.onboarding_completed) {
+        router.push("/studio");
+      }
+    };
+    check();
+  }, [router]);
 
   const transition = (next: () => void) => {
     setVisible(false);

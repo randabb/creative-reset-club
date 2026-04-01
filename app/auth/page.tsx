@@ -33,16 +33,30 @@ export default function AuthPage() {
     // Check onboarding status
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (profile?.onboarding_completed) {
-        router.push("/studio");
-      } else {
-        router.push("/onboarding");
+      try {
+        const { data: profile, error: profileErr } = await supabase
+          .from("profiles")
+          .select("onboarding_completed, default_mode")
+          .eq("id", user.id)
+          .maybeSingle();
+        console.log("[auth] Profile check:", { profile, profileErr });
+        if (profile?.onboarding_completed) {
+          router.push("/studio");
+          return;
+        }
+        // Also check if they have any sessions (may have skipped onboarding)
+        const { count } = await supabase
+          .from("sessions")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        if (count && count > 0) {
+          router.push("/studio");
+          return;
+        }
+      } catch (err) {
+        console.error("[auth] Profile check failed:", err);
       }
+      router.push("/onboarding");
     } else {
       router.push("/onboarding");
     }
