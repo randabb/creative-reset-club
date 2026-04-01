@@ -171,7 +171,6 @@ function CanvasInner() {
   const [showGoal, setShowGoal] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [toast, setToast] = useState("");
-  const [showCoach, setShowCoach] = useState(false);
   const [responseFlow, setResponseFlow] = useState<ResponseFlow | null>(null);
   const [responseText, setResponseText] = useState("");
   const [respCardPos, setRespCardPos] = useState<{ x: number; y: number } | null>(null);
@@ -179,7 +178,6 @@ function CanvasInner() {
   const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string } | null>(null);
   const [synthEditing, setSynthEditing] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
-  const [coachDismissed, setCoachDismissed] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [tourWelcome, setTourWelcome] = useState(false);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -334,7 +332,6 @@ function CanvasInner() {
       console.log("[canvas] primer_canvas_toured:", toured);
       if (!toured) {
         setTourWelcome(true);
-        setCoachDismissed(true); // suppress coach card during/after tour
       }
     }, 500);
     return () => clearTimeout(t);
@@ -346,7 +343,6 @@ function CanvasInner() {
     localStorage.setItem("primer_canvas_toured", "true");
     // Show coach card after 10s if no note selected
     setTimeout(() => {
-      setCoachDismissed(false);
     }, 10000);
   };
   const nextTourStep = () => {
@@ -356,33 +352,10 @@ function CanvasInner() {
       setTourStep(null);
       localStorage.setItem("primer_canvas_toured", "true");
       setTimeout(() => {
-        setCoachDismissed(false);
-      }, 10000);
+        }, 10000);
     }
   };
 
-  // Coach card — shows once per canvas visit (session-local, not persistent)
-  useEffect(() => {
-    if (coachDismissed) return;
-    const t = setTimeout(() => {
-      setShowCoach(true);
-      setQ4Pulsing(true);
-      setTimeout(() => setQ4Pulsing(false), 6000);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [coachDismissed]);
-
-  const dismissCoach = () => {
-    setShowCoach(false);
-    setCoachDismissed(true);
-    setQ4Pulsing(false);
-  };
-
-  // Auto-dismiss coach when user selects a note or clicks an action
-  useEffect(() => {
-    if (selected.size > 0 && showCoach) dismissCoach();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
 
   // Note analysis: suggest actions for notes
   const analyzeNotes = useCallback(async () => {
@@ -591,7 +564,6 @@ function CanvasInner() {
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
     setNoteSuggestions(prev => { const n = { ...prev }; delete n[selId]; return n; });
-    if (showCoach) dismissCoach();
 
     const dim = findNoteDim(selNote);
     if (dim.label) {
@@ -612,6 +584,7 @@ function CanvasInner() {
           allNotesText: notes.filter(n => n.source !== "dimension").map(n => n.text).join("\n\n"),
           dimensionLabel: dim.label,
           dimensionDescription: dim.desc,
+          existingInstructions: notes.filter(n => n.aiInstruction).map(n => `- ${n.text}`).join("\n") || undefined,
         }),
         signal: controller.signal,
       });
@@ -1019,30 +992,6 @@ function CanvasInner() {
         <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 50, background: "#fff", padding: "10px 20px", borderRadius: 100, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
           <div style={{ width: 16, height: 16, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite" }} />
           <span style={{ fontSize: 12, color: "rgba(0,3,50,0.5)" }}>Generating thinking branches...</span>
-        </div>
-      )}
-
-      {/* COACH CARD */}
-      {showCoach && !coachDismissed && (
-        <div style={{
-          position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)",
-          zIndex: 35, maxWidth: 480, width: "calc(100% - 48px)",
-          background: "#fff", borderRadius: 14, padding: "18px 22px",
-          borderLeft: "3px solid #FF9090",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          animation: "coachIn 0.4s ease-out forwards",
-        }}>
-          <button onClick={dismissCoach} style={{
-            position: "absolute", top: 10, right: 12,
-            background: "none", border: "none", fontSize: 16,
-            color: "rgba(0,3,50,0.25)", cursor: "pointer", lineHeight: 1,
-          }}>×</button>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 8 }}>
-            WHERE TO START
-          </div>
-          <p style={{ fontSize: 15, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
-            Select any note, then choose an action: <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the core. <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it. <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it. <strong style={{ color: "#C4A6FF" }}>Express</strong> to structure it.
-          </p>
         </div>
       )}
 

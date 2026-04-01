@@ -32,6 +32,7 @@ RULES:
 7. NEVER ask "What if..." questions. They are suggestions, not thinking prompts.
 8. Consider what has ALREADY been written on the canvas. Don't repeat ground that's been covered.
 9. Pick the single most important thing this person needs to think about RIGHT NOW for this dimension.
+10. NEVER repeat an instruction that has already been given. Each instruction must explore a genuinely different angle. Check the list of existing instructions and make sure yours is distinct.
 
 Also generate a short response title (2-5 words) that names what the user will write.
 
@@ -41,7 +42,7 @@ Do NOT include placeholder text. Write real, specific content.`;
 
 export async function POST(req: Request) {
   try {
-    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription } = await req.json();
+    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription, existingInstructions } = await req.json();
     if (!selectedNoteText || !action) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
       userMsg += `CURRENT DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\nKeep the instruction anchored to this specific dimension.\n\n`;
     }
     userMsg += `SELECTED NOTE:\n${selectedNoteText}\n\nNOTES ALREADY ON CANVAS:\n${allNotesText || selectedNoteText}`;
+    if (existingInstructions) {
+      userMsg += `\n\nINSTRUCTIONS ALREADY GIVEN (do NOT repeat any of these):\n${existingInstructions}`;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
