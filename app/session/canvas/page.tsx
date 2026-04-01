@@ -1145,17 +1145,19 @@ function CanvasInner() {
       <button
         onClick={async () => { await saveCanvas(); router.push("/studio"); }}
         style={{
-          position: "fixed", top: 16, left: 16, zIndex: 25,
-          background: "none", border: "none", fontSize: 13,
+          position: "fixed", top: 60, left: 16, zIndex: 30,
+          background: "rgba(250,247,240,0.9)", backdropFilter: "blur(8px)",
+          border: "none", fontSize: 13, borderRadius: 8, padding: "6px 12px",
           color: "#000332", cursor: "pointer", fontFamily: "'Codec Pro',sans-serif",
-          display: "flex", alignItems: "center", gap: 4, opacity: 0.5,
+          display: "flex", alignItems: "center", gap: 4, opacity: 0.6,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
         }}
         onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-        onMouseLeave={e => (e.currentTarget.style.opacity = "0.5")}
+        onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
       >&larr; Studio</button>
 
       {/* DISCIPLINE LEGEND */}
-      <div style={{ position: "fixed", top: 60, left: 16, zIndex: 20 }}>
+      <div style={{ position: "fixed", top: 60, right: 16, zIndex: 30 }}>
         {showLegend ? (
           <div style={{ background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", width: 220, animation: "noteIn 0.2s ease-out forwards" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
