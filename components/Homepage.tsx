@@ -94,7 +94,7 @@ export default function Homepage() {
             <span className={styles.ctaDot}>&rarr;</span>
           </Link>
           <div className={styles.heroProofRow}>
-            <span>For marketers, founders, PMs, engineers, strategists, and creators</span>
+            <span>Used by founders, marketers, and operators working through real decisions</span>
           </div>
         </div>
 
