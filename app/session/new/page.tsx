@@ -15,6 +15,10 @@ export default function NewSession() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth"); return; }
+      // Pre-fill from query param (e.g. from studio example chips)
+      const params = new URLSearchParams(window.location.search);
+      const prefill = params.get("prefill");
+      if (prefill) setCapture(prefill);
       setLoading(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     };

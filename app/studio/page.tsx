@@ -24,16 +24,6 @@ interface CanvasItem {
   created_at: string;
 }
 
-interface ArcItem {
-  id: string;
-  outcome: string;
-  mode: Mode;
-  current_day: number;
-  total_days: number;
-  phase: string;
-  last_reflection: string;
-}
-
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "morning";
@@ -46,20 +36,30 @@ function formatDate(iso: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+const EXAMPLE_PROMPTS = [
+  "How should I position my product?",
+  "I need to make a hiring decision",
+  "I have an idea but can't articulate it",
+  "I want to plan my next quarter",
+];
+
 export default function Studio() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [firstName, setFirstName] = useState("");
   const [canvases, setCanvases] = useState<CanvasItem[]>([]);
-  const [arcs, setArcs] = useState<ArcItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | Mode>("all");
+  const [arcModal, setArcModal] = useState(false);
+  const [arcEmail, setArcEmail] = useState("");
+  const [arcSubmitted, setArcSubmitted] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth"); return; }
       setUser(user);
+      setArcEmail(user.email || "");
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -70,7 +70,6 @@ export default function Studio() {
       const name = profile?.name || "";
       setFirstName(name.split(" ")[0]);
 
-      // Fetch canvases via API (handles note_count extraction)
       try {
         const res = await fetch(`/api/sessions?userId=${user.id}`);
         const data = await res.json();
@@ -87,21 +86,18 @@ export default function Studio() {
         }
       } catch { /* table may not exist yet */ }
 
-      // Fetch arcs — gracefully handle missing table
-      try {
-        const { data: arcData } = await supabase
-          .from("arcs")
-          .select("id, outcome, mode, current_day, total_days, phase, last_reflection")
-          .eq("user_id", user.id)
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
-        if (arcData) setArcs(arcData as ArcItem[]);
-      } catch { /* table may not exist yet */ }
-
       setLoading(false);
     };
     load();
   }, [router]);
+
+  const handleArcWaitlist = async () => {
+    if (!arcEmail.trim() || !user) return;
+    try {
+      await supabase.from("profiles").update({ arc_waitlist_email: arcEmail.trim() }).eq("id", user.id);
+    } catch { /* column may not exist */ }
+    setArcSubmitted(true);
+  };
 
   if (loading) {
     return (
@@ -111,6 +107,7 @@ export default function Studio() {
     );
   }
 
+  const isFirstTime = canvases.length === 0;
   const filtered = filter === "all" ? canvases : canvases.filter((c) => c.mode === filter);
 
   const filters: { key: "all" | Mode; label: string }[] = [
@@ -149,207 +146,315 @@ export default function Studio() {
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 40px 80px" }}>
         {/* GREETING */}
-        <div style={{ marginBottom: 40, animation: "studioFadeUp 0.5s ease forwards", opacity: 0 }}>
+        <div style={{ marginBottom: isFirstTime ? 32 : 40, animation: "studioFadeUp 0.5s ease forwards", opacity: 0 }}>
           <h1 style={{
             fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 400,
             color: "#000332", fontStyle: "italic", letterSpacing: "-0.02em",
-            lineHeight: 1.2, marginBottom: 8,
+            lineHeight: 1.2, marginBottom: isFirstTime ? 0 : 8,
           }}>
             Good {getGreeting()}{firstName ? `, ${firstName}` : ""}.
           </h1>
-          <p style={{ fontSize: 15, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>
-            Your studio has {canvases.length} canvas{canvases.length !== 1 ? "es" : ""} and {arcs.length} active arc{arcs.length !== 1 ? "s" : ""}.
-          </p>
-        </div>
-
-        {/* ACTION BUTTONS */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 56, animation: "studioFadeUp 0.5s ease 0.1s forwards", opacity: 0, flexWrap: "wrap" }}>
-          <Link href="/session/new" style={{
-            flex: 1, minWidth: 240, padding: "28px 28px",
-            background: "#fff", border: "1.5px solid #FF9090", borderRadius: 16,
-            textDecoration: "none", transition: "transform 0.2s, box-shadow 0.2s",
-            display: "block",
-          }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", fontStyle: "italic", marginBottom: 4 }}>New canvas</div>
-            <div style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>Think through something specific</div>
-          </Link>
-          <Link href="/arc/new" style={{
-            flex: 1, minWidth: 240, padding: "28px 28px",
-            background: "transparent", border: "1.5px dashed rgba(0,3,50,0.15)", borderRadius: 16,
-            textDecoration: "none", transition: "transform 0.2s, box-shadow 0.2s",
-            display: "block",
-          }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", fontStyle: "italic", marginBottom: 4 }}>New arc</div>
-            <div style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>Work toward something bigger, over days</div>
-          </Link>
-        </div>
-
-        {/* ACTIVE ARCS */}
-        {arcs.length > 0 && (
-          <div style={{ marginBottom: 56, animation: "studioFadeUp 0.5s ease 0.2s forwards", opacity: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FF9090", animation: "arcDotPulse 2s ease-in-out infinite" }} />
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#000332" }}>Active arcs</h2>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {arcs.map((arc) => {
-                const m = MODE_META[arc.mode] || MODE_META.clarity;
-                const pct = arc.total_days > 0 ? (arc.current_day / arc.total_days) * 100 : 0;
-                return (
-                  <div key={arc.id} style={{
-                    background: "#fff", borderRadius: 16, padding: "28px 28px",
-                    border: `1.5px solid ${m.color}22`, transition: "transform 0.2s, box-shadow 0.2s",
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                      <div>
-                        <div style={{ fontSize: 17, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{arc.outcome}</div>
-                        <div style={{ fontSize: 12, color: m.color, fontWeight: 600 }}>{m.icon} {m.label} · {arc.phase}</div>
-                      </div>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: "50%",
-                        border: `3px solid ${m.color}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 12, fontWeight: 700, color: m.color,
-                      }}>
-                        {arc.current_day}/{arc.total_days}
-                      </div>
-                    </div>
-                    <div style={{ height: 3, background: "rgba(0,3,50,0.06)", borderRadius: 2, marginBottom: 16 }}>
-                      <div style={{ height: 3, background: m.color, borderRadius: 2, width: `${pct}%`, transition: "width 0.4s" }} />
-                    </div>
-                    {arc.last_reflection && (
-                      <p style={{ fontSize: 13, color: "rgba(0,3,50,0.5)", fontStyle: "italic", fontWeight: 300, lineHeight: 1.6, marginBottom: 16 }}>
-                        &ldquo;{arc.last_reflection.length > 100 ? arc.last_reflection.slice(0, 100) + "..." : arc.last_reflection}&rdquo;
-                      </p>
-                    )}
-                    <button style={{
-                      background: m.color, color: "#000332", border: "none",
-                      padding: "10px 24px", borderRadius: 100, fontSize: 13,
-                      fontWeight: 700, cursor: "pointer", fontFamily: "'Codec Pro',sans-serif",
-                    }}>
-                      Continue Day {arc.current_day}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* CANVASES */}
-        <div style={{ animation: "studioFadeUp 0.5s ease 0.3s forwards", opacity: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#000332" }}>Your canvases</h2>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {filters.map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 100, border: "none",
-                    background: filter === f.key ? "#fff" : "transparent",
-                    boxShadow: filter === f.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                    fontSize: 12, fontWeight: filter === f.key ? 600 : 400,
-                    color: filter === f.key ? "#000332" : "rgba(0,3,50,0.4)",
-                    cursor: "pointer", fontFamily: "'Codec Pro',sans-serif",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div style={{
-              padding: "56px 32px", textAlign: "center",
-              border: "1.5px dashed rgba(0,3,50,0.1)", borderRadius: 16,
-            }}>
-              <p style={{ fontSize: 15, color: "rgba(0,3,50,0.35)", fontWeight: 300, marginBottom: 8 }}>
-                {canvases.length === 0 ? "No canvases yet." : "No canvases in this mode."}
-              </p>
-              {canvases.length === 0 && (
-                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.25)", fontWeight: 300 }}>
-                  Start one to see your thinking take shape.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: 14,
-            }}>
-              {filtered.map((c, i) => {
-                const m = MODE_META[c.mode] || MODE_META.clarity;
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => router.push(`/session/canvas?session_id=${c.id}`)}
-                    style={{
-                      background: "#fff", borderRadius: 16, padding: "24px 24px",
-                      border: "1px solid rgba(0,3,50,0.06)",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      cursor: "pointer",
-                      animation: `studioFadeUp 0.4s ease ${0.05 * i}s forwards`,
-                      opacity: 0,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.06)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
-                  >
-                    {/* Mini spatial thumbnail */}
-                    <div style={{
-                      height: 48, marginBottom: 14, position: "relative",
-                      background: "rgba(0,3,50,0.02)", borderRadius: 8, overflow: "hidden",
-                    }}>
-                      <svg width="100%" height="48" style={{ position: "absolute", inset: 0 }}>
-                        {[0, 1, 2, 3, 4].map((j) => (
-                          <circle
-                            key={j}
-                            cx={30 + j * 50 + Math.random() * 20}
-                            cy={12 + Math.random() * 24}
-                            r={3 + Math.random() * 2}
-                            fill={m.color}
-                            opacity={0.3 + Math.random() * 0.4}
-                          />
-                        ))}
-                      </svg>
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 6, lineHeight: 1.3 }}>
-                      {c.goal || "Untitled canvas"}
-                    </div>
-                    {c.excerpt && (
-                      <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontStyle: "italic", fontWeight: 300, lineHeight: 1.55, marginBottom: 10 }}>
-                        {c.excerpt.length > 80 ? c.excerpt.slice(0, 80) + "..." : c.excerpt}
-                      </p>
-                    )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ display: "flex", gap: 10, fontSize: 11, color: "rgba(0,3,50,0.3)" }}>
-                        <span>{c.note_count || 0} notes</span>
-                        <span>{c.connection_count || 0} connections</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 11, color: "rgba(0,3,50,0.25)" }}>{formatDate(c.created_at)}</span>
-                        <span style={{ fontSize: 14, color: m.color }}>{m.icon}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {!isFirstTime && (
+            <p style={{ fontSize: 15, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>
+              Your studio has {canvases.length} canvas{canvases.length !== 1 ? "es" : ""}.
+            </p>
           )}
         </div>
+
+        {isFirstTime ? (
+          <>
+            {/* FIRST-TIME ENTRY CARD */}
+            <div style={{
+              background: "#fff", borderRadius: 16, padding: "40px 40px",
+              boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
+              marginBottom: 48,
+              animation: "studioFadeUp 0.5s ease 0.1s forwards", opacity: 0,
+            }}>
+              <h2 style={{
+                fontSize: 22, fontWeight: 400, fontStyle: "italic",
+                color: "#000332", letterSpacing: "-0.01em", marginBottom: 12,
+              }}>
+                Start your first canvas
+              </h2>
+              <p style={{
+                fontSize: 15, color: "rgba(0,3,50,0.5)", fontWeight: 300,
+                lineHeight: 1.7, maxWidth: 480, marginBottom: 28,
+              }}>
+                Got a decision to make, an idea to develop, or a problem to untangle? Primer guides you through it in about 15 minutes. You&rsquo;ll leave with something you can actually use.
+              </p>
+
+              {/* Example prompt chips */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                {EXAMPLE_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => {
+                      const params = new URLSearchParams({ prefill: prompt });
+                      router.push(`/session/new?${params.toString()}`);
+                    }}
+                    className="prompt-chip"
+                    style={{
+                      padding: "8px 16px", borderRadius: 20,
+                      background: "rgba(0,3,50,0.03)", border: "1px solid rgba(0,3,50,0.08)",
+                      color: "#000332", fontSize: 13, fontWeight: 400,
+                      cursor: "pointer", fontFamily: "inherit",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
+              <Link href="/session/new" style={{
+                display: "inline-block", padding: "14px 32px", borderRadius: 100,
+                background: "#FF9090", color: "#000332", fontSize: 15, fontWeight: 700,
+                textDecoration: "none", fontFamily: "inherit",
+              }}>
+                Or start blank
+              </Link>
+            </div>
+
+            {/* HOW IT WORKS */}
+            <div style={{
+              borderTop: "1px solid rgba(0,3,50,0.06)", paddingTop: 36,
+              animation: "studioFadeUp 0.5s ease 0.2s forwards", opacity: 0,
+            }}>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 32,
+              }}>
+                {[
+                  { step: "1", title: "Capture", desc: "Write what\u2019s on your mind. No structure needed." },
+                  { step: "2", title: "Think", desc: "AI asks you questions grounded in expert frameworks. You go deeper." },
+                  { step: "3", title: "Canvas", desc: "See your ideas on a spatial canvas. Clarify, expand, decide, or express them." },
+                ].map((s) => (
+                  <div key={s.step}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: "50%",
+                      background: "rgba(255,144,144,0.12)", color: "#FF9090",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 13, fontWeight: 700, marginBottom: 12,
+                    }}>
+                      {s.step}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{s.title}</div>
+                    <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300, lineHeight: 1.6 }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* RETURNING USER: ACTION BUTTONS */}
+            <div style={{ display: "flex", gap: 12, marginBottom: 56, animation: "studioFadeUp 0.5s ease 0.1s forwards", opacity: 0, flexWrap: "wrap" }}>
+              <Link href="/session/new" style={{
+                flex: 1, minWidth: 240, padding: "28px 28px",
+                background: "#fff", border: "1.5px solid #FF9090", borderRadius: 16,
+                textDecoration: "none", transition: "transform 0.2s, box-shadow 0.2s",
+                display: "block",
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", fontStyle: "italic", marginBottom: 4 }}>New canvas</div>
+                <div style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>Think through something specific</div>
+              </Link>
+              <button
+                onClick={() => setArcModal(true)}
+                style={{
+                  flex: 1, minWidth: 240, padding: "28px 28px",
+                  background: "transparent", border: "1.5px dashed rgba(0,3,50,0.15)", borderRadius: 16,
+                  textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  position: "relative",
+                }}
+              >
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#000332", fontStyle: "italic", marginBottom: 4 }}>
+                  New arc
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+                    textTransform: "uppercase" as const, color: "#FF9090",
+                    background: "rgba(255,144,144,0.1)", padding: "3px 8px",
+                    borderRadius: 100, marginLeft: 10, verticalAlign: "middle",
+                    fontStyle: "normal",
+                  }}>Coming soon</span>
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300, fontStyle: "normal" }}>Work toward something bigger, over days</div>
+              </button>
+            </div>
+
+            {/* CANVASES */}
+            <div style={{ animation: "studioFadeUp 0.5s ease 0.3s forwards", opacity: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#000332" }}>Your canvases</h2>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {filters.map((f) => (
+                    <button
+                      key={f.key}
+                      onClick={() => setFilter(f.key)}
+                      style={{
+                        padding: "6px 14px", borderRadius: 100, border: "none",
+                        background: filter === f.key ? "#fff" : "transparent",
+                        boxShadow: filter === f.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                        fontSize: 12, fontWeight: filter === f.key ? 600 : 400,
+                        color: filter === f.key ? "#000332" : "rgba(0,3,50,0.4)",
+                        cursor: "pointer", fontFamily: "'Codec Pro',sans-serif",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {filtered.length === 0 ? (
+                <div style={{
+                  padding: "56px 32px", textAlign: "center",
+                  border: "1.5px dashed rgba(0,3,50,0.1)", borderRadius: 16,
+                }}>
+                  <p style={{ fontSize: 15, color: "rgba(0,3,50,0.35)", fontWeight: 300 }}>
+                    No canvases in this mode.
+                  </p>
+                </div>
+              ) : (
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: 14,
+                }}>
+                  {filtered.map((c, i) => {
+                    const m = MODE_META[c.mode] || MODE_META.clarity;
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => router.push(`/session/canvas?session_id=${c.id}`)}
+                        style={{
+                          background: "#fff", borderRadius: 16, padding: "24px 24px",
+                          border: "1px solid rgba(0,3,50,0.06)",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          cursor: "pointer",
+                          animation: `studioFadeUp 0.4s ease ${0.05 * i}s forwards`,
+                          opacity: 0,
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.06)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                      >
+                        <div style={{
+                          height: 48, marginBottom: 14, position: "relative",
+                          background: "rgba(0,3,50,0.02)", borderRadius: 8, overflow: "hidden",
+                        }}>
+                          <svg width="100%" height="48" style={{ position: "absolute", inset: 0 }}>
+                            {[0, 1, 2, 3, 4].map((j) => (
+                              <circle
+                                key={j}
+                                cx={30 + j * 50 + Math.random() * 20}
+                                cy={12 + Math.random() * 24}
+                                r={3 + Math.random() * 2}
+                                fill={m.color}
+                                opacity={0.3 + Math.random() * 0.4}
+                              />
+                            ))}
+                          </svg>
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 6, lineHeight: 1.3 }}>
+                          {c.goal || "Untitled canvas"}
+                        </div>
+                        {c.excerpt && (
+                          <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontStyle: "italic", fontWeight: 300, lineHeight: 1.55, marginBottom: 10 }}>
+                            {c.excerpt.length > 80 ? c.excerpt.slice(0, 80) + "..." : c.excerpt}
+                          </p>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ display: "flex", gap: 10, fontSize: 11, color: "rgba(0,3,50,0.3)" }}>
+                            <span>{c.note_count || 0} notes</span>
+                            <span>{c.connection_count || 0} connections</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 11, color: "rgba(0,3,50,0.25)" }}>{formatDate(c.created_at)}</span>
+                            <span style={{ fontSize: 14, color: m.color }}>{m.icon}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* ARC COMING SOON MODAL */}
+      {arcModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 60,
+            background: "rgba(0,0,0,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+          onClick={() => setArcModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 16, padding: "32px 32px",
+              maxWidth: 440, width: "100%",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            }}
+          >
+            {arcSubmitted ? (
+              <div style={{ textAlign: "center", padding: "12px 0" }}>
+                <div style={{ fontSize: 28, marginBottom: 12 }}>&#10003;</div>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "#000332", marginBottom: 4 }}>You&rsquo;re on the list.</p>
+                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>We&rsquo;ll let you know when thinking arcs are ready.</p>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#000332", fontStyle: "italic", marginBottom: 12 }}>
+                  Thinking arcs are coming soon.
+                </h3>
+                <p style={{ fontSize: 14, color: "rgba(0,3,50,0.55)", fontWeight: 300, lineHeight: 1.65, marginBottom: 24 }}>
+                  An arc is a multi-day thinking journey for goals too big for one session &mdash; like building a product, repositioning a brand, or planning a career move. Want us to let you know when it&rsquo;s ready?
+                </p>
+                <input
+                  type="email"
+                  value={arcEmail}
+                  onChange={(e) => setArcEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  style={{
+                    width: "100%", padding: "12px 16px",
+                    border: "1.5px solid rgba(0,3,50,0.1)", borderRadius: 10,
+                    fontSize: 14, color: "#000332", outline: "none",
+                    fontFamily: "inherit", marginBottom: 12,
+                  }}
+                />
+                <button
+                  onClick={handleArcWaitlist}
+                  style={{
+                    width: "100%", padding: "14px", borderRadius: 100,
+                    background: "#FF9090", color: "#000332", border: "none",
+                    fontSize: 14, fontWeight: 700, cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Notify me
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes studioFadeUp {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes arcDotPulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.3); }
+        .prompt-chip:hover {
+          border-color: #FF9090 !important;
+          background: rgba(255,144,144,0.04) !important;
         }
       `}</style>
     </div>
