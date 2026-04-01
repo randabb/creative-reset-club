@@ -70,6 +70,8 @@ Also classify which thinking discipline this instruction draws from:
 - critical: testing assumptions, evidence, logic, opposing arguments
 - creative: new combinations, breaking patterns, divergent ideas, unexpected angles
 
+FINAL CHECK: Your instruction MUST be a complete sentence that starts with a verb and tells the user exactly what to write. Examples of GOOD instructions: 'Name three founders who would pay for this tomorrow.' / 'Write what your user does the hour before they need your product.' / 'Describe the worst AI response your target user has ever gotten.' If your instruction is under 8 words or doesn't start with a verb, YOU HAVE FAILED. Rewrite it.
+
 FORMAT — respond with ONLY one line:
 DISCIPLINE: design|systems|strategic|critical|creative | TITLE: your title | INSTRUCTION: your instruction
 Do NOT include placeholder text. Write real, specific content.`;

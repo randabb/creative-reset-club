@@ -684,9 +684,23 @@ function CanvasInner() {
         if (words.length > 5) s = words.slice(0, 4).join(" ");
         return s;
       };
-      const title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
-      const text = (raw.text || "").replace(/[`*_]/g, "");
+      let title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
+      let text = (raw.text || "").replace(/[`*_]/g, "");
       const disc = (["design","systems","strategic","critical","creative"].includes(raw.discipline) ? raw.discipline : "strategic") as Note["discipline"];
+
+      // Validation: if instruction is under 8 words, it's probably a title — swap
+      const textWords = text.split(/\s+/).length;
+      const titleWords = title.split(/\s+/).length;
+      if (textWords < 8 && titleWords >= 8) {
+        const tmp = text;
+        text = title;
+        title = cleanTitle(tmp);
+      } else if (textWords < 8 && titleWords < 8) {
+        // Both too short — use full raw text as instruction
+        const fullText = [raw.title, raw.text].filter(Boolean).join(" ").replace(/[`*_]/g, "");
+        text = fullText;
+        title = cleanTitle(fullText.split(/\s+/).slice(0, 3).join(" "));
+      }
 
       // Place directly below the source note (vertical chain, generous offset)
       const startY = selNote.y + charOffset(selNote.text);
