@@ -76,6 +76,25 @@ export async function POST(req: Request) {
   }
 }
 
+// DELETE: remove a session
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    const { error } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("id", id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+
 // PATCH: update canvas_state (autosave)
 export async function PATCH(req: Request) {
   try {

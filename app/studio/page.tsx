@@ -53,6 +53,8 @@ export default function Studio() {
   const [arcModal, setArcModal] = useState(false);
   const [arcEmail, setArcEmail] = useState("");
   const [arcSubmitted, setArcSubmitted] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -90,6 +92,16 @@ export default function Studio() {
     };
     load();
   }, [router]);
+
+  const handleDelete = async (id: string) => {
+    setCanvases(prev => prev.filter(c => c.id !== id));
+    setDeleteConfirm(null);
+    try {
+      await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
+    } catch { /* already removed from UI */ }
+    setToast("Canvas deleted");
+    setTimeout(() => setToast(""), 2000);
+  };
 
   const handleArcWaitlist = async () => {
     if (!arcEmail.trim() || !user) return;
@@ -328,18 +340,43 @@ export default function Studio() {
                     return (
                       <div
                         key={c.id}
-                        onClick={() => router.push(`/session/canvas?session_id=${c.id}`)}
+                        className="studio-card"
+                        onClick={() => { if (deleteConfirm !== c.id) router.push(`/session/canvas?session_id=${c.id}`); }}
                         style={{
                           background: "#fff", borderRadius: 16, padding: "24px 24px",
                           border: "1px solid rgba(0,3,50,0.06)",
                           transition: "transform 0.2s, box-shadow 0.2s",
                           cursor: "pointer",
                           animation: `studioFadeUp 0.4s ease ${0.05 * i}s forwards`,
-                          opacity: 0,
+                          opacity: 0, position: "relative",
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.06)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
                       >
+                        {/* Delete icon */}
+                        <button
+                          className="card-del"
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm(deleteConfirm === c.id ? null : c.id); }}
+                          style={{
+                            position: "absolute", top: 10, right: 10, zIndex: 2,
+                            background: "none", border: "none", fontSize: 14, color: "#94949E",
+                            cursor: "pointer", opacity: 0, transition: "opacity 0.15s", padding: 4, lineHeight: 1,
+                          }}
+                        >×</button>
+                        {/* Delete confirmation */}
+                        {deleteConfirm === c.id && (
+                          <div onClick={e => e.stopPropagation()} style={{
+                            position: "absolute", inset: 0, zIndex: 3,
+                            background: "rgba(255,255,255,0.95)", borderRadius: 16,
+                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
+                          }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#000332" }}>Delete this canvas?</p>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button onClick={() => handleDelete(c.id)} style={{ padding: "8px 20px", borderRadius: 100, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
+                              <button onClick={() => setDeleteConfirm(null)} style={{ padding: "8px 20px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                            </div>
+                          </div>
+                        )}
                         <div style={{
                           height: 48, marginBottom: 14, position: "relative",
                           background: "rgba(0,3,50,0.02)", borderRadius: 8, overflow: "hidden",
@@ -447,6 +484,13 @@ export default function Studio() {
         </div>
       )}
 
+      {/* TOAST */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 50, background: "#000332", color: "#FAF7F0", padding: "12px 24px", borderRadius: 100, fontSize: 13, fontWeight: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+          {toast}
+        </div>
+      )}
+
       <style>{`
         @keyframes studioFadeUp {
           from { opacity: 0; transform: translateY(12px); }
@@ -456,6 +500,8 @@ export default function Studio() {
           border-color: #FF9090 !important;
           background: rgba(255,144,144,0.04) !important;
         }
+        .studio-card:hover .card-del { opacity: 0.5 !important; }
+        .card-del:hover { opacity: 1 !important; }
       `}</style>
     </div>
   );
