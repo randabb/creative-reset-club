@@ -11,12 +11,10 @@ const SYSTEM = `You are analyzing a canvas of thinking notes. For each note, det
 - decide: the note contains a choice, tradeoff, or unresolved tension
 - express: the note has a good idea but it's poorly articulated or unstructured
 
+Analyze EVERY note provided. Each note needs exactly one suggestion. Assign the action that would help it most right now. Every note in the input must appear in the output.
+
 Respond with ONLY a JSON array, one entry per note:
-[{"id":"note-id","action":"clarify"},{"id":"note-id","action":"expand"}]
-
-Only include notes that clearly need one action. If a note is fine as-is, omit it.
-
-Be selective. Only tag notes that genuinely need development. A canvas where every note has a dot feels overwhelming. Pick the 2-4 notes that would benefit most from further thinking. Prioritize notes that are vague, contain assumptions, or have unexplored tension.`;
+[{"id":"note-id","action":"clarify"},{"id":"note-id","action":"expand"}]`;
 
 interface NoteInput {
   id: string;
@@ -42,7 +40,7 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 300,
+      max_tokens: 600,
       system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
@@ -58,12 +56,9 @@ export async function POST(req: Request) {
 
     const parsed = JSON.parse(match[0]);
     const valid = ["clarify", "expand", "decide", "express"];
-    const suggestions = parsed
-      .filter(
-        (s: { id: string; action: string }) =>
-          s.id && valid.includes(s.action)
-      )
-      .slice(0, 4);
+    const suggestions = parsed.filter(
+      (s: { id: string; action: string }) => s.id && valid.includes(s.action)
+    );
 
     return NextResponse.json({ suggestions });
   } catch (err) {

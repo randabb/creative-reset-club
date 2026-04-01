@@ -497,6 +497,9 @@ function CanvasInner() {
     justFinishedEditRef.current = true;
     setTimeout(() => { justFinishedEditRef.current = false; }, 300);
     setNotes(ns => ns.filter(n => n.id !== id || n.text.trim()));
+    // Re-analyze after editing
+    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
   };
 
   const finishConnection = () => {
@@ -727,6 +730,9 @@ function CanvasInner() {
       setResponseFlow(null);
       setToast("Nice. You've worked through all the branches. Select another note to keep going.");
       setTimeout(() => setToast(""), 3500);
+      // Re-analyze after completing all responses
+      if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
+      analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
     }
   };
 
@@ -1159,7 +1165,7 @@ function CanvasInner() {
                 {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
                   const sugAction = noteSuggestions[n.id];
                   const sugColor = ACT[sugAction].color;
-                  const sugLabel = ACT[sugAction].label;
+                  const sugIcon = ACT[sugAction].icon;
                   const isFresh = freshSuggestions.has(n.id);
                   const tipTexts: Record<Action, string> = {
                     clarify: "Try clarifying this",
@@ -1180,12 +1186,11 @@ function CanvasInner() {
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <div style={{
-                        width: 8, height: 8, borderRadius: "50%",
-                        background: sugColor, opacity: 0.6,
-                        cursor: "pointer",
+                        fontSize: 14, color: sugColor, opacity: 0.5,
+                        cursor: "pointer", lineHeight: 1,
                         transition: "opacity 0.15s",
                         animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : undefined,
-                      }} className="sug-dot" />
+                      }} className="sug-dot">{sugIcon}</div>
                       <div className="sug-tip" style={{
                         position: "absolute", top: "100%", right: 0,
                         marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
@@ -1309,7 +1314,7 @@ function CanvasInner() {
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-dot { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-tip { opacity: 1 !important; }
-        @keyframes sugPulse { 0%,100% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.6); opacity:1; } }
+        @keyframes sugPulse { 0%,100% { transform:scale(1); opacity:0.5; } 50% { transform:scale(1.3); opacity:1; } }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
