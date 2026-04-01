@@ -416,10 +416,13 @@ function CanvasInner() {
   const startPan = useCallback((e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
     if (t.closest(".cn")) return;
+    // If editing, finish edit first and don't start panning
+    if (editId) { finishEdit(editId); return; }
     isPanning.current = true;
     panStart.current = { x: e.clientX - panXRef.current, y: e.clientY - panYRef.current };
     e.preventDefault();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
 
   useEffect(() => {
     const s2cRef = (cx: number, cy: number) => {
@@ -1294,20 +1297,32 @@ function CanvasInner() {
                 )}
                 {isAi && <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 4 }}>YOUR TURN</div>}
                 {editId === n.id ? (
-                  <textarea
-                    autoFocus
-                    value={n.text}
-                    onChange={e => {
-                      updateText(n.id, e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = e.target.scrollHeight + "px";
-                    }}
-                    onBlur={() => finishEdit(n.id)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishEdit(n.id); } }}
-                    onMouseDown={e => e.stopPropagation()}
-                    ref={el => { if (el) { const preH = editPreHeight.current; el.style.height = "auto"; const scrollH = el.scrollHeight; el.style.height = Math.max(scrollH, preH > 0 ? preH - 20 : 30) + "px"; } }}
-                    style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
-                  />
+                  <>
+                    <textarea
+                      autoFocus
+                      value={n.text}
+                      onChange={e => {
+                        updateText(n.id, e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = e.target.scrollHeight + "px";
+                      }}
+                      onBlur={() => finishEdit(n.id)}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishEdit(n.id); } }}
+                      onMouseDown={e => e.stopPropagation()}
+                      ref={el => { if (el) { const preH = editPreHeight.current; el.style.height = "auto"; const scrollH = el.scrollHeight; el.style.height = Math.max(scrollH, preH > 0 ? preH - 20 : 30) + "px"; } }}
+                      style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
+                    />
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                      <button
+                        onMouseDown={e => { e.preventDefault(); e.stopPropagation(); finishEdit(n.id); }}
+                        style={{
+                          padding: "4px 12px", borderRadius: 6, border: "none",
+                          background: "#FF9090", color: "#fff", fontSize: 11,
+                          fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        }}
+                      >Done</button>
+                    </div>
+                  </>
                 ) : (
                   <div style={{
                     fontSize: 13, lineHeight: 1.55, color: "#000332",
