@@ -38,7 +38,7 @@ function CanvasVisual() {
   ];
   return (
     <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px", textAlign: "center" }}>
-      <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia,serif", fontSize: "clamp(22px,3vw,28px)", fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 10 }}>
+      <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,28px)", fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 10 }}>
         See what a session looks like
       </h2>
       <p style={{ ...fadeUp(visible, 0.1), fontSize: 15, color: "rgba(0,3,50,0.45)", fontWeight: 300, marginBottom: 40 }}>
@@ -143,7 +143,7 @@ function OutcomePreview() {
   ];
   return (
     <div ref={ref} style={{ background: "#FAF7F0", padding: "80px 24px" }}>
-      <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia,serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, fontStyle: "italic", color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
+      <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, fontStyle: "italic", color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
         In 15 minutes, you&rsquo;ll walk out with:
       </h2>
       <div style={{ maxWidth: 800, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
