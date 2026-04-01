@@ -232,6 +232,7 @@ function CanvasInner() {
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
+  const sessionIdRef = useRef<string | null>(sp.get("session_id"));
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -296,34 +297,58 @@ function CanvasInner() {
             }),
           });
           const data = await res.json();
-          if (data.id) setSessionId(data.id);
-        } catch { /* continue without session id */ }
+          if (data.id) {
+            console.log("[canvas] New session created:", data.id);
+            setSessionId(data.id);
+            sessionIdRef.current = data.id;
+          } else {
+            console.error("[canvas] Session creation returned no ID:", data);
+          }
+        } catch (err) {
+          console.error("[canvas] Session creation failed:", err);
+        }
       }
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep sessionId ref in sync
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+
   // Autosave: debounced, triggers on changes
   const saveCanvas = useCallback(async () => {
-    if (!sessionId) return;
+    const sid = sessionIdRef.current;
+    if (!sid) {
+      console.warn("[canvas] Save skipped — no session ID");
+      return;
+    }
+    console.log("[canvas] Saving:", { sessionId: sid, notes: notes.length, connections: connections.length });
     setSaveStatus("saving");
     try {
-      await fetch("/api/sessions", {
+      const res = await fetch("/api/sessions", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
+          sessionId: sid,
           canvas_state: { notes, connections },
           synthesis: synthesis || undefined,
         }),
       });
-      setSaveStatus("saved");
-      dirtyRef.current = false;
-    } catch {
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("[canvas] Save failed:", data);
+        setSaveStatus("unsaved");
+      } else {
+        console.log("[canvas] Save success");
+        setSaveStatus("saved");
+        dirtyRef.current = false;
+      }
+    } catch (err) {
+      console.error("[canvas] Save error:", err);
       setSaveStatus("unsaved");
     }
-  }, [sessionId, notes, connections, synthesis]);
+  }, [notes, connections, synthesis]);
 
   const scheduleSave = useCallback(() => {
     dirtyRef.current = true;
