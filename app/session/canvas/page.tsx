@@ -188,11 +188,15 @@ function CanvasInner() {
   const [allDimsComplete, setAllDimsComplete] = useState(false);
   const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
   const [statusState, setStatusState] = useState<{
-    type: "landing" | "working" | "keep_going" | "ready_to_move" | "all_done" | "loading";
+    type: "landing" | "working" | "keep_going" | "ready_to_move" | "all_done" | "loading" | "suggesting";
     dimName?: string;
     nextDimName?: string;
     actionColor?: string;
+    nextAction?: Action;
+    nextActionReason?: string;
+    firstNoteLabel?: string;
   }>({ type: "landing" });
+  const suggestAbortRef = useRef<AbortController | null>(null);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
@@ -311,9 +315,43 @@ function CanvasInner() {
     const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
-    setStatusState({ type: "landing", dimName: dimensions[0]?.label });
+    const firstThinking = notes.find(n => n.source === "thinking");
+    setStatusState({ type: "landing", dimName: dimensions[0]?.label, firstNoteLabel: firstThinking ? (THINKING_LABELS[mode]?.[firstThinking.qIndex ?? 0] || "your first note") : undefined });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
+
+  // Suggest action when user selects a note
+  useEffect(() => {
+    if (selected.size !== 1 || responseFlow || aiLoading) return;
+    const selId = [...selected][0];
+    const selNote = notes.find(n => n.id === selId);
+    if (!selNote || selNote.source === "dimension" || selNote.source === "goal") return;
+
+    // Abort previous suggestion request
+    if (suggestAbortRef.current) suggestAbortRef.current.abort();
+    const controller = new AbortController();
+    suggestAbortRef.current = controller;
+
+    const dim = findNoteDim(selNote);
+    fetch("/api/suggest-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ noteText: selNote.text, goal: capture, dimensionLabel: dim.label }),
+      signal: controller.signal,
+    }).then(r => r.json()).then(data => {
+      if (controller.signal.aborted) return;
+      const actionKey = (data.action || "clarify") as Action;
+      setStatusState({
+        type: "suggesting",
+        nextAction: actionKey,
+        nextActionReason: data.reason || "",
+        actionColor: ACT[actionKey].color,
+      });
+    }).catch(() => { /* aborted or failed — ignore */ });
+
+    return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   // Periodic autosave every 30s if dirty
   useEffect(() => {
@@ -738,13 +776,15 @@ function CanvasInner() {
             dimensionNotes: [...notesUnderDim, respNote].map(n => n.text).join("\n\n"),
             allDimensions: dimensions.map(d => `${d.label} — ${d.description}`).join("\n"),
             mode,
+            lastNote: responseText.trim(),
           }),
         });
         const assessData = await assessRes.json();
+        const recAction = (assessData.next_action || "clarify") as Action;
+        const recReason = assessData.next_action_reason || "";
 
         if (assessData.status === "ready_to_move") {
           setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
-          // Find next unexplored or in_progress dimension
           const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
           if (nextDimEntry) {
             const nextIdx = dimensions.indexOf(nextDimEntry);
@@ -756,7 +796,7 @@ function CanvasInner() {
             setStatusState({ type: "all_done" });
           }
         } else {
-          setStatusState({ type: "keep_going", dimName: dim.label });
+          setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason, actionColor: ACT[recAction].color });
         }
       } catch {
         // Silent — dimension assessment is optional
@@ -1005,6 +1045,8 @@ function CanvasInner() {
           borderLeft: `3px solid ${
             statusState.type === "loading" ? "rgba(0,3,50,0.15)"
             : statusState.type === "working" ? (statusState.actionColor || "#FF9090")
+            : statusState.type === "suggesting" ? (statusState.actionColor || "#FF9090")
+            : statusState.type === "keep_going" ? (statusState.actionColor || "#FF9090")
             : statusState.type === "ready_to_move" ? "#7ED6A8"
             : "#FF9090"
           }`,
@@ -1019,12 +1061,20 @@ function CanvasInner() {
               </span>
             )}
             {statusState.type === "landing" && (
-              <span>Start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Select a note under it and choose an action above.</span>
+              <span>{statusState.firstNoteLabel
+                ? <>Select <strong style={{ color: "#FF9090" }}>{statusState.firstNoteLabel}</strong> and choose an action to start developing your thinking.</>
+                : <>Start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Select a note under it and choose an action above.</>
+              }</span>
+            )}
+            {statusState.type === "suggesting" && statusState.nextAction && (
+              <span>Try <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> on this note. {statusState.nextActionReason}</span>
             )}
             {statusState.type === "working" && (
               <span>Working on <strong>{statusState.dimName}</strong>. Fill in your response, then keep going or try another action.</span>
             )}
-            {statusState.type === "keep_going" && (
+            {statusState.type === "keep_going" && statusState.nextAction ? (
+              <span>Click on the note you just wrote and <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> it. {statusState.nextActionReason}</span>
+            ) : statusState.type === "keep_going" && (
               <span>Keep going on <strong>{statusState.dimName}</strong>. Select another note and develop it further.</span>
             )}
             {statusState.type === "ready_to_move" && (
