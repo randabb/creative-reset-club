@@ -426,6 +426,21 @@ function CanvasInner() {
     if (!selNote) return;
     // Dismiss coach card immediately
     if (showCoach) dismissCoach();
+    // Find which dimension this note belongs to (closest x position)
+    const dimNotes = notes.filter(n => n.source === "dimension");
+    let dimLabel = "";
+    let dimDesc = "";
+    if (dimNotes.length > 0) {
+      let closestDim = dimNotes[0];
+      let closestDist = Math.abs(selNote.x - dimNotes[0].x);
+      dimNotes.forEach(d => {
+        const dist = Math.abs(selNote.x - d.x);
+        if (dist < closestDist) { closestDist = dist; closestDim = d; }
+      });
+      dimLabel = closestDim.dimLabel || "";
+      dimDesc = closestDim.dimDesc || "";
+    }
+
     setAiLoading(true);
     try {
       const controller = new AbortController();
@@ -437,7 +452,9 @@ function CanvasInner() {
           action,
           goal: capture,
           selectedNoteText: selNote.text,
-          allNotesText: notes.map(n => n.text).join("\n\n"),
+          allNotesText: notes.filter(n => n.source !== "dimension").map(n => n.text).join("\n\n"),
+          dimensionLabel: dimLabel,
+          dimensionDescription: dimDesc,
         }),
         signal: controller.signal,
       });

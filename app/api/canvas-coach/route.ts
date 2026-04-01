@@ -53,13 +53,17 @@ One per line, nothing else.`;
 
 export async function POST(req: Request) {
   try {
-    const { action, goal, selectedNoteText, allNotesText } = await req.json();
+    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription } = await req.json();
     if (!selectedNoteText || !action) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
     const ctx = ACTION_CONTEXT[action] || ACTION_CONTEXT.clarify;
-    const userMsg = `ACTION: ${action.toUpperCase()}\n${ctx}\n\nUSER'S GOAL:\n${goal || "Not specified"}\n\nSELECTED NOTE:\n${selectedNoteText}\n\nALL NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
+    let userMsg = `ACTION: ${action.toUpperCase()}\n${ctx}\n\nUSER'S GOAL:\n${goal || "Not specified"}\n\n`;
+    if (dimensionLabel) {
+      userMsg += `CURRENT DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\nKeep all instructions anchored to this specific dimension. Every instruction should help the user think deeper about THIS dimension specifically, not drift to the general goal or other dimensions.\n\n`;
+    }
+    userMsg += `SELECTED NOTE:\n${selectedNoteText}\n\nALL NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
