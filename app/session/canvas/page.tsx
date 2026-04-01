@@ -775,30 +775,55 @@ function CanvasInner() {
     }
   };
 
-  // Get arrow endpoints: right-edge center → left-edge center, or bottom→top if vertically aligned
-  const noteW = 200;
-  const noteH = 60;
-  const arrowPoints = (fromId: string, toId: string) => {
-    const f = notes.find(n => n.id === fromId);
-    const t = notes.find(n => n.id === toId);
-    if (!f || !t) return { x1: 0, y1: 0, x2: 0, y2: 0 };
-    const isVertical = Math.abs(f.x - t.x) < 50;
-    if (isVertical) {
-      // Bottom of source → top of target
-      return { x1: f.x + noteW / 2, y1: f.y + noteH, x2: t.x + noteW / 2, y2: t.y };
-    }
-    // Right edge of source → left edge of target
-    return { x1: f.x + noteW, y1: f.y + noteH / 2, x2: t.x, y2: t.y + noteH / 2 };
+  // Note height estimation for arrow routing
+  const noteW = dimensions.length > 0 ? 190 : 200;
+  const estH = (text: string) => {
+    const len = text.length;
+    if (len < 50) return 60;
+    if (len < 100) return 80;
+    if (len < 200) return 110;
+    return 140;
   };
 
+  // Arrow path: determines edge attachment based on relative position
   const arrowPath = (fromId: string, toId: string) => {
-    const { x1, y1, x2, y2 } = arrowPoints(fromId, toId);
+    const f = notes.find(n => n.id === fromId);
+    const t = notes.find(n => n.id === toId);
+    if (!f || !t) return { d: "", mx: 0, my: 0 };
+    const fH = estH(f.text);
+    const tH = estH(t.text);
+    const dx = t.x - f.x;
+    const dy = t.y - f.y;
+
+    let x1: number, y1: number, x2: number, y2: number;
+
+    if (Math.abs(dx) < 100) {
+      // Vertically aligned: bottom→top or top→bottom
+      if (dy >= 0) {
+        x1 = f.x + noteW / 2; y1 = f.y + fH;
+        x2 = t.x + noteW / 2; y2 = t.y;
+      } else {
+        x1 = f.x + noteW / 2; y1 = f.y;
+        x2 = t.x + noteW / 2; y2 = t.y + tH;
+      }
+    } else if (dx > 0) {
+      // Target to the right
+      x1 = f.x + noteW; y1 = f.y + fH / 2;
+      x2 = t.x; y2 = t.y + tH / 2;
+    } else {
+      // Target to the left
+      x1 = f.x; y1 = f.y + fH / 2;
+      x2 = t.x + noteW; y2 = t.y + tH / 2;
+    }
+
+    // Quadratic bezier control point: midpoint offset 30px perpendicular
     const mx = (x1 + x2) / 2;
     const my = (y1 + y2) / 2;
-    // Slight curve via quadratic bezier
-    const cx = mx + (y2 - y1) * 0.15;
-    const cy = my - (x2 - x1) * 0.15;
-    return { d: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`, mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
+    const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) || 1;
+    const perpX = -(y2 - y1) / len * 30;
+    const perpY = (x2 - x1) / len * 30;
+
+    return { d: `M ${x1} ${y1} Q ${mx + perpX} ${my + perpY} ${x2} ${y2}`, mx, my };
   };
 
   // Delete a note and all its connections
@@ -1085,17 +1110,32 @@ function CanvasInner() {
         >
           {/* ARROWS SVG */}
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}>
-            <defs><marker id="ah" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="rgba(0,3,50,0.35)" /></marker></defs>
+            <defs>
+              {(Object.keys(ACT) as Action[]).map(a => (
+                <marker key={a} id={`ah-${a}`} markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto">
+                  <polygon points="0 0, 5 2.5, 0 5" fill={ACT[a].color} opacity="0.5" />
+                </marker>
+              ))}
+            </defs>
             {connections.map(c => {
               const ap = arrowPath(c.from, c.to);
-              const col = c.color || "rgba(0,3,50,0.2)";
-              const isAiArrow = col !== "rgba(0,3,50,0.15)" && col !== "rgba(0,3,50,0.1)" && col !== "rgba(0,3,50,0.08)";
-              const lineOpacity = isAiArrow ? 0.45 : 0.25;
+              if (!ap.d) return null;
+              const col = c.color || "rgba(0,3,50,0.1)";
+              const structuralColors = ["rgba(0,3,50,0.1)", "rgba(0,3,50,0.15)", "rgba(0,3,50,0.08)", "rgba(0,3,50,0.2)"];
+              const isAiArrow = !structuralColors.includes(col);
+              // Find matching action for marker
+              const actionKey = isAiArrow ? (Object.keys(ACT) as Action[]).find(a => ACT[a].color === col) : null;
               return (
                 <g key={c.id}>
-                  <path d={ap.d} fill="none" stroke={col} strokeWidth="1.5" markerEnd="url(#ah)" opacity={lineOpacity}
-                    style={isAiArrow ? { strokeDasharray: 400, strokeDashoffset: 400, animation: "arrowDraw 0.4s ease-out forwards" } : undefined} />
-                  {c.label && <text x={ap.mx} y={ap.my - 6} textAnchor="middle" fill="rgba(0,3,50,0.35)" fontSize="10" fontFamily="'Codec Pro',sans-serif">{c.label}</text>}
+                  <path
+                    d={ap.d} fill="none"
+                    stroke={isAiArrow ? col : "rgba(0,3,50,0.1)"}
+                    strokeWidth={isAiArrow ? 1.5 : 1}
+                    opacity={isAiArrow ? 0.35 : 1}
+                    markerEnd={actionKey ? `url(#ah-${actionKey})` : undefined}
+                    style={isAiArrow ? { strokeDasharray: 400, strokeDashoffset: 400, animation: "arrowDraw 0.4s ease-out forwards" } : undefined}
+                  />
+                  {c.label && <text x={ap.mx} y={ap.my - 6} textAnchor="middle" fill="rgba(0,3,50,0.3)" fontSize="10" fontFamily="'Codec Pro',sans-serif">{c.label}</text>}
                 </g>
               );
             })}
