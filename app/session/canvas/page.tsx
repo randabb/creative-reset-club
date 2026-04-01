@@ -180,6 +180,9 @@ function CanvasInner() {
   const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
+  const [tourWelcome, setTourWelcome] = useState(false);
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  const tourCheckedRef = useRef(false);
   const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -301,6 +304,38 @@ function CanvasInner() {
     }, 30000);
     return () => clearInterval(interval);
   }, [sessionId, saveCanvas]);
+
+  // First-time tour check
+  useEffect(() => {
+    if (tourCheckedRef.current || !canvasReady) return;
+    tourCheckedRef.current = true;
+    const toured = localStorage.getItem("primer_canvas_toured");
+    if (!toured) {
+      setTourWelcome(true);
+      setCoachDismissed(true); // suppress coach card during/after tour
+    }
+  }, [canvasReady]);
+
+  const startTour = () => { setTourWelcome(false); setTourStep(0); };
+  const skipTour = () => {
+    setTourWelcome(false); setTourStep(null);
+    localStorage.setItem("primer_canvas_toured", "true");
+    // Show coach card after 10s if no note selected
+    setTimeout(() => {
+      setCoachDismissed(false);
+    }, 10000);
+  };
+  const nextTourStep = () => {
+    if (tourStep !== null && tourStep < 3) {
+      setTourStep(tourStep + 1);
+    } else {
+      setTourStep(null);
+      localStorage.setItem("primer_canvas_toured", "true");
+      setTimeout(() => {
+        setCoachDismissed(false);
+      }, 10000);
+    }
+  };
 
   // Coach card — shows once per canvas visit (session-local, not persistent)
   useEffect(() => {
@@ -1308,6 +1343,138 @@ function CanvasInner() {
         </div>
       </div>
 
+      {/* TOUR: WELCOME OVERLAY */}
+      {tourWelcome && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(0,3,50,0.85)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          animation: "tourFadeIn 0.3s ease forwards",
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 16, padding: "40px 40px",
+            maxWidth: 480, width: "calc(100% - 48px)", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em", marginBottom: 28 }}>primer</div>
+            <h2 style={{ fontSize: 24, fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 12 }}>
+              Welcome to your canvas.
+            </h2>
+            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", fontWeight: 300, lineHeight: 1.65, marginBottom: 28, maxWidth: 360, margin: "0 auto 28px" }}>
+              This is where your thinking becomes visible. Here&rsquo;s a quick tour.
+            </p>
+            <button onClick={startTour} style={{
+              padding: "14px 32px", borderRadius: 100, border: "none",
+              background: "#FF9090", color: "#000332", fontSize: 15, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit", marginBottom: 12,
+              display: "block", width: "100%",
+            }}>Show me around</button>
+            <button onClick={skipTour} style={{
+              background: "none", border: "none", fontSize: 13,
+              color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit",
+            }}>Skip, I&rsquo;ll figure it out</button>
+          </div>
+        </div>
+      )}
+
+      {/* TOUR: STEP OVERLAYS */}
+      {tourStep !== null && (() => {
+        const steps = [
+          {
+            spotTop: "0", spotLeft: "0", spotW: "100%", spotH: "120px",
+            cardStyle: { position: "fixed" as const, top: 130, left: "50%", transform: "translateX(-50%)" },
+            arrowSide: "top" as const,
+            text: "Your goal is at the top. Below it, the dimensions are the key areas Primer thinks you should explore. Each one is a lane for your thinking.",
+          },
+          {
+            spotTop: "120px", spotLeft: "0", spotW: "100%", spotH: "calc(100% - 180px)",
+            cardStyle: { position: "fixed" as const, bottom: 80, left: "50%", transform: "translateX(-50%)" },
+            arrowSide: "bottom" as const,
+            text: "These are your answers from the guided thinking. They\u2019re already placed under the most relevant dimension. You can drag them anywhere.",
+          },
+          {
+            spotTop: "4px", spotLeft: "calc(50% - 180px)", spotW: "360px", spotH: "48px",
+            cardStyle: { position: "fixed" as const, top: 64, left: "50%", transform: "translateX(-50%)" },
+            arrowSide: "top" as const,
+            content: (
+              <>
+                <p style={{ fontSize: 14, color: "rgba(0,3,50,0.65)", fontWeight: 300, lineHeight: 1.65, marginBottom: 12 }}>
+                  Select any note, then choose an action:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#6B8AFE" }}>◎ Clarify</span> — cut to the core</div>
+                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#FF9090" }}>✦ Expand</span> — stretch it further</div>
+                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#7ED6A8" }}>⟁ Decide</span> — stress-test it</div>
+                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#C4A6FF" }}>◈ Express</span> — structure it for others</div>
+                </div>
+                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300, lineHeight: 1.5 }}>
+                  Each action creates new thinking branches from your note.
+                </p>
+              </>
+            ),
+          },
+          {
+            spotTop: "4px", spotLeft: "calc(100% - 200px)", spotW: "190px", spotH: "48px",
+            cardStyle: { position: "fixed" as const, top: 64, right: 20 },
+            arrowSide: "top" as const,
+            text: "When you\u2019ve developed your thinking enough, hit Ready to go. Primer will generate a deliverable you can actually use \u2014 a brief, a set of directions, a decision, or an articulated position.",
+          },
+        ];
+        const step = steps[tourStep];
+        const isLast = tourStep === 3;
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 200 }}
+            onClick={nextTourStep}
+          >
+            {/* Dark overlay with spotlight cutout using clip-path */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(0,3,50,0.75)",
+              animation: "tourFadeIn 0.3s ease forwards",
+            }} />
+            {/* Spotlight */}
+            <div style={{
+              position: "absolute",
+              top: step.spotTop, left: step.spotLeft,
+              width: step.spotW, height: step.spotH,
+              boxShadow: "0 0 0 4px rgba(255,144,144,0.3)",
+              borderRadius: 12,
+              zIndex: 201,
+              pointerEvents: "none",
+            }} />
+            {/* Tooltip card */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                ...step.cardStyle,
+                zIndex: 202,
+                background: "#fff", borderRadius: 14, padding: "20px 22px",
+                maxWidth: 340, width: "calc(100% - 48px)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                animation: "tourFadeIn 0.3s ease forwards",
+              }}
+            >
+              {step.content ? step.content : (
+                <p style={{ fontSize: 14, color: "rgba(0,3,50,0.65)", fontWeight: 300, lineHeight: 1.65 }}>
+                  {step.text}
+                </p>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
+                <span style={{ fontSize: 11, color: "rgba(0,3,50,0.3)" }}>{tourStep + 1} of 4</span>
+                <button onClick={nextTourStep} style={{
+                  padding: "10px 24px", borderRadius: 100, border: "none",
+                  background: isLast ? "#FF9090" : "rgba(0,3,50,0.06)",
+                  color: "#000332", fontSize: 13, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>
+                  {isLast ? "Got it, let\u2019s go" : "Next"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
@@ -1320,6 +1487,7 @@ function CanvasInner() {
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
+        @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
       `}</style>
     </div>
   );
