@@ -37,7 +37,7 @@ function CanvasVisual() {
     { label: "EXPAND ↓", text: "Write what your user says to a friend the day after using this", color: "#FF9090", x: 230, y: 340 },
   ];
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "60px 24px 40px", textAlign: "center" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "20px 24px 40px", textAlign: "center" }}>
       <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,28px)", fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 10 }}>
         See what a session looks like
       </h2>
@@ -143,7 +143,7 @@ function OutcomePreview() {
   ];
   return (
     <div ref={ref} style={{ background: "#FAF7F0", padding: "40px 24px 40px" }}>
-      <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, fontStyle: "italic", color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
+      <h2 style={{ ...fadeUp(visible), fontFamily: "'Codec Pro',sans-serif", fontSize: "clamp(22px,3vw,26px)", fontWeight: 700, color: "#000332", textAlign: "center", marginBottom: 40, letterSpacing: "-0.01em" }}>
         In 15 minutes, you&rsquo;ll walk out with:
       </h2>
       <div style={{ maxWidth: 800, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
@@ -390,17 +390,6 @@ export default function Homepage() {
           <path d="M0 60 Q720 0 1440 60 L1440 60 L0 60Z" fill="#FAF7F0" />
         </svg>
       </section>
-
-      {/* CREAM PAGE PARTICLES */}
-      <div className={styles.creamParticles}>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-        <div className={styles.cp}></div>
-      </div>
 
       {/* CANVAS VISUAL SECTION */}
       <CanvasVisual />
