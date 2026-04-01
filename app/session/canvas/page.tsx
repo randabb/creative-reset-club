@@ -180,6 +180,10 @@ function CanvasInner() {
   const [synthLoading, setSynthLoading] = useState(false);
   const [coachDismissed, setCoachDismissed] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
+  const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
+  const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
+  const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAnalyzeRef = useRef(0);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -315,6 +319,47 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
+  // Note analysis: suggest actions for notes
+  const analyzeNotes = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastAnalyzeRef.current < 15000) return;
+    lastAnalyzeRef.current = now;
+    const eligible = notes.filter(n =>
+      n.source !== "dimension" && n.source !== "goal" && !n.aiInstruction && n.text.trim().length > 5
+    );
+    if (eligible.length === 0) return;
+    try {
+      const res = await fetch("/api/analyze-notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: capture,
+          notes: eligible.map(n => ({ id: n.id, text: n.text, label: n.source === "thinking" ? "guided thinking answer" : undefined })),
+        }),
+      });
+      const data = await res.json();
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        const map: Record<string, Action> = {};
+        const ids = new Set<string>();
+        data.suggestions.forEach((s: { id: string; action: Action }) => {
+          map[s.id] = s.action;
+          ids.add(s.id);
+        });
+        setNoteSuggestions(map);
+        setFreshSuggestions(ids);
+        setTimeout(() => setFreshSuggestions(new Set()), 1500);
+      }
+    } catch { /* silent */ }
+  }, [notes, capture]);
+
+  // Trigger analysis on canvas load (3s delay)
+  useEffect(() => {
+    if (!canvasReady || notes.length < 2) return;
+    const t = setTimeout(() => analyzeNotes(), 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasReady]);
+
   // Keep pan refs in sync with state (so native listeners always have current values)
   useEffect(() => { panXRef.current = panX; }, [panX]);
   useEffect(() => { panYRef.current = panY; }, [panY]);
@@ -435,6 +480,8 @@ function CanvasInner() {
     const selId = [...selected][0];
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
+    // Clear suggestion dot for this note
+    setNoteSuggestions(prev => { const n = { ...prev }; delete n[selId]; return n; });
     // Dismiss coach card immediately
     if (showCoach) dismissCoach();
     // Find which dimension this note belongs to (closest x position)
@@ -562,6 +609,9 @@ function CanvasInner() {
       // handled by API fallback
     }
     setAiLoading(false);
+    // Re-analyze after coaching completes
+    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
+    analyzeTimerRef.current = setTimeout(() => analyzeNotes(), 3000);
   };
 
   // Export helpers
@@ -730,14 +780,37 @@ function CanvasInner() {
           {saveStatus === "saving" ? "..." : saveStatus === "saved" ? "✓" : "💾"}
         </button>
         <div style={{ width: 1, height: 20, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
-        {(Object.keys(ACT) as Action[]).map(a => (
-          <button key={a} onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
-            padding: "6px 10px", borderRadius: 100, border: "none", background: "transparent",
-            fontSize: 14, color: hasSelection ? ACT[a].color : "rgba(0,3,50,0.2)",
-            cursor: hasSelection ? "pointer" : "default", opacity: hasSelection ? 1 : 0.4,
-            fontFamily: "inherit", fontWeight: 600, transition: "all 0.15s",
-          }} title={ACT[a].label}>{ACT[a].icon}</button>
-        ))}
+        {(Object.keys(ACT) as Action[]).map(a => {
+          const tooltips: Record<Action, string> = {
+            clarify: "Cut to the core. What actually matters here?",
+            expand: "Stretch it. What else is possible?",
+            decide: "Stress-test it. What could go wrong?",
+            express: "Structure it. How would you say this?",
+          };
+          return (
+            <div key={a} style={{ position: "relative" }} className="act-tip-wrap">
+              <button onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
+                padding: "6px 10px", borderRadius: 100, border: "none", background: "transparent",
+                fontSize: 14, color: hasSelection ? ACT[a].color : "rgba(0,3,50,0.2)",
+                cursor: hasSelection ? "pointer" : "default", opacity: hasSelection ? 1 : 0.4,
+                fontFamily: "inherit", fontWeight: 600, transition: "all 0.15s",
+              }}>{ACT[a].icon}</button>
+              <div className="act-tip" style={{
+                position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+                marginTop: 8, background: "#000332", color: "#FAF7F0", fontSize: 12,
+                padding: "8px 12px", borderRadius: 8, maxWidth: 200, whiteSpace: "nowrap",
+                pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
+                fontWeight: 400, lineHeight: 1.4,
+              }}>
+                <div style={{
+                  position: "absolute", top: -4, left: "50%", transform: "translateX(-50%) rotate(45deg)",
+                  width: 8, height: 8, background: "#000332",
+                }} />
+                {tooltips[a]}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* RIGHT CONTROLS */}
@@ -850,16 +923,7 @@ function CanvasInner() {
             WHERE TO START
           </div>
           <p style={{ fontSize: 15, fontStyle: "italic", color: "#000332", lineHeight: 1.55, fontWeight: 400, paddingRight: 20 }}>
-            {dimensions.length > 0 ? (
-              <>Start with &ldquo;{dimensions[0].label}&rdquo; — select it and use <strong style={{ color: "#6B8AFE" }}>Clarify</strong> or <strong style={{ color: "#FF9090" }}>Expand</strong> to develop your thinking.</>
-            ) : (
-              <>
-                {mode === "clarity" && <>Start with your core thread (top right) — select it and hit <strong style={{ color: "#FF9090" }}>Expand</strong> to push it further, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to sharpen it.</>}
-                {mode === "expansion" && <>Start with your strongest angle (top right) — select it and hit <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the essence, or <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it even further.</>}
-                {mode === "decision" && <>Start with your real test (top right) — select it and hit <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it, or <strong style={{ color: "#C4A6FF" }}>Express</strong> to articulate your choice.</>}
-                {mode === "expression" && <>Start with your opposition (top right) — select it and hit <strong style={{ color: "#C4A6FF" }}>Express</strong> to strengthen your position, or <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to find the core of what you&rsquo;re saying.</>}
-              </>
-            )}
+            Select any note, then choose an action: <strong style={{ color: "#6B8AFE" }}>Clarify</strong> to cut to the core. <strong style={{ color: "#FF9090" }}>Expand</strong> to stretch it. <strong style={{ color: "#7ED6A8" }}>Decide</strong> to stress-test it. <strong style={{ color: "#C4A6FF" }}>Express</strong> to structure it.
           </p>
         </div>
       )}
@@ -1062,6 +1126,48 @@ function CanvasInner() {
                     }}
                   >×</button>
                 )}
+                {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
+                  const sugAction = noteSuggestions[n.id];
+                  const sugColor = ACT[sugAction].color;
+                  const sugLabel = ACT[sugAction].label;
+                  const isFresh = freshSuggestions.has(n.id);
+                  const tipTexts: Record<Action, string> = {
+                    clarify: "Try clarifying this",
+                    expand: "Try expanding this",
+                    decide: "Try deciding on this",
+                    express: "Try expressing this",
+                  };
+                  return (
+                    <div
+                      className="sug-dot-wrap"
+                      style={{ position: "absolute", top: 6, right: 6, zIndex: 5 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(new Set([n.id]));
+                        setNoteSuggestions(prev => { const next = { ...prev }; delete next[n.id]; return next; });
+                        setTimeout(() => runAction(sugAction), 100);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <div style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: sugColor, opacity: 0.6,
+                        cursor: "pointer",
+                        transition: "opacity 0.15s",
+                        animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : undefined,
+                      }} className="sug-dot" />
+                      <div className="sug-tip" style={{
+                        position: "absolute", top: "100%", right: 0,
+                        marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
+                        padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap",
+                        pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
+                        fontWeight: 400,
+                      }}>
+                        {tipTexts[sugAction]}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {sl && (
                   <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7 }}>
                     {sl.text}
@@ -1168,6 +1274,10 @@ function CanvasInner() {
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
+        .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
+        .sug-dot-wrap:hover .sug-dot { opacity: 1 !important; }
+        .sug-dot-wrap:hover .sug-tip { opacity: 1 !important; }
+        @keyframes sugPulse { 0%,100% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.6); opacity:1; } }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
