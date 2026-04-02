@@ -64,6 +64,7 @@ const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE"
 
 const RAW_PLACEHOLDERS = ["just dump it...", "don't edit yourself...", "say it ugly first...", "what's the gut reaction...", "think out loud...", "no one's grading this...", "messy is the point..."];
 const rawPh = () => RAW_PLACEHOLDERS[Math.floor(Math.random() * RAW_PLACEHOLDERS.length)];
+const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 function uid() { return crypto.randomUUID(); }
 
@@ -1280,34 +1281,26 @@ function CanvasInner() {
             {statusState.type === "loading" && (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 14, height: 14, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", flexShrink: 0 }} />
-                Thinking...
+                {pick(["Thinking...", "One sec...", "Processing that..."])}
               </span>
             )}
             {statusState.type === "landing" && (
-              <span>Let&rsquo;s start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Write whatever comes to mind.</span>
+              <span>{pick(["Let\u2019s start here. Say whatever\u2019s in your head.", "First things first. Don\u2019t think, just write.", `Let\u2019s start with ${statusState.dimName}. Say what comes to mind.`])}</span>
             )}
             {statusState.type === "suggesting" && statusState.nextAction && (
-              <span>Try <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> on this. {statusState.nextActionReason}</span>
+              <span>{pick([`Try ${ACT[statusState.nextAction].label.toLowerCase()} on this.`, `This one could use some ${ACT[statusState.nextAction].label.toLowerCase()}.`])} {statusState.nextActionReason}</span>
             )}
             {statusState.type === "working" && (
-              <span>Write whatever comes to mind. Messy is fine.</span>
+              <span>{pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."])}</span>
             )}
-            {statusState.type === "keep_going" && (() => {
-              const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
-              return (
-                <span>
-                  There&rsquo;s more in <strong>{statusState.dimName}</strong>. Keep going.{" "}
-                  <span style={{ color: "rgba(0,3,50,0.3)" }}>{remaining > 0 ? `${remaining} more after this.` : "Last one."}</span>
-                </span>
-              );
-            })()}
+            {statusState.type === "keep_going" && (
+              <span>{pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."])}</span>
+            )}
             {statusState.type === "ready_to_move" && (
-              <span>
-                &#10003; <strong>{statusState.dimName}</strong> — nice. Ready for <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>?
-              </span>
+              <span>{pick([`Good. Let\u2019s look at `, `Done with that one. On to `, `Next up: `])}<strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>.</span>
             )}
             {statusState.type === "all_done" && (
-              <span>You&rsquo;ve worked through everything. Hit <strong style={{ color: "#FF9090" }}>See what you found →</strong> when you want your synthesis.</span>
+              <span>You worked through all of it. See what you found?</span>
             )}
           </div>
         </div>
