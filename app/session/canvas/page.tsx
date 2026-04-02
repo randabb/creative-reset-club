@@ -184,7 +184,6 @@ function CanvasInner() {
   const [connections, setConnections] = useState<Connection[]>(initial.conns);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
   const [editId, setEditId] = useState<string | null>(null);
   const editPreHeight = useRef(0);
   const [connecting, setConnecting] = useState(false);
@@ -239,7 +238,6 @@ function CanvasInner() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
   const zoomRef = useRef(zoom);
-  const dragIdRef = useRef<string | null>(null);
   const dragOffRef = useRef({ x: 0, y: 0 });
   const vpRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -486,47 +484,47 @@ function CanvasInner() {
 
   // Keep refs in sync
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
-  useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
-  useEffect(() => { dragOffRef.current = dragOff; }, [dragOff]);
-
-  // Note drag: window-level listeners
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragIdRef.current || !vpRef.current) return;
-      e.preventDefault();
-      const off = dragOffRef.current;
-      const did = dragIdRef.current;
-      const scrollTop = vpRef.current.scrollTop;
-      const newX = e.clientX - off.x;
-      const newY = e.clientY - off.y + scrollTop;
-      setNotes(ns => ns.map(n => n.id === did ? { ...n, x: newX, y: newY } : n));
-    };
-    const handleMouseUp = () => {
-      if (dragIdRef.current && vpRef.current) {
-        vpRef.current.style.overflowY = "auto";
-        setDragId(null);
-        dragIdRef.current = null;
-      }
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
 
   const s2c = (cx: number, cy: number) => {
     if (!vpRef.current) return { x: 0, y: 0 };
     return { x: cx, y: cy + vpRef.current.scrollTop };
   };
 
-  // Note drag
+  // Note drag — window listeners activate only when dragId is set
+  useEffect(() => {
+    if (!dragId) return;
+    const scrollContainer = vpRef.current;
+    if (scrollContainer) scrollContainer.style.overflowY = "hidden";
+
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+      const newX = Math.max(0, e.clientX - dragOffRef.current.x);
+      const newY = Math.max(0, e.clientY - dragOffRef.current.y + scrollTop);
+      setNotes(ns => ns.map(n => n.id === dragId ? { ...n, x: newX, y: newY } : n));
+    };
+    const handleMouseUp = () => {
+      setDragId(null);
+      if (scrollContainer) scrollContainer.style.overflowY = "auto";
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      if (scrollContainer) scrollContainer.style.overflowY = "auto";
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragId]);
+
+  // Note drag start
   const startDrag = (id: string, e: React.MouseEvent) => {
     if (editId === id || justFinishedEditRef.current) return;
     const t = e.target as HTMLElement;
-    if (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "BUTTON" || t.closest("button")) return;
+    if (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "BUTTON" || t.closest("button") || t.closest("a")) return;
     e.preventDefault();
+    e.stopPropagation();
     const n = notes.find(n => n.id === id);
     if (!n || n.source === "dimension") return;
     if (connecting) {
@@ -534,15 +532,10 @@ function CanvasInner() {
       if (connectFrom !== id) { setConnModal({ from: connectFrom, to: id }); setConnectFrom(null); }
       return;
     }
-    if (!vpRef.current) return;
-    const scrollTop = vpRef.current.scrollTop;
-    // Lock scroll during drag
-    vpRef.current.style.overflowY = "hidden";
-    const off = { x: e.clientX - n.x, y: e.clientY + scrollTop - n.y };
+    console.log("[canvas] Note mousedown", id);
+    const scrollTop = vpRef.current ? vpRef.current.scrollTop : 0;
+    dragOffRef.current = { x: e.clientX - n.x, y: e.clientY - (n.y - scrollTop) };
     setDragId(id);
-    dragIdRef.current = id;
-    setDragOff(off);
-    dragOffRef.current = off;
     if (!e.shiftKey) setSelected(new Set([id]));
     else setSelected(s => { const ns = new Set(s); ns.has(id) ? ns.delete(id) : ns.add(id); return ns; });
   };
@@ -1488,13 +1481,13 @@ function CanvasInner() {
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
-                  zIndex: dragId === n.id ? 20 : isSel ? 15 : 10,
-                  transition: isAi ? "none" : "box-shadow 0.15s, opacity 0.3s",
+                  zIndex: dragId === n.id ? 50 : isSel ? 15 : 10,
+                  opacity: dragId === n.id ? 0.9 : 1,
+                  transition: dragId === n.id ? "none" : "box-shadow 0.15s, opacity 0.3s",
                   animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3"
                     : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
                     : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
                   animationDelay: isAi && !responseFlow ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
-                  opacity: undefined,
                 }}
               >
                 {n.source !== "goal" && (
