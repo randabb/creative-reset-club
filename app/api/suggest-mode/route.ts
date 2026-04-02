@@ -5,7 +5,7 @@ export const maxDuration = 15;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM = `Read the user's capture text and determine which thinking mode they need most. Respond with ONLY a JSON object:
-{"mode":"clarity|expansion|decision|expression","reason":"one sentence explaining why, referencing their words"}
+{"mode":"clarity|expansion|decision|expression","reason":"One sentence explaining why this mode fits, written directly to the user using 'you/your'. Example: 'You said you need ideas — let's stretch this in new directions.' NOT 'They explicitly say they need ideas.' Keep it casual and short."}
 
 CLARITY: They're tangled, overwhelmed, or can't see what matters most. Words like: "figure out", "understand", "too many", "messy", "confused", "what matters", "sort through", "overwhelmed"
 
