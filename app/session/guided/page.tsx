@@ -32,8 +32,17 @@ function GuidedInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const capture = searchParams.get("capture") || "";
-  const mode = searchParams.get("mode") || "clarity";
+  const [mode, setMode] = useState(searchParams.get("mode") || "clarity");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const MODES: { id: string; icon: string; color: string; label: string }[] = [
+    { id: "clarity", icon: "◎", color: "#6B8AFE", label: "Clarity" },
+    { id: "expansion", icon: "✦", color: "#FF9090", label: "Expansion" },
+    { id: "decision", icon: "⟁", color: "#7ED6A8", label: "Decision" },
+    { id: "expression", icon: "◈", color: "#C4A6FF", label: "Expression" },
+  ];
+  const currentMode = MODES.find(m => m.id === mode) || MODES[0];
+  const [modeDropdown, setModeDropdown] = useState(false);
 
   const [qas, setQas] = useState<QA[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
@@ -169,9 +178,49 @@ function GuidedInner() {
       padding: "48px 24px 80px",
       fontFamily: "'Codec Pro', sans-serif",
     }}>
-      {/* Logo */}
-      <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em", marginBottom: 40 }}>
-        primer
+      {/* Logo + mode label */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 40 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em" }}>
+          primer
+        </div>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setModeDropdown(!modeDropdown)}
+            style={{
+              background: "none", border: `1px solid ${currentMode.color}30`,
+              borderRadius: 100, padding: "4px 12px", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, color: currentMode.color,
+              fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            {currentMode.icon} {currentMode.label} <span style={{ fontSize: 10, opacity: 0.5 }}>▾</span>
+          </button>
+          {modeDropdown && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, marginTop: 4,
+              background: "#fff", borderRadius: 10, padding: 6,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.1)", zIndex: 10,
+              minWidth: 160,
+            }}>
+              {MODES.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => { setMode(m.id); setModeDropdown(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    width: "100%", padding: "8px 12px", border: "none",
+                    background: mode === m.id ? "rgba(0,3,50,0.04)" : "transparent",
+                    borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, color: "#000332", fontWeight: mode === m.id ? 600 : 400,
+                  }}
+                >
+                  <span style={{ color: m.color, fontSize: 14 }}>{m.icon}</span>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ maxWidth: 560, width: "100%" }}>

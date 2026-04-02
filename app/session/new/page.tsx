@@ -25,10 +25,24 @@ export default function NewSession() {
     load();
   }, [router]);
 
-  const handleSubmit = () => {
-    if (capture.trim().length < 15) return;
-    const params = new URLSearchParams({ capture: capture.trim() });
-    router.push(`/session/mode?${params.toString()}`);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (capture.trim().length < 15 || submitting) return;
+    setSubmitting(true);
+    const trimmed = capture.trim();
+    let mode = "clarity";
+    try {
+      const res = await fetch("/api/suggest-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ capture: trimmed }),
+      });
+      const data = await res.json();
+      if (data.mode) mode = data.mode;
+    } catch { /* default to clarity */ }
+    const params = new URLSearchParams({ capture: trimmed, mode });
+    router.push(`/session/guided?${params.toString()}`);
   };
 
   if (loading) {
@@ -90,18 +104,18 @@ export default function NewSession() {
 
         <button
           onClick={handleSubmit}
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           style={{
             marginTop: 24, width: "100%", padding: "16px", borderRadius: 100,
-            background: canSubmit ? "#FF9090" : "rgba(0,3,50,0.06)",
-            color: canSubmit ? "#000332" : "rgba(0,3,50,0.25)",
+            background: canSubmit && !submitting ? "#FF9090" : "rgba(0,3,50,0.06)",
+            color: canSubmit && !submitting ? "#000332" : "rgba(0,3,50,0.25)",
             border: "none", fontSize: 15, fontWeight: 700,
             cursor: canSubmit ? "pointer" : "default",
             fontFamily: "'Codec Pro', sans-serif",
             transition: "all 0.25s ease",
           }}
         >
-          Let&rsquo;s go deeper
+          {submitting ? "Setting up..." : "Let\u2019s go deeper"}
         </button>
       </div>
     </div>
