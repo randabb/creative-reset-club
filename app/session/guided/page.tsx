@@ -55,6 +55,7 @@ function GuidedInner() {
   const [typing, setTyping] = useState(false);
   const [reflection, setReflection] = useState("");
   const [showReflection, setShowReflection] = useState(false);
+  const dimPromiseRef = useRef<Promise<{ label: string; description: string }[]> | null>(null);
 
   const getFallback = useCallback((qNum: number) => {
     const fb = FALLBACKS[mode] || FALLBACKS.clarity;
@@ -145,13 +146,51 @@ function GuidedInner() {
       setReflection("");
     }
 
+    // After Q1: start generating dimensions in background
+    if (currentQNum === 1) {
+      dimPromiseRef.current = fetch("/api/session-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: capture, mode, qas: updatedQAs }),
+      }).then(r => r.json()).then(data => data.dimensions || []).catch(() => []);
+    }
+
     if (currentQNum >= 2) {
+      // Re-fire with full data (Q1+Q2) — use whichever finishes
+      const fullDimPromise = fetch("/api/session-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: capture, mode, qas: updatedQAs }),
+      }).then(r => r.json()).then(data => data.dimensions || []).catch(() => []);
+
+      // Wait for the best available dimensions (full data or Q1-only)
+      let dims: { label: string; description: string }[] = [];
+      try {
+        dims = await Promise.race([
+          fullDimPromise,
+          new Promise<{ label: string; description: string }[]>(resolve =>
+            setTimeout(async () => {
+              // If full call is slow, use Q1-only result
+              if (dimPromiseRef.current) {
+                const fallback = await dimPromiseRef.current;
+                if (fallback.length > 0) resolve(fallback);
+              }
+            }, 3000)
+          ),
+        ]);
+        if (!dims.length) dims = await fullDimPromise;
+      } catch {
+        dims = [];
+      }
+
+      // Navigate directly to canvas, skip plan page
       const params = new URLSearchParams({
         capture,
         mode,
         qas: JSON.stringify(updatedQAs),
+        dimensions: JSON.stringify(dims),
       });
-      router.push(`/session/plan?${params.toString()}`);
+      router.push(`/session/canvas?${params.toString()}`);
       return;
     }
 
