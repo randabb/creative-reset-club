@@ -487,20 +487,21 @@ function CanvasInner() {
   useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
   useEffect(() => { dragOffRef.current = dragOff; }, [dragOff]);
 
-  // Note drag: window-level listeners (notes positioned relative to inner scroll div)
+  // Note drag: window-level listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragIdRef.current || !vpRef.current) return;
+      e.preventDefault();
       const off = dragOffRef.current;
       const did = dragIdRef.current;
-      const r = vpRef.current.getBoundingClientRect();
       const scrollTop = vpRef.current.scrollTop;
-      const newX = e.clientX - r.left - off.x;
-      const newY = e.clientY - r.top + scrollTop - off.y;
+      const newX = e.clientX - off.x;
+      const newY = e.clientY - off.y + scrollTop;
       setNotes(ns => ns.map(n => n.id === did ? { ...n, x: newX, y: newY } : n));
     };
     const handleMouseUp = () => {
-      if (dragIdRef.current) {
+      if (dragIdRef.current && vpRef.current) {
+        vpRef.current.style.overflowY = "auto";
         setDragId(null);
         dragIdRef.current = null;
       }
@@ -515,14 +516,15 @@ function CanvasInner() {
 
   const s2c = (cx: number, cy: number) => {
     if (!vpRef.current) return { x: 0, y: 0 };
-    const r = vpRef.current.getBoundingClientRect();
-    return { x: cx - r.left, y: cy - r.top + vpRef.current.scrollTop };
+    return { x: cx, y: cy + vpRef.current.scrollTop };
   };
 
   // Note drag
   const startDrag = (id: string, e: React.MouseEvent) => {
     if (editId === id || justFinishedEditRef.current) return;
-    e.stopPropagation();
+    const t = e.target as HTMLElement;
+    if (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "BUTTON" || t.closest("button")) return;
+    e.preventDefault();
     const n = notes.find(n => n.id === id);
     if (!n || n.source === "dimension") return;
     if (connecting) {
@@ -531,9 +533,10 @@ function CanvasInner() {
       return;
     }
     if (!vpRef.current) return;
-    const r = vpRef.current.getBoundingClientRect();
     const scrollTop = vpRef.current.scrollTop;
-    const off = { x: e.clientX - r.left - n.x, y: e.clientY - r.top + scrollTop - n.y };
+    // Lock scroll during drag
+    vpRef.current.style.overflowY = "hidden";
+    const off = { x: e.clientX - n.x, y: e.clientY + scrollTop - n.y };
     setDragId(id);
     dragIdRef.current = id;
     setDragOff(off);
