@@ -298,10 +298,17 @@ function GuidedInner() {
           {[1, 2].map((i) => (
             <div key={i} style={{
               width: 48, height: 3, borderRadius: 2,
-              background: i < questionNumber ? "#FF9090" : i === questionNumber ? "#FF9090" : "rgba(0,3,50,0.08)",
-              opacity: i <= questionNumber ? 1 : 0.4,
-              transition: "all 0.3s ease",
-            }} />
+              background: "rgba(0,3,50,0.08)",
+              position: "relative", overflow: "hidden",
+            }}>
+              <div style={{
+                position: "absolute", inset: 0, borderRadius: 2,
+                background: "#FF9090",
+                transform: i <= questionNumber ? "scaleX(1)" : "scaleX(0)",
+                transformOrigin: "left",
+                transition: "transform 0.4s ease-out",
+              }} />
+            </div>
           ))}
         </div>
 

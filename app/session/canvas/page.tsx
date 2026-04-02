@@ -1022,7 +1022,7 @@ function CanvasInner() {
               if (data.deliverable_label || data.sections) setSynthesis(data);
             } catch { /* use without synthesis */ }
             setSynthLoading(false);
-          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>See what you found →</button>
+          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
         </div>
       </div>
@@ -1183,6 +1183,7 @@ function CanvasInner() {
                     width: 7, height: 7, borderRadius: "50%",
                     background: dimStatus[d.label] === "complete" ? "#FF9090" : "rgba(0,3,50,0.1)",
                     transition: "background 0.3s",
+                    animation: dimStatus[d.label] === "complete" ? "dotPop 0.3s ease-out" : undefined,
                   }} />
                 ))}
               </div>
@@ -1274,6 +1275,7 @@ function CanvasInner() {
                 width: 8, height: 8, borderRadius: "50%",
                 background: dimStatus[d.label] === "complete" ? "#FF9090" : "rgba(0,3,50,0.1)",
                 transition: "background 0.3s",
+                animation: dimStatus[d.label] === "complete" ? "dotPop 0.3s ease-out" : undefined,
               }} />
             ))}
           </div>
@@ -1457,11 +1459,14 @@ function CanvasInner() {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     zIndex: 10,
                     cursor: "default",
-                    animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : undefined,
+                    animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : activeDimQuestion === n.dimLabel ? "dimGlow 1s ease-in-out 1" : undefined,
+                    transition: "background 0.4s, box-shadow 0.4s",
+                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "#0a0a40" } : {}),
                   }}
                 >
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6 }}>
-                    DIMENSION {(n.dimIndex ?? 0) + 1}
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
+                    <span>DIMENSION {(n.dimIndex ?? 0) + 1}</span>
+                    {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "slideIn 0.3s ease-out 0.1s forwards" }}>✓</span>}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#FAF7F0", marginBottom: 4, lineHeight: 1.3 }}>
                     {n.dimLabel}
@@ -2079,8 +2084,11 @@ function CanvasInner() {
         @keyframes sugPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.15); } }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
-        @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
-        @keyframes slideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes noteIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes slideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes dotPop { 0% { transform:scale(0); } 70% { transform:scale(1.1); } 100% { transform:scale(1); } }
+        @keyframes dimGlow { 0% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.2), 0 2px 8px rgba(0,0,0,0.1); } 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } }
+        @keyframes synthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 8px rgba(255,144,144,0.25); } }
         .done-btn:active { transform: scale(0.97); }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
