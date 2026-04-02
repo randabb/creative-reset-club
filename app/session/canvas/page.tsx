@@ -1466,10 +1466,8 @@ function CanvasInner() {
 
             // Dimension header rendering
             if (isDim) {
-              return (<>
-
+              return (<div key={n.id} style={{ display: "contents" }}>
                 <div
-                  key={n.id}
                   className="cn"
                   style={{
                     position: "absolute", left: n.x, top: n.y,
@@ -1518,7 +1516,7 @@ function CanvasInner() {
                 {/* First question below dimension */}
                 {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && (() => {
                   // Find the lowest note in this dimension's column
-                  const colNotes = notes.filter(cn => cn.id !== n.id && Math.abs(cn.x - n.x) < 130);
+                  const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
                   let questionY = n.y + 140; // default: below dimension header
                   if (colNotes.length > 0) {
                     const lowestNote = colNotes.reduce((a, b) => (a.y + charOffset(a.text)) > (b.y + charOffset(b.text)) ? a : b);
@@ -1564,7 +1562,7 @@ function CanvasInner() {
 
                             // Create user note on canvas — below the last note in this column
                             const noteId = uid();
-                            const colNotes = notes.filter(cn => cn.id !== n.id && Math.abs(cn.x - n.x) < 130);
+                            const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
                             const lastNoteY = colNotes.length > 0 ? Math.max(...colNotes.map(cn => cn.y + charOffset(cn.text))) : n.y + 160;
                             setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user" }]);
                             setDimQuestionAnswer("");
@@ -1649,7 +1647,7 @@ function CanvasInner() {
                   </div>
                   );
                 })()}
-              </>);
+              </div>);
             }
 
             return (
