@@ -52,6 +52,8 @@ function GuidedInner() {
   const [captureOpen, setCaptureOpen] = useState(true);
   const [focused, setFocused] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [reflection, setReflection] = useState("");
+  const [showReflection, setShowReflection] = useState(false);
 
   const getFallback = useCallback((qNum: number) => {
     const fb = FALLBACKS[mode] || FALLBACKS.clarity;
@@ -105,13 +107,44 @@ function GuidedInner() {
 
     const newQA: QA = { question: currentQuestion, answer: answer.trim() };
     const updatedQAs = [...qas, newQA];
+    const currentQNum = questionNumber;
     setQas(updatedQAs);
     setAnswer("");
     setTyping(false);
     setCaptureOpen(false);
+    setLoadingQ(true);
 
-    if (questionNumber >= 4) {
-      // Done — navigate to session plan
+    // Fetch reflection (non-blocking, 3s timeout)
+    let reflectionText = "";
+    try {
+      const reflRes = await fetch("/api/thinking-reflection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionNumber: currentQNum,
+          userAnswer: newQA.answer,
+          capture,
+          previousQAs: updatedQAs,
+        }),
+      });
+      const reflData = await reflRes.json();
+      reflectionText = reflData.reflection || "";
+    } catch { /* skip reflection */ }
+
+    // Show reflection if we got one
+    if (reflectionText) {
+      setLoadingQ(false);
+      setReflection(reflectionText);
+      await new Promise(r => setTimeout(r, 400));
+      setShowReflection(true);
+      const holdTime = currentQNum >= 4 ? 3000 : 2500;
+      await new Promise(r => setTimeout(r, holdTime));
+      setShowReflection(false);
+      await new Promise(r => setTimeout(r, 300));
+      setReflection("");
+    }
+
+    if (currentQNum >= 4) {
       const params = new URLSearchParams({
         capture,
         mode,
@@ -121,7 +154,7 @@ function GuidedInner() {
       return;
     }
 
-    const nextQ = questionNumber + 1;
+    const nextQ = currentQNum + 1;
     setQuestionNumber(nextQ);
     await fetchQuestion(nextQ, updatedQAs);
   };
@@ -207,8 +240,22 @@ function GuidedInner() {
           </div>
         ))}
 
-        {/* Current question or loading */}
-        {loadingQ ? (
+        {/* Reflection, loading, or question */}
+        {reflection ? (
+          <div style={{
+            textAlign: "center", padding: "48px 20px",
+            opacity: showReflection ? 1 : 0,
+            transition: "opacity 0.5s ease",
+          }}>
+            <p style={{
+              fontSize: 15, fontStyle: "italic", color: "#000332",
+              fontFamily: "Georgia, serif", lineHeight: 1.55, maxWidth: 400,
+              margin: "0 auto",
+            }}>
+              {reflection}
+            </p>
+          </div>
+        ) : loadingQ ? (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <div style={{
               width: 20, height: 20, border: "2px solid rgba(255,144,144,0.2)",
