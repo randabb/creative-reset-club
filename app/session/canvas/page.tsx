@@ -746,6 +746,11 @@ function CanvasInner() {
     setRespCardPos(null);
     setResponseFlow(null);
 
+    // Auto-scroll to keep response visible
+    setTimeout(() => {
+      if (vpRef.current) vpRef.current.scrollTo({ top: respNote.y - 100, behavior: "smooth" });
+    }, 100);
+
     // Re-analyze notes (force bypass debounce)
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
     analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
@@ -1372,7 +1377,7 @@ function CanvasInner() {
       </div>
 
       {/* CANVAS VIEWPORT */}
-      <div ref={vpRef} style={{ height: "calc(100vh - 44px)", overflowY: "auto", overflowX: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44 }}>
+      <div ref={vpRef} style={{ height: "calc(100vh - 44px)", overflowY: "auto", overflowX: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44, scrollBehavior: "smooth" }}>
         <div
           ref={canvasRef}
           onMouseDown={(e) => { const t = e.target as HTMLElement; if (!t.closest(".cn") && editId) finishEdit(editId); }}
@@ -1505,12 +1510,12 @@ function CanvasInner() {
                   <div style={{
                     position: "absolute", left: n.x, top: questionY,
                     width: 220, zIndex: 10,
+                    animation: "slideIn 0.3s ease-out forwards",
                   }}>
                     <div style={{
                       background: "#fff", borderRadius: 10, padding: "12px 14px",
                       border: `1.5px solid ${ACT[dimSuggestions[n.dimLabel || ""].action].color}30`,
                       boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                      animation: "noteIn 0.3s ease-out forwards",
                     }}>
                       <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: ACT[dimSuggestions[n.dimLabel || ""].action].color, marginBottom: 4 }}>
                         {ACT[dimSuggestions[n.dimLabel || ""].action].icon} {ACT[dimSuggestions[n.dimLabel || ""].action].label.toUpperCase()}
@@ -1546,6 +1551,11 @@ function CanvasInner() {
                             setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user" }]);
                             setDimQuestionAnswer("");
                             setDimStatus(prev => ({ ...prev, [dimLabel]: "in_progress" }));
+
+                            // Auto-scroll to keep latest card visible
+                            setTimeout(() => {
+                              if (vpRef.current) vpRef.current.scrollTo({ top: lastNoteY - 100, behavior: "smooth" });
+                            }, 100);
 
                             // Track Q&A for this dimension
                             const newQA = { question: currentQ, answer: answerText, action: currentAction };
@@ -1609,10 +1619,11 @@ function CanvasInner() {
                             scheduleSave();
                           }}
                           onMouseDown={e => e.stopPropagation()}
+                          className="done-btn"
                           style={{
                             marginTop: 6, padding: "6px 16px", borderRadius: 100, border: "none",
                             background: "#FF9090", color: "#000332", fontSize: 12, fontWeight: 700,
-                            cursor: "pointer", fontFamily: "inherit",
+                            cursor: "pointer", fontFamily: "inherit", transition: "transform 0.1s",
                           }}
                         >Done</button>
                       )}
@@ -1756,10 +1767,12 @@ function CanvasInner() {
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
                       <button
                         onMouseDown={e => { e.preventDefault(); e.stopPropagation(); finishEdit(n.id); }}
+                        className="done-btn"
                         style={{
                           padding: "4px 12px", borderRadius: 6, border: "none",
                           background: "#FF9090", color: "#fff", fontSize: 11,
                           fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                          transition: "transform 0.1s",
                         }}
                       >Done</button>
                     </div>
@@ -1907,12 +1920,13 @@ function CanvasInner() {
                   <button
                     onClick={completeResponse}
                     disabled={!responseText.trim()}
+                    className="done-btn"
                     style={{
                       padding: "6px 16px", borderRadius: 100, border: "none",
                       background: responseText.trim() ? mColor : "rgba(0,3,50,0.06)",
                       color: responseText.trim() ? "#000332" : "rgba(0,3,50,0.25)",
                       fontSize: 12, fontWeight: 700, cursor: responseText.trim() ? "pointer" : "default",
-                      fontFamily: "inherit",
+                      fontFamily: "inherit", transition: "transform 0.1s",
                     }}
                   >Done</button>
                   <button onClick={skipResponse} style={{
@@ -2073,6 +2087,8 @@ function CanvasInner() {
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
         @keyframes noteIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
+        @keyframes slideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .done-btn:active { transform: scale(0.97); }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
         @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
