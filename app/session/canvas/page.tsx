@@ -1489,9 +1489,17 @@ function CanvasInner() {
                   )}
                 </div>
                 {/* First question below dimension */}
-                {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && (
+                {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && (() => {
+                  // Find the lowest note in this dimension's column
+                  const colNotes = notes.filter(cn => cn.id !== n.id && Math.abs(cn.x - n.x) < 130);
+                  let questionY = n.y + 140; // default: below dimension header
+                  if (colNotes.length > 0) {
+                    const lowestNote = colNotes.reduce((a, b) => (a.y + charOffset(a.text)) > (b.y + charOffset(b.text)) ? a : b);
+                    questionY = lowestNote.y + charOffset(lowestNote.text);
+                  }
+                  return (
                   <div style={{
-                    position: "absolute", left: n.x, top: n.y + 140,
+                    position: "absolute", left: n.x, top: questionY,
                     width: 220, zIndex: 10,
                   }}>
                     <div style={{
@@ -1527,10 +1535,10 @@ function CanvasInner() {
                             const currentAction = activeDimAction || dimSuggestions[dimLabel]?.action || "clarify";
                             const answerText = dimQuestionAnswer.trim();
 
-                            // Create user note on canvas
+                            // Create user note on canvas — below the last note in this column
                             const noteId = uid();
-                            const existingDimNotes = notes.filter(note => note.source === "user" && Math.abs(note.x - n.x) < 130);
-                            const lastNoteY = existingDimNotes.length > 0 ? Math.max(...existingDimNotes.map(note => note.y + charOffset(note.text))) : n.y + 160;
+                            const colNotes = notes.filter(cn => cn.id !== n.id && Math.abs(cn.x - n.x) < 130);
+                            const lastNoteY = colNotes.length > 0 ? Math.max(...colNotes.map(cn => cn.y + charOffset(cn.text))) : n.y + 160;
                             setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user" }]);
                             setDimQuestionAnswer("");
                             setDimStatus(prev => ({ ...prev, [dimLabel]: "in_progress" }));
@@ -1606,7 +1614,8 @@ function CanvasInner() {
                       )}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </>);
             }
 
