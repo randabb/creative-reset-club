@@ -190,8 +190,7 @@ function CanvasInner() {
   const [synthRevealed, setSynthRevealed] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
-  const [tourWelcome, setTourWelcome] = useState(false);
-  const [tourStep, setTourStep] = useState<number | null>(null);
+  const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
   const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
@@ -206,6 +205,7 @@ function CanvasInner() {
     nextAction?: Action;
     nextActionReason?: string;
     firstNoteLabel?: string;
+    message?: string;
   }>({ type: "landing" });
   const [symbolHintShown, setSymbolHintShown] = useState(false);
   const [showSymbolHint, setShowSymbolHint] = useState(false);
@@ -369,7 +369,7 @@ function CanvasInner() {
     const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
-    setStatusState({ type: "landing", dimName: dimensions[0]?.label });
+    setStatusState({ type: "landing", dimName: dimensions[0]?.label, message: pick(["Let\u2019s start here. Say whatever\u2019s in your head.", "First things first. Don\u2019t think, just write.", `Let\u2019s start with ${dimensions[0]?.label}. Say what comes to mind.`]) });
 
     // Fetch AI suggestions for each dimension
     fetch("/api/suggest-dimension-actions", {
@@ -401,8 +401,8 @@ function CanvasInner() {
       setStatusState({
         type: "suggesting",
         nextAction: sug,
-        nextActionReason: `This note could use ${ACT[sug].label.toLowerCase()}.`,
         actionColor: ACT[sug].color,
+        message: `Try ${ACT[sug].label.toLowerCase()} on this. This note could use it.`,
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -417,35 +417,20 @@ function CanvasInner() {
   }, [sessionId, saveCanvas]);
 
   // First-time tour check — slight delay to ensure canvas is rendered
+  // Tour: check Supabase for canvas_tour_completed
   useEffect(() => {
-    if (tourCheckedRef.current || !canvasReady) return;
+    if (tourCheckedRef.current || !canvasReady || !userId) return;
     tourCheckedRef.current = true;
-    const t = setTimeout(() => {
-      const toured = localStorage.getItem("primer_canvas_toured");
-      console.log("[canvas] primer_canvas_toured:", toured);
-      if (!toured) {
-        setTourWelcome(true);
-      }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [canvasReady]);
+    supabase.from("profiles").select("canvas_tour_completed").eq("id", userId).maybeSingle()
+      .then(({ data }) => {
+        if (!data?.canvas_tour_completed) setShowTour(true);
+      });
+  }, [canvasReady, userId]);
 
-  const startTour = () => { setTourWelcome(false); setTourStep(0); };
-  const skipTour = () => {
-    setTourWelcome(false); setTourStep(null);
-    localStorage.setItem("primer_canvas_toured", "true");
-    // Show coach card after 10s if no note selected
-    setTimeout(() => {
-    }, 10000);
-  };
-  const nextTourStep = () => {
-    if (tourStep !== null && tourStep < 3) {
-      setTourStep(tourStep + 1);
-    } else {
-      setTourStep(null);
-      localStorage.setItem("primer_canvas_toured", "true");
-      setTimeout(() => {
-        }, 10000);
+  const dismissTour = () => {
+    setShowTour(false);
+    if (userId) {
+      supabase.from("profiles").update({ canvas_tour_completed: true }).eq("id", userId).then(() => {});
     }
   };
 
@@ -667,7 +652,7 @@ function CanvasInner() {
       setResponseFlow({ instructionIds: [instId], currentIdx: 0, sourceId: selId, action });
       setResponseText("");
       setSelected(new Set());
-      setStatusState({ type: "working", dimName: dim.label });
+      setStatusState({ type: "working", dimName: dim.label, message: pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."]) });
     } catch { /* handled by API fallback */ }
     setAiLoading(false);
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
@@ -821,7 +806,7 @@ function CanvasInner() {
           }
         } else {
           setAllDimsComplete(true);
-          setStatusState({ type: "all_done" });
+          setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
         }
       };
 
@@ -852,10 +837,10 @@ function CanvasInner() {
           if (assessData.status === "ready_to_move" || responseCount >= 2) {
             handleReadyToMove();
           } else {
-            setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, nextActionReason: recReason, actionColor: ACT[recAction].color });
+            setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, actionColor: ACT[recAction].color, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one."]) });
           }
         } catch {
-          setStatusState({ type: "keep_going", dimName: dim.label });
+          setStatusState({ type: "keep_going", dimName: dim.label, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
         }
       }
     }
@@ -1303,26 +1288,14 @@ function CanvasInner() {
             {statusState.type === "loading" && (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 14, height: 14, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", flexShrink: 0 }} />
-                {pick(["Thinking...", "One sec...", "Processing that..."])}
+                Thinking...
               </span>
             )}
-            {statusState.type === "landing" && (
-              <span>{pick(["Let\u2019s start here. Say whatever\u2019s in your head.", "First things first. Don\u2019t think, just write.", `Let\u2019s start with ${statusState.dimName}. Say what comes to mind.`])}</span>
+            {statusState.type !== "loading" && statusState.message && (
+              <span>{statusState.message}{statusState.type === "ready_to_move" && statusState.nextDimName && <> <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>.</>}</span>
             )}
-            {statusState.type === "suggesting" && statusState.nextAction && (
-              <span>{pick([`Try ${ACT[statusState.nextAction].label.toLowerCase()} on this.`, `This one could use some ${ACT[statusState.nextAction].label.toLowerCase()}.`])} {statusState.nextActionReason}</span>
-            )}
-            {statusState.type === "working" && (
-              <span>{pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."])}</span>
-            )}
-            {statusState.type === "keep_going" && (
-              <span>{pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."])}</span>
-            )}
-            {statusState.type === "ready_to_move" && (
-              <span>{pick([`Good. Let\u2019s look at `, `Done with that one. On to `, `Next up: `])}<strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>.</span>
-            )}
-            {statusState.type === "all_done" && (
-              <span>You worked through all of it. See what you found?</span>
+            {statusState.type !== "loading" && !statusState.message && (
+              <span>Write whatever comes to mind.</span>
             )}
           </div>
         </div>
@@ -1611,7 +1584,7 @@ function CanvasInner() {
                                 if (nextDim) {
                                   setNudgeDimIdx(dimensions.indexOf(nextDim));
                                   setTimeout(() => setNudgeDimIdx(null), 8000);
-                                  setStatusState({ type: "ready_to_move", dimName: dimLabel, nextDimName: nextDim.label });
+                                  setStatusState({ type: "ready_to_move", dimName: dimLabel, nextDimName: nextDim.label, message: pick(["Good. Let\u2019s look at", "Done with that one. On to", "Next up:"]) });
                                   // Auto-open next dimension after brief pause
                                   setTimeout(() => {
                                     setActiveDimQuestion(nextDim.label);
@@ -1620,16 +1593,16 @@ function CanvasInner() {
                                   }, 2000);
                                 } else {
                                   setAllDimsComplete(true);
-                                  setStatusState({ type: "all_done" });
+                                  setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
                                 }
                               } else if (data.question) {
                                 // Continue with next question in this dimension
                                 setDimSuggestions(prev => ({ ...prev, [dimLabel]: { action: data.action as Action, question: data.question } }));
                                 setActiveDimAction(data.action as Action);
-                                setStatusState({ type: "keep_going", dimName: dimLabel });
+                                setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                               }
                             } catch {
-                              setStatusState({ type: "keep_going", dimName: dimLabel });
+                              setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                             }
                             setDimLoading(false);
                             scheduleSave();
@@ -1958,137 +1931,29 @@ function CanvasInner() {
         </div>
       </div>
 
-      {/* TOUR: WELCOME OVERLAY */}
-      {tourWelcome && (
+      {/* SIMPLE TOUR OVERLAY */}
+      {showTour && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
-          background: "rgba(0,3,50,0.85)",
+          background: "rgba(0,3,50,0.7)",
           display: "flex", alignItems: "center", justifyContent: "center",
           animation: "tourFadeIn 0.3s ease forwards",
         }}>
           <div style={{
-            background: "#fff", borderRadius: 16, padding: "40px 40px",
-            maxWidth: 480, width: "calc(100% - 48px)", textAlign: "center",
+            background: "#fff", borderRadius: 14, padding: "32px 32px",
+            maxWidth: 400, width: "calc(100% - 48px)", textAlign: "center",
           }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em", marginBottom: 28 }}>primer</div>
-            <h2 style={{ fontSize: 24, fontWeight: 400, fontStyle: "italic", color: "#000332", marginBottom: 12 }}>
-              Welcome to your canvas.
-            </h2>
-            <p style={{ fontSize: 14, color: "rgba(0,3,50,0.5)", fontWeight: 300, lineHeight: 1.65, marginBottom: 28, maxWidth: 360, margin: "0 auto 28px" }}>
-              This is where your thinking becomes visible. Here&rsquo;s a quick tour.
+            <p style={{ fontSize: 15, color: "#000332", lineHeight: 1.6, fontWeight: 400, marginBottom: 24 }}>
+              Your thinking dimensions are above. Start with the first one — just write what comes to mind.
             </p>
-            <button onClick={startTour} style={{
-              padding: "14px 32px", borderRadius: 100, border: "none",
-              background: "#FF9090", color: "#000332", fontSize: 15, fontWeight: 700,
-              cursor: "pointer", fontFamily: "inherit", marginBottom: 12,
-              display: "block", width: "100%",
-            }}>Show me around</button>
-            <button onClick={skipTour} style={{
-              background: "none", border: "none", fontSize: 13,
-              color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit",
-            }}>Skip, I&rsquo;ll figure it out</button>
+            <button onClick={dismissTour} style={{
+              padding: "12px 32px", borderRadius: 100, border: "none",
+              background: "#FF9090", color: "#000332", fontSize: 14, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}>Got it</button>
           </div>
         </div>
       )}
-
-      {/* TOUR: STEP OVERLAYS */}
-      {tourStep !== null && (() => {
-        const steps = [
-          {
-            spotTop: "0", spotLeft: "0", spotW: "100%", spotH: "120px",
-            cardStyle: { position: "fixed" as const, top: 130, left: "50%", transform: "translateX(-50%)" },
-            arrowSide: "top" as const,
-            text: "Your goal is at the top. Below it, the dimensions are the key areas Primer thinks you should explore. Each one is a lane for your thinking.",
-          },
-          {
-            spotTop: "120px", spotLeft: "0", spotW: "100%", spotH: "calc(100% - 180px)",
-            cardStyle: { position: "fixed" as const, bottom: 80, left: "50%", transform: "translateX(-50%)" },
-            arrowSide: "bottom" as const,
-            text: "These are your answers from the guided thinking. They\u2019re already placed under the most relevant dimension. You can drag them anywhere.",
-          },
-          {
-            spotTop: "4px", spotLeft: "calc(50% - 180px)", spotW: "360px", spotH: "48px",
-            cardStyle: { position: "fixed" as const, top: 64, left: "50%", transform: "translateX(-50%)" },
-            arrowSide: "top" as const,
-            content: (
-              <>
-                <p style={{ fontSize: 14, color: "rgba(0,3,50,0.65)", fontWeight: 300, lineHeight: 1.65, marginBottom: 12 }}>
-                  Select any note, then choose an action:
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
-                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#6B8AFE" }}>◎ Clarify</span> — cut to the core</div>
-                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#FF9090" }}>✦ Expand</span> — stretch it further</div>
-                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#7ED6A8" }}>⟁ Decide</span> — stress-test it</div>
-                  <div style={{ fontSize: 13, color: "#000332", fontWeight: 400 }}><span style={{ color: "#C4A6FF" }}>◈ Express</span> — structure it for others</div>
-                </div>
-                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300, lineHeight: 1.5 }}>
-                  Each action creates new thinking branches from your note.
-                </p>
-              </>
-            ),
-          },
-          {
-            spotTop: "4px", spotLeft: "calc(100% - 200px)", spotW: "190px", spotH: "48px",
-            cardStyle: { position: "fixed" as const, top: 64, right: 20 },
-            arrowSide: "top" as const,
-            text: "When you\u2019ve developed your thinking enough, hit Ready to go. Primer will generate a deliverable you can actually use \u2014 a brief, a set of directions, a decision, or an articulated position.",
-          },
-        ];
-        const step = steps[tourStep];
-        const isLast = tourStep === 3;
-        return (
-          <div
-            style={{ position: "fixed", inset: 0, zIndex: 200 }}
-            onClick={nextTourStep}
-          >
-            {/* Dark overlay with spotlight cutout using clip-path */}
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "rgba(0,3,50,0.75)",
-              animation: "tourFadeIn 0.3s ease forwards",
-            }} />
-            {/* Spotlight */}
-            <div style={{
-              position: "absolute",
-              top: step.spotTop, left: step.spotLeft,
-              width: step.spotW, height: step.spotH,
-              boxShadow: "0 0 0 4px rgba(255,144,144,0.3)",
-              borderRadius: 12,
-              zIndex: 201,
-              pointerEvents: "none",
-            }} />
-            {/* Tooltip card */}
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                ...step.cardStyle,
-                zIndex: 202,
-                background: "#fff", borderRadius: 14, padding: "20px 22px",
-                maxWidth: 340, width: "calc(100% - 48px)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                animation: "tourFadeIn 0.3s ease forwards",
-              }}
-            >
-              {step.content ? step.content : (
-                <p style={{ fontSize: 14, color: "rgba(0,3,50,0.65)", fontWeight: 300, lineHeight: 1.65 }}>
-                  {step.text}
-                </p>
-              )}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
-                <span style={{ fontSize: 11, color: "rgba(0,3,50,0.3)" }}>{tourStep + 1} of 4</span>
-                <button onClick={nextTourStep} style={{
-                  padding: "10px 24px", borderRadius: 100, border: "none",
-                  background: isLast ? "#FF9090" : "rgba(0,3,50,0.06)",
-                  color: "#000332", fontSize: 13, fontWeight: 700,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>
-                  {isLast ? "Got it, let\u2019s go" : "Next"}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
