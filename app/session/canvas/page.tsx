@@ -1016,7 +1016,7 @@ function CanvasInner() {
               if (data.deliverable_label || data.sections) setSynthesis(data);
             } catch { /* use without synthesis */ }
             setSynthLoading(false);
-          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>Ready to go? →</button>
+          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
         </div>
       </div>
@@ -1076,12 +1076,16 @@ function CanvasInner() {
               )}
             </div>
           )}
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
-            <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
-            <button onClick={downloadMd} style={{ padding: "12px", borderRadius: 10, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Download as text</button>
-          </div>
+          {synthesis && !synthLoading && (
+            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.5s forwards" }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
+                <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
+                <button onClick={downloadMd} style={{ padding: "12px", borderRadius: 10, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Download as text</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1214,7 +1218,7 @@ function CanvasInner() {
                   })()}
                   {allDimsComplete && (
                     <p style={{ fontSize: 12, color: "#FF9090", fontWeight: 600, marginTop: 8 }}>
-                      All dimensions explored. Hit Ready to go → for your full brief.
+                      All dimensions explored. Hit See what you found → for your full brief.
                     </p>
                   )}
                 </>
@@ -1298,7 +1302,7 @@ function CanvasInner() {
               </span>
             )}
             {statusState.type === "all_done" && (
-              <span>You&rsquo;ve worked through everything. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> when you want your synthesis.</span>
+              <span>You&rsquo;ve worked through everything. Hit <strong style={{ color: "#FF9090" }}>See what you found →</strong> when you want your synthesis.</span>
             )}
           </div>
         </div>
@@ -2073,6 +2077,7 @@ function CanvasInner() {
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
         @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes dimNudge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.25), 0 2px 8px rgba(0,0,0,0.1); } }
+        @keyframes synthExportFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
