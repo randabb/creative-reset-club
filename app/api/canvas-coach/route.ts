@@ -1,87 +1,85 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { INTELLECTUAL_LAYER } from "@/lib/prompts/intellectual-layer";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const ACTION_CONTEXT: Record<string, string> = {
-  clarify: "Help them cut to the core. Draw invisibly from First Principles, Socratic method, Five Whys, MECE.",
-  expand: "Help them stretch and find new angles. Draw invisibly from Lateral Thinking, SCAMPER, Six Thinking Hats, Analogical Thinking.",
-  decide: "Help them evaluate and commit. Draw invisibly from Pre-Mortem, Inversion, Second-Order Thinking.",
-  express: "Help them articulate clearly. Draw invisibly from Minto Pyramid, SCQA, Steelmanning.",
+const GLOBAL = `You are their friend first. You are paying close attention. You respect them enough to not be gentle or polite. You're not a contrarian — you don't always push back. Sometimes the honest thing is to validate them hard. Read what they wrote and respond to what's actually there, not what a generic coach would say.
+
+Use their words. Reference their specific situation. Never give generic advice.`;
+
+const ACTION_PROMPTS: Record<string, string> = {
+  clarify: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to CUT THROUGH IT.
+
+Your output format:
+1. A sharp restatement of what they actually said, distilled to the bone. Start with "The real thing here is..." or "What you're actually saying is..." — one or two sentences max.
+2. Then ONE follow-up line that either:
+   - Challenges what they're dancing around: "So what are you going to do about that?" or "What are you avoiding here?"
+   - OR validates them hard: "You already know this. Stop second-guessing it." or "That's the answer. You're overthinking everything else."
+
+Read their energy. If they're circling and hedging, challenge them. If they've already landed on something true, tell them they nailed it and to stop overthinking.
+
+Never be soft. Never say "it sounds like" or "I hear you saying." Just tell them what they said, sharper than they said it.
+Keep the whole response under 50 words.
+
+${GLOBAL}`,
+
+  expand: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to MULTIPLY their thinking with angles they haven't considered.
+
+Your output format:
+Give 3-4 short provocations. Each one opens a door they didn't see. One line each, no explanations.
+
+These should NOT be safe or obvious. Go for:
+- The angle that makes them uncomfortable
+- The possibility they're underestimating themselves
+- The perspective of someone who would disagree
+- The version where they're wrong about their assumption
+
+But also:
+- Sometimes the best expansion is "what if you're right and this is way bigger than you're thinking?"
+- Sometimes it's "what if the thing you dismissed first was actually the answer?"
+
+No preamble. No "here are some angles to consider." Just the provocations, each on its own line starting with "→"
+Keep each provocation under 15 words.
+
+${GLOBAL}`,
+
+  decide: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to FORCE A CHOICE.
+
+Your output format:
+1. Name the tension or tradeoff hiding in what they wrote. "You're choosing between ___ and ___." One sentence.
+2. Then ONE line that either:
+   - Calls out what they've already decided: "You already know you want ___. What's stopping you?"
+   - OR frames the real cost: "If you pick ___, you're giving up ___. Can you live with that?"
+
+Read their energy. If they're pretending they haven't decided, call it. If they're genuinely torn, make the tradeoff so sharp they can't avoid it.
+
+Never present a balanced pros-and-cons list. That's not deciding, that's stalling.
+Keep the whole response under 50 words.
+
+${GLOBAL}`,
+
+  express: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to DRAFT what they actually mean in clean, usable language.
+
+Your output format:
+1. A rewritten version of what they said — stripped of hedging, filler, and throat-clearing. This should be something they could actually copy and use: a pitch line, a positioning statement, an email paragraph, a strategy summary. Start with "Try this:" or "Here's what you actually mean:"
+2. Then ONE line of commentary: what you cut and why. "You buried the real point under three qualifiers." or "This is good — the only thing wrong was you started with context instead of the point."
+
+If what they wrote is already strong, say so: "This is already sharp. The only edit: lead with ___ instead of ___."
+
+Never add fluff to their writing. Always make it shorter, never longer.
+Keep the draft under 40 words. Keep the commentary under 20 words.
+
+${GLOBAL}`,
 };
 
 const FALLBACKS: Record<string, { discipline: string; title: string; text: string }> = {
-  clarify: { discipline: "critical", title: "The essential sentence", text: "Write the single most important sentence from this note." },
-  expand: { discipline: "creative", title: "The opposite", text: "Write the opposite of this — what would that look like?" },
-  decide: { discipline: "strategic", title: "The failure scenario", text: "Write what happens if you choose this and it fails." },
-  express: { discipline: "design", title: "One repeatable sentence", text: "Write this as one sentence someone could repeat back to you." },
+  clarify: { discipline: "critical", title: "Cut through", text: "What you're actually saying is — write it in one sentence without any hedging." },
+  expand: { discipline: "creative", title: "New angles", text: "→ What if you're wrong about who this is for?\n→ What would your biggest critic say?\n→ What are you underestimating?" },
+  decide: { discipline: "strategic", title: "The choice", text: "You're choosing between two things. Name them both and pick one right now." },
+  express: { discipline: "design", title: "Say it clean", text: "Try this: rewrite what you just said in one sentence someone could repeat back to you." },
 };
-
-const SYSTEM = `You are the AI thinking coach inside Primer's canvas. When the user selects a note and an action, generate ONE specific thinking instruction.
-
-RULES:
-1. ONE instruction only. Nothing else.
-2. This instruction tells the user WHAT TO WRITE in a response note. They will replace your instruction with their own thinking.
-3. Reference the user's EXACT language from their goal, the dimension, and the selected note.
-4. NEVER do the thinking for them.
-5. NEVER name any framework.
-6. NEVER ask "What if..." questions. They are suggestions, not thinking prompts.
-7. Consider what has ALREADY been written on the canvas. Don't repeat ground that's been covered.
-8. Pick the single most important thing this person needs to think about RIGHT NOW for this dimension.
-9. NEVER repeat an instruction that has already been given. Each instruction must explore a genuinely different angle.
-
-LANGUAGE RULES FOR INSTRUCTIONS:
-- Write like a sharp friend asking you a question at a coffee shop, not a consultant writing a deliverable
-- Use short, everyday words. No jargon. No formal phrasing.
-- Under 20 words. Ideally under 15.
-- Start with a verb: "Write...", "Name...", "List...", "Describe...", "Pick..."
-- NEVER use phrases like "the exact moment when", "the specific difference between", "the triggering moment", "the counterintuitive insight"
-- NEVER use compound constructions with dashes like "what task were they trying to accomplish - what stage they're at"
-- ONE simple ask per instruction. Not two things connected by a dash or comma.
-
-BAD instructions (too formal, too long, too compound):
-- "Write about the exact moment when founders realize they're wasting time going back and forth with AI"
-- "Describe the specific difference between a Claude plan created from a lazy prompt vs your fuller context"
-- "List the triggering moment when someone moves from accepting current AI limitations to seeking a better approach"
-
-GOOD instructions (simple, direct, still deep):
-- "When do founders first realize AI isn't getting them?"
-- "What's the difference between a lazy AI prompt and a primed one?"
-- "Name one person who'd pay for this tomorrow. Why them?"
-- "What do people do right before they give up on an AI conversation?"
-- "Write the sentence that would make someone stop scrolling."
-
-Your instructions must be grounded in expert thinking frameworks (first principles, systems thinking, strategic thinking, design thinking, creative thinking) — but the PHRASING must be short, conversational, and simple.
-
-Good: "Who's already frustrated with how things work there?"
-Bad: "What would have to be true about their internal politics for this to get approved without a champion?"
-
-Both come from stakeholder mapping. One sounds human, the other sounds like a textbook.
-
-The sophistication comes from WHAT you ask, not HOW you phrase it. Under 15 words. One idea per instruction. Use "you" and "they" not abstract language. No framework names, no jargon.
-
-The instruction must be a specific prompt that tells the user what to WRITE. It should start with a verb. If your instruction is under 8 words or doesn't tell the user what to produce, it's not specific enough. Rewrite it.
-
-TITLE RULES:
-- Response titles should be 2-4 words. Conversational. Like a label you'd scribble on a sticky note.
-- BAD titles: "SPECIFIC FRUSTRATION MOMENTS", "YOUR THINKING DEPTH GAP", "CONTEXT CONTAMINATION ANALYSIS"
-- GOOD titles: "The frustration", "When it breaks", "Their first reaction", "The real competitor", "Why they'd pay"
-
-Also classify which thinking discipline this instruction draws from:
-- design: empathy, reframing, user perspective, walking in someone else's shoes
-- systems: connections, feedback loops, dependencies, seeing the whole picture
-- strategic: tradeoffs, positioning, first principles, where to focus and why
-- critical: testing assumptions, evidence, logic, opposing arguments
-- creative: new combinations, breaking patterns, divergent ideas, unexpected angles
-
-FINAL CHECK: Your instruction MUST be a complete sentence that starts with a verb and tells the user exactly what to write. Examples of GOOD instructions: 'Name three founders who would pay for this tomorrow.' / 'Write what your user does the hour before they need your product.' / 'Describe the worst AI response your target user has ever gotten.' If your instruction is under 8 words or doesn't start with a verb, YOU HAVE FAILED. Rewrite it.
-
-FORMAT — respond with ONLY one line:
-DISCIPLINE: design|systems|strategic|critical|creative | TITLE: your title | INSTRUCTION: your instruction
-Do NOT include placeholder text. Write real, specific content.`;
 
 export async function POST(req: Request) {
   try {
@@ -90,14 +88,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const ctx = ACTION_CONTEXT[action] || ACTION_CONTEXT.clarify;
-    let userMsg = `ACTION: ${action.toUpperCase()}\n${ctx}\n\nUSER'S GOAL:\n${goal || "Not specified"}\n\n`;
+    const system = ACTION_PROMPTS[action] || ACTION_PROMPTS.clarify;
+    let userMsg = `USER'S GOAL: ${goal || "Not specified"}\n\n`;
     if (dimensionLabel) {
-      userMsg += `CURRENT DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\nKeep the instruction anchored to this specific dimension.\n\n`;
+      userMsg += `DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\n`;
     }
-    userMsg += `SELECTED NOTE:\n${selectedNoteText}\n\nNOTES ALREADY ON CANVAS:\n${allNotesText || selectedNoteText}`;
+    userMsg += `THE NOTE THEY SELECTED:\n${selectedNoteText}\n\nOTHER NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
     if (existingInstructions) {
-      userMsg += `\n\nINSTRUCTIONS ALREADY GIVEN (do NOT repeat any of these):\n${existingInstructions}`;
+      userMsg += `\n\nPREVIOUS COACHING RESPONSES (don't repeat these):\n${existingInstructions}`;
     }
 
     const controller = new AbortController();
@@ -105,72 +103,26 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 100,
-      system: SYSTEM + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nUse the intellectual layer to generate a more specific, framework-grounded thinking instruction.",
+      max_tokens: 200,
+      system,
       messages: [{ role: "user", content: userMsg }],
     });
 
     clearTimeout(timer);
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
-    const line = text.split("\n").map((l: string) => l.replace(/^\d+[\.\)]\s*/, "").trim()).find((l: string) => l.length > 0);
+    if (!text) throw new Error("Empty");
 
-    if (!line) throw new Error("Empty");
+    // Determine discipline from action
+    const discMap: Record<string, string> = { clarify: "critical", expand: "creative", decide: "strategic", express: "design" };
+    const discipline = discMap[action] || "strategic";
 
-    // Clean title: keep only part before colon, max 5 words
-    const cleanTitle = (t: string) => {
-      let s = t.includes(":") ? t.split(":")[0].trim() : t;
-      const words = s.split(/\s+/);
-      if (words.length > 5) s = words.slice(0, 4).join(" ");
-      return s;
-    };
+    // Generate a short title from the first few words
+    const firstLine = text.split("\n")[0].replace(/^(The real thing|What you're actually|Try this|You're choosing)[^:]*:\s*/i, "");
+    const titleWords = firstLine.split(/\s+/).slice(0, 4).join(" ");
+    const title = titleWords.length > 30 ? titleWords.slice(0, 28) + "…" : titleWords;
 
-    // Parse: DISCIPLINE: x | TITLE: y | INSTRUCTION: z
-    const clean = line.replace(/[`*_]/g, "").trim();
-    const validDisc = ["design", "systems", "strategic", "critical", "creative"];
-    let discipline = "strategic";
-    let title = "";
-    let instText = "";
-
-    const parts = clean.split("|").map(p => p.trim());
-    for (const part of parts) {
-      if (/^DISCIPLINE:\s*/i.test(part)) {
-        const d = part.replace(/^DISCIPLINE:\s*/i, "").trim().toLowerCase();
-        if (validDisc.includes(d)) discipline = d;
-      } else if (/^TITLE:\s*/i.test(part)) {
-        title = cleanTitle(part.replace(/^TITLE:\s*/i, "").trim());
-      } else if (/^INSTRUCTION:\s*/i.test(part)) {
-        instText = part.replace(/^INSTRUCTION:\s*/i, "").trim();
-      } else if (!title) {
-        title = cleanTitle(part);
-      } else if (!instText) {
-        instText = part;
-      }
-    }
-    if (!title || !instText) {
-      const stripped = clean.replace(/^(DISCIPLINE|TITLE|INSTRUCTION):\s*\S+\s*\|?\s*/gi, "");
-      const words = stripped.split(/\s+/);
-      if (!title) title = words.slice(0, 4).join(" ");
-      if (!instText) instText = stripped;
-    }
-
-    // Validation: prevent discipline name leaking into title
-    if (validDisc.includes(title.toLowerCase())) {
-      title = instText.split(/\s+/).slice(0, 3).join(" ");
-    }
-    // Validation: if instruction is too short, it's probably the title leaking — swap
-    if (instText.split(/\s+/).length < 5 && title.split(/\s+/).length >= 5) {
-      const tmp = instText;
-      instText = title;
-      title = cleanTitle(tmp);
-    }
-    // Strip any discipline prefix that leaked into title or instruction
-    for (const d of validDisc) {
-      title = title.replace(new RegExp(`^${d}\\s*[-:]?\\s*`, "i"), "");
-      instText = instText.replace(new RegExp(`^${d}\\s*[-:]?\\s*`, "i"), "");
-    }
-
-    return NextResponse.json({ instruction: { discipline, title: cleanTitle(title), text: instText } });
+    return NextResponse.json({ instruction: { discipline, title, text } });
   } catch (err) {
     console.error("[canvas-coach]", err);
     const body = await req.clone().json().catch(() => ({}));

@@ -635,30 +635,10 @@ function CanvasInner() {
       const data = await res.json();
 
       // Parse the single instruction (API now returns { instruction } not { instructions })
-      const raw = data.instruction || (data.instructions && data.instructions[0]) || { title: "Your thinking", text: "Write what comes to mind.", discipline: "strategic" };
-      const cleanTitle = (t: string) => {
-        let s = t.includes(":") ? t.split(":")[0].trim() : t;
-        const words = s.split(/\s+/);
-        if (words.length > 5) s = words.slice(0, 4).join(" ");
-        return s;
-      };
-      let title = cleanTitle((raw.title || "").replace(/[`*_]/g, ""));
-      let text = (raw.text || "").replace(/[`*_]/g, "");
+      const raw = data.instruction || { title: "Your thinking", text: "Write what comes to mind.", discipline: "strategic" };
+      const title = (raw.title || "Response").replace(/[`*_]/g, "").slice(0, 40);
+      const text = (raw.text || "").replace(/[`*_]/g, "");
       const disc = (["design","systems","strategic","critical","creative"].includes(raw.discipline) ? raw.discipline : "strategic") as Note["discipline"];
-
-      // Validation: if instruction is under 8 words, it's probably a title — swap
-      const textWords = text.split(/\s+/).length;
-      const titleWords = title.split(/\s+/).length;
-      if (textWords < 8 && titleWords >= 8) {
-        const tmp = text;
-        text = title;
-        title = cleanTitle(tmp);
-      } else if (textWords < 8 && titleWords < 8) {
-        // Both too short — use full raw text as instruction
-        const fullText = [raw.title, raw.text].filter(Boolean).join(" ").replace(/[`*_]/g, "");
-        text = fullText;
-        title = cleanTitle(fullText.split(/\s+/).slice(0, 3).join(" "));
-      }
 
       // Place directly below the source note (vertical chain, generous offset)
       const startY = selNote.y + charOffset(selNote.text);
@@ -1687,8 +1667,8 @@ function CanvasInner() {
                 {isAi && (
                   <div
                     onMouseDown={e => startDrag(n.id, e)}
-                    style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 4, cursor: "grab", userSelect: "none" }}
-                  >YOUR TURN</div>
+                    style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: n.action ? ACT[n.action].color : "#FF9090", marginBottom: 4, cursor: "grab", userSelect: "none" }}
+                  >{n.action ? `${ACT[n.action].icon} ${ACT[n.action].label.toUpperCase()}` : "YOUR TURN"}</div>
                 )}
                 {editId === n.id ? (
                   <>
@@ -1720,12 +1700,27 @@ function CanvasInner() {
                 ) : (
                   <div style={{
                     fontSize: 13, lineHeight: 1.55, color: "#000332",
-                    fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif",
-                    fontStyle: isAi ? "italic" : "normal",
-                    opacity: isAi ? 0.75 : 1,
+                    fontFamily: "'Codec Pro',sans-serif",
                     whiteSpace: "pre-wrap", wordBreak: "break-word",
+                    ...(isAi && n.action === "express" ? { borderLeft: `3px solid ${ACT.express.color}`, paddingLeft: 10 } : {}),
                   }}>
-                    {n.text || <span style={{ color: "rgba(0,3,50,0.25)" }}>Double-click to edit</span>}
+                    {isAi && n.text ? (
+                      n.text.split("\n").map((line, li) => {
+                        const isBoldLine = li === 0 && (n.action === "clarify" || n.action === "decide");
+                        const isProvocation = line.trim().startsWith("→");
+                        return (
+                          <div key={li} style={{
+                            fontWeight: isBoldLine ? 600 : 400,
+                            marginBottom: 4,
+                            ...(isProvocation ? { paddingLeft: 4, color: ACT.expand.color } : {}),
+                          }}>
+                            {line}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      n.text || <span style={{ color: "rgba(0,3,50,0.25)" }}>Double-click to edit</span>
+                    )}
                   </div>
                 )}
                 {/* Show me an example — AI instruction notes only */}
