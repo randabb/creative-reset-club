@@ -187,6 +187,7 @@ function CanvasInner() {
   const [respDragOff, setRespDragOff] = useState<{ x: number; y: number } | null>(null);
   const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string; thinking_approaches?: string } | null>(null);
   const [synthEditing, setSynthEditing] = useState(false);
+  const [synthRevealed, setSynthRevealed] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [tourWelcome, setTourWelcome] = useState(false);
@@ -706,13 +707,19 @@ function CanvasInner() {
   };
 
   const copyPrompt = () => {
-    let synthText = "";
-    if (synthesis?.sections) {
-      synthText = `${synthesis.deliverable_label}\n\n` + synthesis.sections.map(s => `${s.heading}: ${s.content}`).join("\n\n") + "\n\n---\n\n";
+    let md = `Here's my thinking on "${capture}". I used Primer to work through this. Help me take the next step:\n\n`;
+    if (dimensions.length) {
+      md += `## Dimensions I explored\n${dimensions.map(d => `- ${d.label}: ${d.description}`).join("\n")}\n\n`;
     }
-    const md = "Here's my thinking session output from Primer. I've already done the deep thinking — now I need help executing on it.\n\n" + synthText + "Original session notes:\n\n" + notes.filter(n => n.source !== "dimension").map(n => `- ${n.text}`).join("\n");
+    if (discoveries.length) {
+      md += `## Key insights\n${discoveries.map(d => `- ${d.text}`).join("\n")}\n\n`;
+    }
+    if (synthesis?.sections) {
+      md += `## ${synthesis.deliverable_label}\n\n${synthesis.sections.map(s => `### ${s.heading}\n${s.content}`).join("\n\n")}\n\n`;
+    }
+    md += `## Raw thinking notes\n${notes.filter(n => n.source !== "dimension" && n.source !== "goal").map(n => `- ${n.text}`).join("\n")}`;
     navigator.clipboard.writeText(md);
-    setToast("✓ Copied to clipboard!");
+    setToast("✓ Copied to clipboard");
     setTimeout(() => setToast(""), 2500);
   };
 
@@ -1019,7 +1026,11 @@ function CanvasInner() {
                 body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
               });
               const data = await res.json();
-              if (data.deliverable_label || data.sections) setSynthesis(data);
+              if (data.deliverable_label || data.sections) {
+                setSynthesis(data);
+                setSynthRevealed(false);
+                setTimeout(() => setSynthRevealed(true), 100);
+              }
             } catch { /* use without synthesis */ }
             setSynthLoading(false);
           }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
@@ -1047,14 +1058,23 @@ function CanvasInner() {
           {synthesis && synthesis.sections && (
             <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid rgba(0,3,50,0.06)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                <p style={{ fontSize: 18, fontWeight: 700, fontStyle: "italic", color: "#000332" }}>{synthesis.deliverable_label}</p>
+                <p style={{
+                  fontSize: 18, fontWeight: 700, fontStyle: "italic", color: "#000332",
+                  opacity: synthRevealed ? 1 : 0,
+                  transition: "opacity 0.4s ease 0.1s",
+                }}>{synthesis.deliverable_label}</p>
                 <button onClick={() => setSynthEditing(!synthEditing)} style={{ background: "none", border: "none", fontSize: 11, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0, marginLeft: 8 }}>
                   {synthEditing ? "Done" : "Edit"}
                 </button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {synthesis.sections.map((sec, i) => (
-                  <div key={i} style={{ borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12 }}>
+                  <div key={i} style={{
+                    borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12,
+                    opacity: synthRevealed ? 1 : 0,
+                    transform: synthRevealed ? "translateY(0)" : "translateY(8px)",
+                    transition: `opacity 0.4s ease ${0.3 + i * 0.4}s, transform 0.4s ease ${0.3 + i * 0.4}s`,
+                  }}>
                     {synthEditing ? (
                       <>
                         <input value={sec.heading} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, heading: e.target.value } : s) }; setSynthesis(ns); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, fontWeight: 700, color: "#000332", fontFamily: "inherit", marginBottom: 4 }} />
@@ -1062,8 +1082,8 @@ function CanvasInner() {
                       </>
                     ) : (
                       <>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{sec.heading}</p>
-                        <p style={{ fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400 }}>{sec.content}</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{i === 0 ? sec.heading : sec.heading}</p>
+                        <p style={{ fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: i === 0 ? 500 : 400 }}>{sec.content}</p>
                       </>
                     )}
                   </div>
