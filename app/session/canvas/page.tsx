@@ -132,7 +132,7 @@ function CanvasInner() {
         ns.push({
           id: dimId,
           x: 60 + i * 260,
-          y: 200,
+          y: 220,
           text: dim.label,
           source: "dimension",
           dimIndex: i,
@@ -220,6 +220,7 @@ function CanvasInner() {
   const [dimQuestionAnswer, setDimQuestionAnswer] = useState("");
   const [dimQAs, setDimQAs] = useState<Record<string, { question: string; answer: string; action: string }[]>>({});
   const [dimLoading, setDimLoading] = useState(false);
+  const [goalExpanded, setGoalExpanded] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [zoom, setZoom] = useState(1);
@@ -1417,7 +1418,7 @@ function CanvasInner() {
           </svg>
 
           {/* FIRST DRAFTS NUDGE */}
-          <div style={{ position: "absolute", left: 60, top: 170, fontSize: 11, color: "rgba(0,3,50,0.25)", fontFamily: "'DM Mono', monospace", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", left: 60, top: 192, fontSize: 11, color: "rgba(0,3,50,0.25)", fontFamily: "'DM Mono', monospace", pointerEvents: "none" }}>
             first drafts only.
           </div>
 
@@ -1756,6 +1757,7 @@ function CanvasInner() {
                     fontFamily: "'Codec Pro',sans-serif",
                     whiteSpace: "pre-wrap", wordBreak: "break-word",
                     ...(isAi && n.action === "express" ? { borderLeft: `3px solid ${ACT.express.color}`, paddingLeft: 10 } : {}),
+                    ...(n.source === "goal" && !goalExpanded ? { maxHeight: 80, overflow: "hidden" } : {}),
                   }}>
                     {isAi && n.text ? (
                       n.text.split("\n").map((line, li) => {
@@ -1775,6 +1777,13 @@ function CanvasInner() {
                       n.text || <span style={{ color: "rgba(0,3,50,0.25)" }}>Double-click to edit</span>
                     )}
                   </div>
+                )}
+                {n.source === "goal" && n.text.length > 120 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setGoalExpanded(!goalExpanded); }}
+                    onMouseDown={e => e.stopPropagation()}
+                    style={{ background: "none", border: "none", fontSize: 11, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit", padding: 0, marginTop: 4 }}
+                  >{goalExpanded ? "show less" : "show more..."}</button>
                 )}
                 {/* Show me an example — AI instruction notes only */}
                 {isAi && editId !== n.id && (
