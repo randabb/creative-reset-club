@@ -226,6 +226,8 @@ function CanvasInner() {
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
+  const [discoveries, setDiscoveries] = useState<{ text: string; dimLabel: string; discipline?: string }[]>([]);
+  const [discOpen, setDiscOpen] = useState(true);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [zoom, setZoom] = useState(1);
@@ -762,6 +764,22 @@ function CanvasInner() {
     if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
     analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
 
+    // Generate discovery line
+    const dim = findNoteDim(instNote);
+    fetch("/api/generate-discovery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userResponse: respNote.text,
+        dimensionLabel: dim.label,
+        previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
+      }),
+    }).then(r => r.json()).then(data => {
+      if (data.discovery) {
+        setDiscoveries(prev => [...prev, { text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline }]);
+      }
+    }).catch(() => { /* skip */ });
+
     // Assess dimension progression
     if (dimensions.length > 0) {
       setStatusState({ type: "loading" });
@@ -1112,6 +1130,86 @@ function CanvasInner() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* DISCOVERIES CARD */}
+      {dimensions.length > 0 && (
+        <div style={{
+          position: "fixed", right: 20, top: 100, zIndex: 20,
+          width: 280, background: "#fff", borderRadius: 14,
+          border: "1px solid rgba(0,3,50,0.06)",
+          boxShadow: "0 4px 20px rgba(0,3,50,0.06)",
+          overflow: "hidden",
+        }}>
+          <div
+            onClick={() => setDiscOpen(!discOpen)}
+            style={{
+              padding: "12px 16px", cursor: "pointer",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              borderBottom: discOpen ? "1px solid rgba(0,3,50,0.04)" : "none",
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#000332" }}>Your discoveries</span>
+            <span style={{ fontSize: 12, color: "rgba(0,3,50,0.3)" }}>{discOpen ? "▾" : "▸"}</span>
+          </div>
+          {discOpen && (
+            <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px 16px 12px" }}>
+              {/* Progress dots */}
+              <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                {dimensions.map((d, i) => (
+                  <div key={i} style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: dimStatus[d.label] === "complete" ? "#FF9090" : "rgba(0,3,50,0.1)",
+                    transition: "background 0.3s",
+                  }} />
+                ))}
+              </div>
+              {discoveries.length === 0 ? (
+                <p style={{ fontSize: 12, color: "rgba(0,3,50,0.35)", fontStyle: "italic", lineHeight: 1.55 }}>
+                  Your discoveries will appear here as you work through each dimension.
+                </p>
+              ) : (
+                <>
+                  {(() => {
+                    let lastDim = "";
+                    return discoveries.map((d, i) => {
+                      const showDimHeader = d.dimLabel !== lastDim;
+                      lastDim = d.dimLabel;
+                      const discColor = d.discipline && DISC_DOT[d.discipline] ? DISC_DOT[d.discipline] : "#FF9090";
+                      const colonIdx = d.text.indexOf(":");
+                      const label = colonIdx > 0 ? d.text.slice(0, colonIdx) : "";
+                      const rest = colonIdx > 0 ? d.text.slice(colonIdx + 1).trim() : d.text;
+                      return (
+                        <div key={i}>
+                          {showDimHeader && (
+                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginTop: i > 0 ? 10 : 0, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                              {d.dimLabel.toUpperCase()}
+                              {dimStatus[d.dimLabel] === "complete" && <span style={{ color: "#7ED6A8" }}>✓</span>}
+                            </div>
+                          )}
+                          <div style={{
+                            borderLeft: `3px solid ${discColor}`,
+                            paddingLeft: 10, marginBottom: 8,
+                            animation: "noteIn 0.3s ease-out forwards",
+                          }}>
+                            <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.45 }}>
+                              {label ? <><strong style={{ color: "#000332" }}>{label}:</strong> {rest}</> : rest}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                  {allDimsComplete && (
+                    <p style={{ fontSize: 12, color: "#FF9090", fontWeight: 600, marginTop: 8 }}>
+                      All dimensions explored. Hit Ready to go → for your full brief.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 
