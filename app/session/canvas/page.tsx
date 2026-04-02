@@ -216,7 +216,10 @@ function CanvasInner() {
   const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
   const [activeDimQuestion, setActiveDimQuestion] = useState<string | null>(null);
+  const [activeDimAction, setActiveDimAction] = useState<Action | null>(null);
   const [dimQuestionAnswer, setDimQuestionAnswer] = useState("");
+  const [dimQAs, setDimQAs] = useState<Record<string, { question: string; answer: string; action: string }[]>>({});
+  const [dimLoading, setDimLoading] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [zoom, setZoom] = useState(1);
@@ -1267,48 +1270,34 @@ function CanvasInner() {
             {statusState.type === "loading" && (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 14, height: 14, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", flexShrink: 0 }} />
-                {responseFlow ? "Thinking..." : "Analyzing your thinking..."}
+                Thinking...
               </span>
             )}
             {statusState.type === "landing" && (
-              <span>{statusState.firstNoteLabel
-                ? <>Select <strong style={{ color: "#FF9090" }}>{statusState.firstNoteLabel}</strong> and choose an action to start developing your thinking.</>
-                : <>Start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Select a note under it and choose an action above.</>
-              }</span>
+              <span>Let&rsquo;s start with <strong style={{ color: "#FF9090" }}>{statusState.dimName}</strong>. Write whatever comes to mind.</span>
             )}
             {statusState.type === "suggesting" && statusState.nextAction && (
-              <span>Try <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> on this note. {statusState.nextActionReason}</span>
+              <span>Try <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> on this. {statusState.nextActionReason}</span>
             )}
             {statusState.type === "working" && (
-              <span>Fill in your response below.</span>
+              <span>Write whatever comes to mind. Messy is fine.</span>
             )}
             {statusState.type === "keep_going" && (() => {
               const remaining = dimensions.filter(d => dimStatus[d.label] !== "complete" && d.label !== statusState.dimName).length;
-              const isLast = remaining === 0;
-              return statusState.nextAction ? (
+              return (
                 <span>
-                  You&rsquo;re developing <strong>{statusState.dimName}</strong>. Click on the note you just wrote and <strong style={{ color: statusState.actionColor }}>{ACT[statusState.nextAction].label.toLowerCase()}</strong> it. {statusState.nextActionReason}{" "}
-                  <span style={{ color: "rgba(0,3,50,0.35)" }}>{isLast ? "Last dimension — finish this and you're ready." : `${remaining} more dimension${remaining > 1 ? "s" : ""} after this.`}</span>
-                </span>
-              ) : (
-                <span>
-                  You&rsquo;re developing <strong>{statusState.dimName}</strong>. Select another note and develop it further.{" "}
-                  <span style={{ color: "rgba(0,3,50,0.35)" }}>{isLast ? "Last dimension — finish this and you're ready." : `${remaining} more dimension${remaining > 1 ? "s" : ""} after this.`}</span>
+                  There&rsquo;s more in <strong>{statusState.dimName}</strong>. Keep going.{" "}
+                  <span style={{ color: "rgba(0,3,50,0.3)" }}>{remaining > 0 ? `${remaining} more after this.` : "Last one."}</span>
                 </span>
               );
             })()}
             {statusState.type === "ready_to_move" && (
               <span>
-                &#10003; <strong>{statusState.dimName}</strong> done. Move to <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>.{" "}
-                {statusState.firstNoteLabel
-                  ? <>Select <strong style={{ color: "#FF9090" }}>{statusState.firstNoteLabel}</strong> to start.</>
-                  : <>Select a note under it to start.</>
-                }{" "}
-                <span style={{ color: "rgba(0,3,50,0.35)" }}>{statusState.nextActionReason}</span>
+                &#10003; <strong>{statusState.dimName}</strong> — nice. Ready for <strong style={{ color: "#FF9090" }}>{statusState.nextDimName}</strong>?
               </span>
             )}
             {statusState.type === "all_done" && (
-              <span>All dimensions explored. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> for your deliverable. Or keep refining.</span>
+              <span>You&rsquo;ve worked through everything. Hit <strong style={{ color: "#FF9090" }}>Ready to go →</strong> when you want your synthesis.</span>
             )}
           </div>
         </div>
@@ -1530,16 +1519,80 @@ function CanvasInner() {
                       />
                       {dimQuestionAnswer.trim().length > 5 && (
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            const sug = dimSuggestions[n.dimLabel || ""];
-                            // Create the answer as a user note below the dimension
+                            const dimLabel = n.dimLabel || "";
+                            const currentQ = dimSuggestions[dimLabel]?.question || "";
+                            const currentAction = activeDimAction || dimSuggestions[dimLabel]?.action || "clarify";
+                            const answerText = dimQuestionAnswer.trim();
+
+                            // Create user note on canvas
                             const noteId = uid();
-                            const noteY = n.y + 300;
-                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: noteY, text: dimQuestionAnswer.trim(), source: "user" }]);
+                            const existingDimNotes = notes.filter(note => note.source === "user" && Math.abs(note.x - n.x) < 130);
+                            const lastNoteY = existingDimNotes.length > 0 ? Math.max(...existingDimNotes.map(note => note.y + charOffset(note.text))) : n.y + 160;
+                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user" }]);
                             setDimQuestionAnswer("");
-                            setActiveDimQuestion(null);
-                            setDimStatus(prev => ({ ...prev, [n.dimLabel || ""]: "in_progress" }));
+                            setDimStatus(prev => ({ ...prev, [dimLabel]: "in_progress" }));
+
+                            // Track Q&A for this dimension
+                            const newQA = { question: currentQ, answer: answerText, action: currentAction };
+                            const updatedQAs = [...(dimQAs[dimLabel] || []), newQA];
+                            setDimQAs(prev => ({ ...prev, [dimLabel]: updatedQAs }));
+
+                            // Update status bar
+                            setStatusState({ type: "loading" });
+                            setDimLoading(true);
+
+                            // Get followup
+                            try {
+                              const res = await fetch("/api/dimension-followup", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  goal: capture,
+                                  dimension: `${dimLabel} — ${n.dimDesc || ""}`,
+                                  dimensionQAs: updatedQAs,
+                                  allDimensions: dimensions.map(d => d.label).join(", "),
+                                  previousActions: updatedQAs.map(q => q.action).join(", "),
+                                }),
+                              });
+                              const data = await res.json();
+
+                              // Add discovery if present
+                              if (data.discovery) {
+                                setDiscoveries(prev => [...prev, { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() }]);
+                              }
+
+                              if (data.status === "complete") {
+                                setDimStatus(prev => ({ ...prev, [dimLabel]: "complete" }));
+                                setActiveDimQuestion(null);
+                                setActiveDimAction(null);
+                                // Find next unexplored dimension
+                                const nextDim = dimensions.find(d => d.label !== dimLabel && dimStatus[d.label] !== "complete");
+                                if (nextDim) {
+                                  setNudgeDimIdx(dimensions.indexOf(nextDim));
+                                  setTimeout(() => setNudgeDimIdx(null), 8000);
+                                  setStatusState({ type: "ready_to_move", dimName: dimLabel, nextDimName: nextDim.label });
+                                  // Auto-open next dimension after brief pause
+                                  setTimeout(() => {
+                                    setActiveDimQuestion(nextDim.label);
+                                    setActiveDimAction(null);
+                                    if (vpRef.current) vpRef.current.scrollTo({ top: 0, behavior: "smooth" });
+                                  }, 2000);
+                                } else {
+                                  setAllDimsComplete(true);
+                                  setStatusState({ type: "all_done" });
+                                }
+                              } else if (data.question) {
+                                // Continue with next question in this dimension
+                                setDimSuggestions(prev => ({ ...prev, [dimLabel]: { action: data.action as Action, question: data.question } }));
+                                setActiveDimAction(data.action as Action);
+                                setStatusState({ type: "keep_going", dimName: dimLabel });
+                              }
+                            } catch {
+                              setStatusState({ type: "keep_going", dimName: dimLabel });
+                            }
+                            setDimLoading(false);
                             scheduleSave();
                           }}
                           onMouseDown={e => e.stopPropagation()}
