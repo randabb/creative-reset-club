@@ -949,75 +949,88 @@ function CanvasInner() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Codec Pro',sans-serif", position: "relative" }}>
-      {/* TOOLBAR */}
+      {/* UNIFIED HEADER BAR */}
       <div style={{
-        position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 30,
-        display: "flex", alignItems: "center", gap: 4,
-        background: "#fff", borderRadius: 100, padding: "6px 12px",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 35,
+        height: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: "rgba(250,247,240,0.95)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(0,3,50,0.04)", padding: "0 20px",
+        fontFamily: "'Codec Pro',sans-serif",
       }}>
-        <button onClick={addNote} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
-        <button onClick={() => { setConnecting(!connecting); setConnectFrom(null); }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: connecting ? "rgba(0,3,50,0.08)" : "transparent", fontSize: 12, fontWeight: 600, color: connecting ? "#FF9090" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>Connect</button>
-        <button onClick={() => saveCanvas()} title="Save" style={{ padding: "6px 10px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, color: saveStatus === "saved" ? "rgba(0,3,50,0.25)" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>
-          {saveStatus === "saving" ? "..." : saveStatus === "saved" ? "✓" : "💾"}
-        </button>
-        <div style={{ width: 1, height: 20, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
-        {(Object.keys(ACT) as Action[]).map(a => {
-          const tooltips: Record<Action, string> = {
-            clarify: "Cut to the core. What actually matters here?",
-            expand: "Stretch it. What else is possible?",
-            decide: "Stress-test it. What could go wrong?",
-            express: "Structure it. How would you say this?",
-          };
-          return (
-            <div key={a} style={{ position: "relative" }} className="act-tip-wrap">
-              <button onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
-                padding: "6px 10px", borderRadius: 100, border: "none", background: "transparent",
-                fontSize: 14, color: hasSelection ? ACT[a].color : "rgba(0,3,50,0.2)",
-                cursor: hasSelection ? "pointer" : "default", opacity: hasSelection ? 1 : 0.4,
-                fontFamily: "inherit", fontWeight: 600, transition: "all 0.15s",
-              }}>{ACT[a].icon}</button>
-              <div className="act-tip" style={{
-                position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
-                marginTop: 8, background: "#000332", color: "#FAF7F0", fontSize: 12,
-                padding: "8px 12px", borderRadius: 8, maxWidth: 200, whiteSpace: "nowrap",
-                pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
-                fontWeight: 400, lineHeight: 1.4,
-              }}>
-                <div style={{
-                  position: "absolute", top: -4, left: "50%", transform: "translateX(-50%) rotate(45deg)",
-                  width: 8, height: 8, background: "#000332",
-                }} />
-                {tooltips[a]}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        {/* LEFT: Back to Studio */}
+        <button
+          onClick={async () => { await saveCanvas(); router.push("/studio"); }}
+          style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.6 }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+          onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
+        >&larr; Studio</button>
 
-      {/* RIGHT CONTROLS */}
-      <div style={{ position: "absolute", top: 14, right: 20, zIndex: 30, display: "flex", gap: 8 }}>
-        <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "8px 16px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.1)", background: "#fff", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
-        <button onClick={async () => {
-          if (showExport) { setShowExport(false); return; }
-          setShowExport(true);
-          setSynthesis(null);
-          setSynthLoading(true);
-          try {
-            const res = await fetch("/api/session-synthesis", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
-            });
-            const data = await res.json();
-            if (data.deliverable_label || data.sections) setSynthesis(data);
-          } catch { /* use without synthesis */ }
-          setSynthLoading(false);
-        }} style={{ padding: "8px 16px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>Ready to go? →</button>
+        {/* CENTER: Toolbar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <button onClick={addNote} style={{ padding: "4px 12px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
+          <button onClick={() => { setConnecting(!connecting); setConnectFrom(null); }} style={{ padding: "4px 12px", borderRadius: 100, border: "none", background: connecting ? "rgba(0,3,50,0.08)" : "transparent", fontSize: 12, fontWeight: 600, color: connecting ? "#FF9090" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>Connect</button>
+          <button onClick={() => saveCanvas()} title="Save" style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, color: saveStatus === "saved" ? "rgba(0,3,50,0.25)" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>
+            {saveStatus === "saving" ? "..." : saveStatus === "saved" ? "✓" : "💾"}
+          </button>
+          <div style={{ width: 1, height: 18, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
+          {(Object.keys(ACT) as Action[]).map(a => {
+            const tooltips: Record<Action, string> = {
+              clarify: "Cut to the core. What actually matters here?",
+              expand: "Stretch it. What else is possible?",
+              decide: "Stress-test it. What could go wrong?",
+              express: "Structure it. How would you say this?",
+            };
+            return (
+              <div key={a} style={{ position: "relative" }} className="act-tip-wrap">
+                <button onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
+                  padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent",
+                  fontSize: 14, color: hasSelection ? ACT[a].color : "rgba(0,3,50,0.2)",
+                  cursor: hasSelection ? "pointer" : "default", opacity: hasSelection ? 1 : 0.4,
+                  fontFamily: "inherit", fontWeight: 600, transition: "all 0.15s",
+                }}>{ACT[a].icon}</button>
+                <div className="act-tip" style={{
+                  position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+                  marginTop: 6, background: "#000332", color: "#FAF7F0", fontSize: 12,
+                  padding: "8px 12px", borderRadius: 8, maxWidth: 200, whiteSpace: "nowrap",
+                  pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
+                  fontWeight: 400, lineHeight: 1.4,
+                }}>
+                  <div style={{
+                    position: "absolute", top: -4, left: "50%", transform: "translateX(-50%) rotate(45deg)",
+                    width: 8, height: 8, background: "#000332",
+                  }} />
+                  {tooltips[a]}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* RIGHT: Goal, Ready to go, Legend */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "6px 14px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.08)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
+          <button onClick={async () => {
+            if (showExport) { setShowExport(false); return; }
+            setShowExport(true);
+            setSynthesis(null);
+            setSynthLoading(true);
+            try {
+              const res = await fetch("/api/session-synthesis", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
+              });
+              const data = await res.json();
+              if (data.deliverable_label || data.sections) setSynthesis(data);
+            } catch { /* use without synthesis */ }
+            setSynthLoading(false);
+          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "rfPulse 1.5s ease-in-out infinite" : undefined }}>Ready to go? →</button>
+          <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
+        </div>
       </div>
 
       {/* GOAL DROPDOWN */}
       {showGoal && (
-        <div style={{ position: "absolute", top: 52, right: 120, zIndex: 40, background: "#000332", borderRadius: 14, padding: "18px 20px", maxWidth: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
+        <div style={{ position: "fixed", top: 50, right: 160, zIndex: 40, background: "#000332", borderRadius: 14, padding: "18px 20px", maxWidth: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 8 }}>Your goal</p>
           <p style={{ fontSize: 13, color: "rgba(250,247,240,0.7)", lineHeight: 1.6, fontWeight: 300 }}>{capture}</p>
         </div>
@@ -1025,7 +1038,7 @@ function CanvasInner() {
 
       {/* EXPORT PANEL */}
       {showExport && (
-        <div style={{ position: "absolute", top: 52, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 340, maxHeight: "calc(100vh - 100px)", overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+        <div style={{ position: "fixed", top: 50, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 340, maxHeight: "calc(100vh - 100px)", overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
           {synthLoading && (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ width: 18, height: 18, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", margin: "0 auto 10px" }} />
@@ -1094,45 +1107,24 @@ function CanvasInner() {
         </div>
       )}
 
-      {/* BACK TO STUDIO */}
-      <button
-        onClick={async () => { await saveCanvas(); router.push("/studio"); }}
-        style={{
-          position: "fixed", top: 60, left: 16, zIndex: 30,
-          background: "rgba(250,247,240,0.9)", backdropFilter: "blur(8px)",
-          border: "none", fontSize: 13, borderRadius: 8, padding: "6px 12px",
-          color: "#000332", cursor: "pointer", fontFamily: "'Codec Pro',sans-serif",
-          display: "flex", alignItems: "center", gap: 4, opacity: 0.6,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-        }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-        onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
-      >&larr; Studio</button>
-
-      {/* DISCIPLINE LEGEND */}
-      <div style={{ position: "fixed", top: 60, right: 16, zIndex: 30 }}>
-        {showLegend ? (
-          <div style={{ background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", width: 220, animation: "noteIn 0.2s ease-out forwards" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#000332" }}>How you&rsquo;re thinking</span>
-              <button onClick={() => setShowLegend(false)} style={{ background: "none", border: "none", fontSize: 14, color: "rgba(0,3,50,0.3)", cursor: "pointer", lineHeight: 1 }}>×</button>
-            </div>
-            {Object.entries(DISC_COLORS).map(([key, val]) => (
-              <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: DISC_DOT[key], flexShrink: 0, marginTop: 2 }} />
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#000332" }}>{val.label}</div>
-                  <div style={{ fontSize: 11, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>{val.desc}</div>
-                </div>
-              </div>
-            ))}
+      {/* LEGEND DROPDOWN (from header bar) */}
+      {showLegend && (
+        <div style={{ position: "fixed", top: 50, right: 20, zIndex: 40, background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", width: 220, animation: "noteIn 0.2s ease-out forwards" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#000332" }}>How you&rsquo;re thinking</span>
+            <button onClick={() => setShowLegend(false)} style={{ background: "none", border: "none", fontSize: 14, color: "rgba(0,3,50,0.3)", cursor: "pointer", lineHeight: 1 }}>×</button>
           </div>
-        ) : (
-          <button onClick={() => setShowLegend(true)} style={{ background: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", fontSize: 12, color: "rgba(0,3,50,0.4)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 14 }}>◇</span> Legend
-          </button>
-        )}
-      </div>
+          {Object.entries(DISC_COLORS).map(([key, val]) => (
+            <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: DISC_DOT[key], flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#000332" }}>{val.label}</div>
+                <div style={{ fontSize: 11, color: "rgba(0,3,50,0.45)", fontWeight: 300 }}>{val.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* SYMBOL HINT */}
       {showSymbolHint && (
@@ -1294,7 +1286,7 @@ function CanvasInner() {
       </div>
 
       {/* CANVAS VIEWPORT */}
-      <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative" }}>
+      <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44 }}>
         <div
           ref={canvasRef}
           onMouseDown={(e) => { const t = e.target as HTMLElement; if (!t.closest(".cn") && editId) finishEdit(editId); }}
