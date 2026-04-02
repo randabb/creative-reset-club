@@ -37,10 +37,10 @@ interface ResponseFlow {
 }
 
 const THINKING_LABELS: Record<string, string[]> = {
-  clarity: ["YOUR SITUATION", "YOUR ASSUMPTION", "YOUR ROOT", "YOUR CORE THREAD"],
-  expansion: ["YOUR SEED", "YOUR SHIFT", "YOUR TRANSFORMATION", "YOUR STRONGEST ANGLE"],
-  decision: ["YOUR DECISION", "YOUR INTUITION", "YOUR RISK", "YOUR CRITERIA"],
-  expression: ["YOUR MESSAGE", "YOUR CORE POINT", "YOUR STRUCTURE", "YOUR OPPOSITION"],
+  clarity: ["YOUR SITUATION", "THE REAL ISSUE"],
+  expansion: ["YOUR SEED", "THE SURPRISING ANGLE"],
+  decision: ["THE REAL CHOICE", "WHAT'S AT STAKE"],
+  expression: ["WHAT YOU'RE SAYING", "THE TENSION"],
 };
 
 interface Connection {

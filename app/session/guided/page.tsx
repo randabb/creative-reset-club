@@ -7,27 +7,19 @@ import { Suspense } from "react";
 const FALLBACKS: Record<string, string[]> = {
   clarity: [
     "What's the core thing you're trying to figure out?",
-    "What are you assuming is true here that you haven't tested?",
-    "Why does this matter to you? Go one layer deeper.",
-    "Of everything you've said, what's the one thread that makes everything else fall into place?",
+    "What's hiding underneath that?",
   ],
   expansion: [
     "What excites you about this right now?",
-    "What would someone completely outside your world find interesting here?",
-    "Remove the most obvious part of this. What's left?",
-    "Which angle surprised you most?",
+    "What angle haven't you considered yet?",
   ],
   decision: [
-    "What's the actual decision? Say it as simply as you can.",
-    "If you had to choose right now, in 10 seconds, what would you pick?",
-    "Imagine that choice failed spectacularly. What went wrong?",
-    "What would have to be true for you to feel confident?",
+    "What's the actual decision here?",
+    "What are you really afraid of choosing?",
   ],
   expression: [
     "What's the thing you're trying to say?",
-    "If you could only say one sentence, what would it be?",
-    "What does your audience already agree with, and what tension are you introducing?",
-    "What's the strongest argument against your position?",
+    "What tension does your audience need to feel?",
   ],
 };
 
@@ -137,14 +129,14 @@ function GuidedInner() {
       setReflection(reflectionText);
       await new Promise(r => setTimeout(r, 400));
       setShowReflection(true);
-      const holdTime = currentQNum >= 4 ? 3000 : 2500;
+      const holdTime = currentQNum >= 2 ? 3000 : 2500;
       await new Promise(r => setTimeout(r, holdTime));
       setShowReflection(false);
       await new Promise(r => setTimeout(r, 300));
       setReflection("");
     }
 
-    if (currentQNum >= 4) {
+    if (currentQNum >= 2) {
       const params = new URLSearchParams({
         capture,
         mode,
@@ -215,7 +207,7 @@ function GuidedInner() {
 
         {/* Progress bar */}
         <div style={{ display: "flex", gap: 6, marginBottom: 36, justifyContent: "center" }}>
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2].map((i) => (
             <div key={i} style={{
               width: 48, height: 3, borderRadius: 2,
               background: i < questionNumber ? "#FF9090" : i === questionNumber ? "#FF9090" : "rgba(0,3,50,0.08)",
@@ -248,8 +240,8 @@ function GuidedInner() {
             transition: "opacity 0.5s ease",
           }}>
             <p style={{
-              fontSize: 15, fontStyle: "italic", color: "#000332",
-              fontFamily: "Georgia, serif", lineHeight: 1.55, maxWidth: 400,
+              fontSize: 15, color: "#000332",
+              fontFamily: "'Codec Pro', sans-serif", lineHeight: 1.55, maxWidth: 400, fontWeight: 400,
               margin: "0 auto",
             }}>
               {reflection}
@@ -351,7 +343,7 @@ function GuidedInner() {
                 transition: "all 0.25s ease",
               }}
             >
-              {questionNumber >= 4 ? "Finish thinking" : "Next"}
+              {questionNumber >= 2 ? "Finish thinking" : "Next"}
             </button>
           </>
         )}

@@ -31,10 +31,10 @@ export async function POST(req: Request) {
 
     const validModes = ["clarity", "expansion", "decision", "expression"];
     const safeMode = validModes.includes(mode) ? mode : "clarity";
-    const qNum = Math.min(Math.max(questionNumber || 1, 1), 4);
+    const qNum = Math.min(Math.max(questionNumber || 1, 1), 2);
 
     // Build the user message with full context
-    let userMessage = `THINKING MODE: ${safeMode.toUpperCase()}\nQUESTION NUMBER: ${qNum} of 4\n\n`;
+    let userMessage = `THINKING MODE: ${safeMode.toUpperCase()}\nQUESTION NUMBER: ${qNum} of 2\n\n`;
     userMessage += `INITIAL CAPTURE:\n${capture}\n`;
 
     if (previousQAs && previousQAs.length > 0) {
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     try {
       const body = await req.clone().json();
       mode = body.mode || "clarity";
-      qNum = Math.min(Math.max(body.questionNumber || 1, 1), 4);
+      qNum = Math.min(Math.max(body.questionNumber || 1, 1), 2);
     } catch {
       // use defaults
     }

@@ -30,7 +30,7 @@ Just say the thing directly. No reframes. No flipping negatives into positives.
 
 Respond with ONLY the reflection. Nothing else.`;
 
-const SYSTEM_FINAL = `The user just answered their FINAL thinking question (question 4 of 4). Name the thread that connects everything they said across all four answers. Make it feel like arrival, not a summary. Under 12 words. Use their words.
+const SYSTEM_FINAL = `The user just answered their FINAL thinking question (question 2 of 2). Name the thread that connects both their answers. Make it feel like arrival, not a summary. Under 12 words. Use their words.
 
 EXAMPLES:
 - "There it is. That's what this is actually about."
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     const { questionNumber, userAnswer, capture, previousQAs } = await req.json();
     if (!userAnswer) return NextResponse.json({ reflection: null });
 
-    const isFinal = questionNumber >= 4;
+    const isFinal = questionNumber >= 2;
     let userMsg = `USER'S GOAL: ${capture || "Not specified"}\n\nLATEST ANSWER (Q${questionNumber}):\n${userAnswer}`;
     if (previousQAs && previousQAs.length > 0) {
       userMsg += "\n\nALL ANSWERS SO FAR:\n";
