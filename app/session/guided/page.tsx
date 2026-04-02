@@ -63,6 +63,7 @@ function GuidedInner() {
   }, [mode]);
 
   const fetchQuestion = useCallback(async (qNum: number, prevQAs: QA[]) => {
+    setCurrentQuestion("");
     setLoadingQ(true);
     setLoadingLong(false);
 
