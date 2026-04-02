@@ -225,7 +225,7 @@ function CanvasInner() {
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
-  const [discoveries, setDiscoveries] = useState<{ text: string; dimLabel: string; discipline?: string }[]>([]);
+  const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
@@ -266,6 +266,9 @@ function CanvasInner() {
           if (data.canvas_state?.connections?.length) {
             setConnections(data.canvas_state.connections);
           }
+          if (data.canvas_state?.discoveries?.length) {
+            setDiscoveries(data.canvas_state.discoveries);
+          }
           if (data.synthesis) setSynthesis(data.synthesis);
         } catch (err) {
           console.error("[canvas] Load error:", err);
@@ -288,7 +291,7 @@ function CanvasInner() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               userId: uid, goal: capture, mode, qas, dimensions,
-              canvas_state: { notes, connections },
+              canvas_state: { notes, connections, discoveries },
             }),
           });
           const data = await res.json();
@@ -332,7 +335,7 @@ function CanvasInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: sid,
-          canvas_state: { notes, connections },
+          canvas_state: { notes, connections, discoveries },
           synthesis: synthesis || undefined,
         }),
       });
@@ -349,7 +352,7 @@ function CanvasInner() {
       console.error("[canvas] Save error:", err);
       setSaveStatus("unsaved");
     }
-  }, [notes, connections, synthesis]);
+  }, [notes, connections, synthesis, discoveries]);
 
   const scheduleSave = useCallback(() => {
     dirtyRef.current = true;
@@ -769,7 +772,7 @@ function CanvasInner() {
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {
-        setDiscoveries(prev => [...prev, { text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline }]);
+        setDiscoveries(prev => [...prev, { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() }]);
       }
     }).catch(() => { /* skip */ });
 
