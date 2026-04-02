@@ -228,7 +228,6 @@ function CanvasInner() {
   const [showLegend, setShowLegend] = useState(false);
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
-  const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
   const sessionIdRef = useRef<string | null>(sp.get("session_id"));
@@ -237,7 +236,6 @@ function CanvasInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
-  const panYRef = useRef(panY);
   const zoomRef = useRef(zoom);
   const dragIdRef = useRef<string | null>(null);
   const dragOffRef = useRef({ x: 0, y: 0 });
@@ -485,33 +483,20 @@ function CanvasInner() {
   }, [canvasReady]);
 
   // Keep refs in sync
-  useEffect(() => { panYRef.current = panY; }, [panY]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
   useEffect(() => { dragOffRef.current = dragOff; }, [dragOff]);
 
-  // Scroll = vertical pan (wheel/trackpad)
-  useEffect(() => {
-    const el = vpRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const ny = panYRef.current - e.deltaY;
-      panYRef.current = ny;
-      setPanY(ny);
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, []);
-
-  // Note drag: window-level listeners
+  // Note drag: window-level listeners (notes positioned relative to inner scroll div)
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragIdRef.current) return;
+      if (!dragIdRef.current || !vpRef.current) return;
       const off = dragOffRef.current;
       const did = dragIdRef.current;
-      const newX = e.clientX - off.x;
-      const newY = e.clientY - off.y - panYRef.current;
+      const r = vpRef.current.getBoundingClientRect();
+      const scrollTop = vpRef.current.scrollTop;
+      const newX = e.clientX - r.left - off.x;
+      const newY = e.clientY - r.top + scrollTop - off.y;
       setNotes(ns => ns.map(n => n.id === did ? { ...n, x: newX, y: newY } : n));
     };
     const handleMouseUp = () => {
@@ -531,7 +516,7 @@ function CanvasInner() {
   const s2c = (cx: number, cy: number) => {
     if (!vpRef.current) return { x: 0, y: 0 };
     const r = vpRef.current.getBoundingClientRect();
-    return { x: (cx - r.left) / zoom, y: (cy - r.top - panY) / zoom };
+    return { x: cx - r.left, y: cy - r.top + vpRef.current.scrollTop };
   };
 
   // Note drag
@@ -545,7 +530,10 @@ function CanvasInner() {
       if (connectFrom !== id) { setConnModal({ from: connectFrom, to: id }); setConnectFrom(null); }
       return;
     }
-    const off = { x: e.clientX - n.x, y: e.clientY - (n.y + panYRef.current) };
+    if (!vpRef.current) return;
+    const r = vpRef.current.getBoundingClientRect();
+    const scrollTop = vpRef.current.scrollTop;
+    const off = { x: e.clientX - r.left - n.x, y: e.clientY - r.top + scrollTop - n.y };
     setDragId(id);
     dragIdRef.current = id;
     setDragOff(off);
@@ -677,10 +665,9 @@ function CanvasInner() {
       setConnections(cs => [...cs, { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color }]);
 
       // Auto-scroll vertically to show new note
+      // Auto-scroll to show new note
       if (vpRef.current) {
-        const vpRect = vpRef.current.getBoundingClientRect();
-        const newPanY = vpRect.height / 2 - (startY + 60) * zoom;
-        setPanY(newPanY); panYRef.current = newPanY;
+        vpRef.current.scrollTo({ top: startY - 100, behavior: "smooth" });
       }
 
       // Start single-instruction response flow
@@ -810,8 +797,7 @@ function CanvasInner() {
           });
           // Auto-scroll to show dimension headers
           if (vpRef.current) {
-            const newPanY = -100 * zoom;
-            setPanY(newPanY); panYRef.current = newPanY;
+            vpRef.current.scrollTo({ top: 0, behavior: "smooth" });
           }
         } else {
           setAllDimsComplete(true);
@@ -1257,7 +1243,6 @@ function CanvasInner() {
           if (vpRef.current) {
             const r = vpRef.current.getBoundingClientRect();
             const cx = r.width / 2, cy = r.height / 2;
-            setPanY(py => cy - (cy - py) * (nz / zoom));
           }
           setZoom(nz);
         }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 16, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
@@ -1272,35 +1257,33 @@ function CanvasInner() {
           if (vpRef.current) {
             const r = vpRef.current.getBoundingClientRect();
             const cx = r.width / 2, cy = r.height / 2;
-            setPanY(py => cy - (cy - py) * (nz / zoom));
           }
           setZoom(nz);
         }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 16, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
           onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,3,50,0.04)")}
           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >−</button>
-        <button onClick={() => { setZoom(1); setPanY(0); }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 14, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
+        <button onClick={() => { setZoom(1); if (vpRef.current) vpRef.current.scrollTo({ top: 0 }); }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#94949E", fontSize: 14, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}
           onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,3,50,0.04)")}
           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >⟲</button>
       </div>
 
       {/* CANVAS VIEWPORT */}
-      <div ref={vpRef} style={{ flex: 1, overflow: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44 }}>
+      <div ref={vpRef} style={{ height: "calc(100vh - 44px)", overflowY: "auto", overflowX: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44 }}>
         <div
           ref={canvasRef}
           onMouseDown={(e) => { const t = e.target as HTMLElement; if (!t.closest(".cn") && editId) finishEdit(editId); }}
           onDoubleClick={onCanvasDoubleClick}
           onClick={(e) => { const t = e.target as HTMLElement; if (!dragId && !t.closest(".cn")) { setSelected(new Set()); setShowGoal(false); setShowExport(false); } }}
           style={{
-            width: "100%", minHeight: "100%", position: "absolute",
-            top: panY, left: 0,
+            width: "100%", position: "relative",
+            minHeight: Math.max(2000, Math.max(...notes.map(n => n.y + 300), 0) + 500),
             transform: `scale(${zoom})`,
             transformOrigin: "top left",
             background: "#F5F2ED",
             backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
-            paddingBottom: 800,
           }}
         >
           {/* ARROWS SVG */}
