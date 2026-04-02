@@ -138,24 +138,7 @@ function CanvasInner() {
         });
         dimIds.push(dimId);
       });
-      // Place Q&A notes below their dimension column with generous spacing
-      // Track the bottom Y of each column to stack vertically without overlap
-      const colBottomY: Record<number, number> = {};
-      qas.forEach((qa, i) => {
-        const dimIdx = Math.min(i, dimensions.length - 1);
-        const topY = colBottomY[dimIdx] ?? 500; // first note starts at y=500 (below dim headers)
-        colBottomY[dimIdx] = topY + charOffset(qa.answer);
-        const nid = uid();
-        ns.push({
-          id: nid,
-          x: 65 + dimIdx * 260,
-          y: topY,
-          text: qa.answer,
-          source: "thinking",
-          qIndex: i,
-        });
-        cs.push({ id: uid(), from: dimIds[dimIdx], to: nid, label: "", color: "rgba(0,3,50,0.1)" });
-      });
+      // Guided thinking answers are now shown in the Discoveries card, not as canvas notes
     } else {
       // Fallback: arc layout (no dimensions)
       const noteIds = [goalId];
@@ -227,6 +210,10 @@ function CanvasInner() {
   const [showLegend, setShowLegend] = useState(false);
   const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
+  const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
+  const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
+  const [activeDimQuestion, setActiveDimQuestion] = useState<string | null>(null);
+  const [dimQuestionAnswer, setDimQuestionAnswer] = useState("");
   const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAnalyzeRef = useRef(0);
   const [zoom, setZoom] = useState(1);
@@ -367,14 +354,30 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notes, connections]);
 
-  // Initialize dimension tracking and landing status
+  // Initialize dimension tracking, landing status, and fetch dimension suggestions
   useEffect(() => {
     if (!canvasReady || dimensions.length === 0) return;
     const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
-    const firstThinking = notes.find(n => n.source === "thinking");
-    setStatusState({ type: "landing", dimName: dimensions[0]?.label, firstNoteLabel: firstThinking ? (THINKING_LABELS[mode]?.[firstThinking.qIndex ?? 0] || "your first note") : undefined });
+    setStatusState({ type: "landing", dimName: dimensions[0]?.label });
+
+    // Fetch AI suggestions for each dimension
+    fetch("/api/suggest-dimension-actions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goal: capture, dimensions, qas }),
+    }).then(r => r.json()).then(data => {
+      if (data.suggestions?.length) {
+        const map: Record<string, { action: Action; question: string }> = {};
+        data.suggestions.forEach((s: { dimension: string; action: string; question: string }) => {
+          map[s.dimension] = { action: s.action as Action, question: s.question };
+        });
+        setDimSuggestions(map);
+        // Auto-open first dimension
+        if (dimensions[0]) setActiveDimQuestion(dimensions[0].label);
+      }
+    }).catch(() => { /* silent */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
 
@@ -523,7 +526,7 @@ function CanvasInner() {
 
   // Note drag start
   const startDrag = (id: string, e: React.MouseEvent) => {
-    if (editId === id || justFinishedEditRef.current) return;
+    if (justFinishedEditRef.current) return;
     const t = e.target as HTMLElement;
     if (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "BUTTON" || t.closest("button") || t.closest("a")) return;
     e.preventDefault();
@@ -1150,7 +1153,32 @@ function CanvasInner() {
             <span style={{ fontSize: 12, color: "rgba(0,3,50,0.3)" }}>{discOpen ? "▾" : "▸"}</span>
           </div>
           {discOpen && (
-            <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px 16px 12px" }}>
+            <div style={{ maxHeight: 400, overflowY: "auto", padding: "8px 16px 12px" }}>
+              {/* Your original thoughts */}
+              {qas.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <button
+                    onClick={() => setOrigThoughtsOpen(!origThoughtsOpen)}
+                    style={{ background: "none", border: "none", fontSize: 11, fontWeight: 600, color: "rgba(0,3,50,0.4)", cursor: "pointer", fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    Your original thoughts <span style={{ fontSize: 10 }}>{origThoughtsOpen ? "▾" : "▸"}</span>
+                  </button>
+                  {origThoughtsOpen && (
+                    <div style={{ marginTop: 6 }}>
+                      {qas.map((qa, i) => {
+                        const label = THINKING_LABELS[mode]?.[i] || `Answer ${i + 1}`;
+                        return (
+                          <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: i < qas.length - 1 ? "1px solid rgba(0,3,50,0.04)" : "none" }}>
+                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(0,3,50,0.35)", marginBottom: 2 }}>{label}</div>
+                            <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.5, fontWeight: 300 }}>{qa.answer}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Discoveries */}
               {/* Progress dots */}
               <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                 {dimensions.map((d, i) => (
@@ -1436,7 +1464,8 @@ function CanvasInner() {
 
             // Dimension header rendering
             if (isDim) {
-              return (
+              return (<>
+
                 <div
                   key={n.id}
                   className="cn"
@@ -1465,8 +1494,78 @@ function CanvasInner() {
                       Explore this next &rarr;
                     </div>
                   )}
+                  {/* Suggested action badge */}
+                  {dimSuggestions[n.dimLabel || ""] && activeDimQuestion !== n.dimLabel && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setActiveDimQuestion(n.dimLabel || ""); }}
+                      style={{
+                        marginTop: 8, padding: "4px 10px", borderRadius: 100,
+                        border: "none", background: `${ACT[dimSuggestions[n.dimLabel || ""].action].color}30`,
+                        color: ACT[dimSuggestions[n.dimLabel || ""].action].color,
+                        fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        display: "flex", alignItems: "center", gap: 4,
+                      }}
+                    >
+                      {ACT[dimSuggestions[n.dimLabel || ""].action].icon} {ACT[dimSuggestions[n.dimLabel || ""].action].label}
+                    </button>
+                  )}
                 </div>
-              );
+                {/* First question below dimension */}
+                {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && (
+                  <div style={{
+                    position: "absolute", left: n.x, top: n.y + 140,
+                    width: 220, zIndex: 10,
+                  }}>
+                    <div style={{
+                      background: "#fff", borderRadius: 10, padding: "12px 14px",
+                      border: `1.5px solid ${ACT[dimSuggestions[n.dimLabel || ""].action].color}30`,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                      animation: "noteIn 0.3s ease-out forwards",
+                    }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: ACT[dimSuggestions[n.dimLabel || ""].action].color, marginBottom: 4 }}>
+                        {ACT[dimSuggestions[n.dimLabel || ""].action].icon} {ACT[dimSuggestions[n.dimLabel || ""].action].label.toUpperCase()}
+                      </div>
+                      <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5, fontStyle: "italic", fontFamily: "Georgia,serif", opacity: 0.75, marginBottom: 8 }}>
+                        {dimSuggestions[n.dimLabel || ""].question}
+                      </p>
+                      <textarea
+                        value={dimQuestionAnswer}
+                        onChange={e => setDimQuestionAnswer(e.target.value)}
+                        onMouseDown={e => e.stopPropagation()}
+                        placeholder="Write here..."
+                        style={{
+                          width: "100%", minHeight: 50, border: "none", outline: "none",
+                          resize: "none", background: "rgba(0,3,50,0.02)", borderRadius: 6,
+                          padding: 8, fontFamily: "'Codec Pro',sans-serif", fontSize: 13,
+                          lineHeight: 1.55, color: "#000332",
+                        }}
+                      />
+                      {dimQuestionAnswer.trim().length > 5 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const sug = dimSuggestions[n.dimLabel || ""];
+                            // Create the answer as a user note below the dimension
+                            const noteId = uid();
+                            const noteY = n.y + 300;
+                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: noteY, text: dimQuestionAnswer.trim(), source: "user" }]);
+                            setDimQuestionAnswer("");
+                            setActiveDimQuestion(null);
+                            setDimStatus(prev => ({ ...prev, [n.dimLabel || ""]: "in_progress" }));
+                            scheduleSave();
+                          }}
+                          onMouseDown={e => e.stopPropagation()}
+                          style={{
+                            marginTop: 6, padding: "6px 16px", borderRadius: 100, border: "none",
+                            background: "#FF9090", color: "#000332", fontSize: 12, fontWeight: 700,
+                            cursor: "pointer", fontFamily: "inherit",
+                          }}
+                        >Done</button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>);
             }
 
             return (
@@ -1483,7 +1582,7 @@ function CanvasInner() {
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].border : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
                   boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
-                  cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : "grab",
+                  cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : editId === n.id ? "default" : "grab",
                   zIndex: dragId === n.id ? 50 : isSel ? 15 : 10,
                   opacity: dragId === n.id ? 0.9 : 1,
                   transition: dragId === n.id ? "none" : "box-shadow 0.15s, opacity 0.3s",
@@ -1570,11 +1669,19 @@ function CanvasInner() {
                   </div>
                 )}
                 {sl && (
-                  <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7 }}>
+                  <div
+                    onMouseDown={e => startDrag(n.id, e)}
+                    style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7, cursor: "grab", userSelect: "none" }}
+                  >
                     {sl.text}
                   </div>
                 )}
-                {isAi && <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 4 }}>YOUR TURN</div>}
+                {isAi && (
+                  <div
+                    onMouseDown={e => startDrag(n.id, e)}
+                    style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 4, cursor: "grab", userSelect: "none" }}
+                  >YOUR TURN</div>
+                )}
                 {editId === n.id ? (
                   <>
                     <textarea
