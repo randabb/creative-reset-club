@@ -71,7 +71,7 @@ export default function AuthPage() {
       <div style={{ maxWidth: 380, width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 19, fontWeight: 700, color: "#000332", letterSpacing: "-0.01em", marginBottom: 8 }}>primer</div>
-          <p style={{ fontSize: 14, color: "rgba(0,3,50,0.4)", fontWeight: 300 }}>Where thinking starts.</p>
+          <p style={{ fontSize: 14, color: "rgba(0,3,50,0.4)", fontWeight: 300 }}>The work before the work.</p>
         </div>
 
         {/* Tabs */}
