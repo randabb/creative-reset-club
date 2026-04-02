@@ -54,9 +54,16 @@ GOOD instructions (simple, direct, still deep):
 - "What do people do right before they give up on an AI conversation?"
 - "Write the sentence that would make someone stop scrolling."
 
-The sophistication comes from WHAT you ask, not HOW you phrase it. A simple question can be devastatingly insightful. A complex question just confuses people. Read your instruction out loud — if it sounds like something you'd say to a friend, it's good. If it sounds like a consulting document, rewrite it.
+Your instructions must be grounded in expert thinking frameworks (first principles, systems thinking, strategic thinking, design thinking, creative thinking) — but the PHRASING must be short, conversational, and simple.
 
-The instruction must be a specific prompt that tells the user what to WRITE. It should start with a verb. If your instruction is under 5 words or doesn't tell the user what to produce, it's not specific enough. Rewrite it.
+Good: "Who's already frustrated with how things work there?"
+Bad: "What would have to be true about their internal politics for this to get approved without a champion?"
+
+Both come from stakeholder mapping. One sounds human, the other sounds like a textbook.
+
+The sophistication comes from WHAT you ask, not HOW you phrase it. Under 15 words. One idea per instruction. Use "you" and "they" not abstract language. No framework names, no jargon.
+
+The instruction must be a specific prompt that tells the user what to WRITE. It should start with a verb. If your instruction is under 8 words or doesn't tell the user what to produce, it's not specific enough. Rewrite it.
 
 TITLE RULES:
 - Response titles should be 2-4 words. Conversational. Like a label you'd scribble on a sticky note.

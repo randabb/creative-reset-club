@@ -15,7 +15,14 @@ Actions:
 
 For each dimension, respond with:
 - action: one of clarify/expand/decide/express
-- question: A specific, provocative first question (under 25 words) that references the user's goal and guided thinking answers. Use their language. Start with a verb.
+- question: A specific first question (under 15 words) that references the user's goal. Use their language. Start with a verb.
+
+Your questions must be grounded in expert thinking frameworks — but the PHRASING must be short, conversational, and simple.
+
+Good: "Who's already frustrated with how things work there?"
+Bad: "What would have to be true about their internal politics for this to get approved?"
+
+Under 15 words. One idea per question. Use "you" and "they" not abstract language. No framework names, no jargon.
 
 Respond with ONLY a JSON array:
 [{"dimension":"dimension label","action":"clarify","question":"your question here"}]`;
