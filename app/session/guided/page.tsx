@@ -185,14 +185,15 @@ function GuidedInner() {
         dims = [];
       }
 
-      // Navigate directly to canvas, skip plan page
+      // Navigate to canvas — mobile or desktop
       const params = new URLSearchParams({
         capture,
         mode,
         qas: JSON.stringify(updatedQAs),
         dimensions: JSON.stringify(dims),
       });
-      router.push(`/session/canvas?${params.toString()}`);
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      router.push(`/session/${isMobile ? "mobile-canvas" : "canvas"}?${params.toString()}`);
       return;
     }
 
