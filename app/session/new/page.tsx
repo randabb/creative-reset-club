@@ -67,7 +67,7 @@ export default function NewSession() {
 
       <div style={{ maxWidth: 560, width: "100%", textAlign: "center" }}>
         <h1 style={{ fontSize: 24, fontWeight: 400, fontStyle: "italic", color: "#000332", lineHeight: 1.35, letterSpacing: "-0.01em", marginBottom: 32 }}>
-          What&rsquo;s on your mind?
+          What are you thinking through?
         </h1>
 
         <textarea

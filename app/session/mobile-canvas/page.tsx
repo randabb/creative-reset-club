@@ -364,7 +364,7 @@ function MobileCanvasInner() {
               const isFirst = i === 0;
               return (
                 <p key={i} style={{
-                  fontFamily: "Georgia, serif",
+                  fontFamily: "'Codec Pro', sans-serif",
                   fontSize: isFirst ? 20 : isHeading ? 15 : 17,
                   fontWeight: isFirst || isHeading ? 700 : 400,
                   color: "#FAF7F0",
@@ -458,7 +458,7 @@ function MobileCanvasInner() {
 
         {/* Discovery text */}
         <p style={{
-          fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 700,
+          fontFamily: "'Codec Pro', sans-serif", fontSize: 22, fontWeight: 700,
           color: "#000332", lineHeight: 1.4, maxWidth: 320, marginBottom: 32,
           opacity: discoveryVisible ? 1 : 0, transform: discoveryVisible ? "translateY(0)" : "translateY(10px)",
           transition: "all 0.6s ease 0.3s",
@@ -525,7 +525,7 @@ function MobileCanvasInner() {
             {activeDim.toUpperCase()}
           </div>
           <h2 style={{
-            fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 700,
+            fontFamily: "'Codec Pro', sans-serif", fontSize: 22, fontWeight: 700,
             color: "#000332", lineHeight: 1.35, marginBottom: 24,
             animation: "mFadeUp 0.3s ease-out forwards",
           }}>
@@ -636,7 +636,7 @@ function MobileCanvasInner() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <p style={{
-                        fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 700,
+                        fontFamily: "'Codec Pro', sans-serif", fontSize: 17, fontWeight: 700,
                         color: "#000332", lineHeight: 1.4, flex: 1,
                       }}>
                         {q}
@@ -713,7 +713,7 @@ function MobileCanvasInner() {
         </div>
 
         {/* HEADING */}
-        <h1 style={{ fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 400, color: "#000332", marginBottom: 24, lineHeight: 1.2 }}>
+        <h1 style={{ fontFamily: "'Codec Pro', sans-serif", fontSize: 28, fontWeight: 400, color: "#000332", marginBottom: 24, lineHeight: 1.2 }}>
           {heading}
         </h1>
 
@@ -737,7 +737,7 @@ function MobileCanvasInner() {
             {/* Revealed lines */}
             {briefLines.map((bl, i) => (
               <p key={i} style={{
-                fontFamily: "Georgia, serif", fontSize: 15, color: "#FAF7F0",
+                fontFamily: "'Codec Pro', sans-serif", fontSize: 15, color: "#FAF7F0",
                 lineHeight: 1.55, marginBottom: 10,
                 animation: "mBriefFadeUp 0.5s ease-out forwards",
               }}>
@@ -795,7 +795,7 @@ function MobileCanvasInner() {
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700, color: "#000332", marginBottom: 2, lineHeight: 1.3 }}>
+                  <div style={{ fontFamily: "'Codec Pro', sans-serif", fontSize: 16, fontWeight: 700, color: "#000332", marginBottom: 2, lineHeight: 1.3 }}>
                     {dim.label}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: isComplete ? 600 : 400, color: isComplete ? color : "rgba(0,3,50,0.4)" }}>

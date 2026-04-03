@@ -1514,7 +1514,7 @@ function CanvasInner() {
                       <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: ACT[dimSuggestions[n.dimLabel || ""].action].color, marginBottom: 4 }}>
                         {ACT[dimSuggestions[n.dimLabel || ""].action].icon} {ACT[dimSuggestions[n.dimLabel || ""].action].label.toUpperCase()}
                       </div>
-                      <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5, fontStyle: "italic", fontFamily: "Georgia,serif", opacity: 0.75, marginBottom: 8 }}>
+                      <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5, fontStyle: "italic", fontFamily: "'Codec Pro',sans-serif", opacity: 0.75, marginBottom: 8 }}>
                         {dimSuggestions[n.dimLabel || ""].question}
                       </p>
                       <textarea
@@ -1756,7 +1756,7 @@ function CanvasInner() {
                       onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishEdit(n.id); } }}
                       onMouseDown={e => e.stopPropagation()}
                       ref={el => { if (el) { const preH = editPreHeight.current; el.style.height = "auto"; const scrollH = el.scrollHeight; el.style.height = Math.max(scrollH, preH > 0 ? preH - 20 : 30) + "px"; } }}
-                      style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: isAi ? "Georgia,serif" : "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
+                      style={{ width: "100%", minHeight: 30, border: "none", outline: "none", resize: "none", background: "transparent", fontFamily: "'Codec Pro',sans-serif", fontSize: 13, lineHeight: 1.55, color: "#000332", overflow: "hidden" }}
                     />
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
                       <button
