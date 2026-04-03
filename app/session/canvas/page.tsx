@@ -1368,7 +1368,7 @@ function CanvasInner() {
       <div ref={vpRef} style={{ height: "calc(100vh - 44px)", overflowY: "auto", overflowX: "hidden", cursor: dragId ? "grabbing" : connecting ? "crosshair" : "default", position: "relative", marginTop: 44, scrollBehavior: "smooth" }}>
         <div
           ref={canvasRef}
-          onMouseDown={(e) => { const t = e.target as HTMLElement; if (!t.closest(".cn") && editId) finishEdit(editId); }}
+          onMouseDown={(e) => { const t = e.target as HTMLElement; if (t.closest(".cn")) return; if (editId) finishEdit(editId); }}
           onDoubleClick={onCanvasDoubleClick}
           onClick={(e) => { const t = e.target as HTMLElement; if (!dragId && !t.closest(".cn")) { setSelected(new Set()); setShowGoal(false); setShowExport(false); } }}
           style={{
@@ -1524,7 +1524,7 @@ function CanvasInner() {
                           lineHeight: 1.55, color: "#000332",
                         }}
                       />
-                      {dimQuestionAnswer.trim().length > 5 && (
+                      {dimQuestionAnswer.trim().length > 0 && (
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
