@@ -387,7 +387,25 @@ function CanvasInner() {
         setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
       } else {
         const nextDim = dimensions.find(d => dimStatus[d.label] !== "complete");
-        setStatusState({ type: "keep_going", dimName: nextDim?.label, message: pick(["Pick up where you left off.", "Welcome back. Keep going.", `Continue with ${nextDim?.label || "your thinking"}.`]) });
+        if (nextDim) {
+          setStatusState({ type: "keep_going", dimName: nextDim.label, message: pick(["Pick up where you left off.", "Welcome back. Keep going.", `Continue with ${nextDim.label}.`]) });
+          // Auto-generate next question for the dimension they left off on
+          setActiveDimQuestion(nextDim.label);
+          const prevQAs = dimQAs[nextDim.label] || [];
+          fetch("/api/mobile-stickies", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              goal: capture, mode, qas,
+              dimension: nextDim.label,
+              previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined,
+            }),
+          }).then(r => r.json()).then(data => {
+            if (data.question) {
+              setDimSuggestions(prev => ({ ...prev, [nextDim.label]: { action: "clarify" as Action, question: data.question } }));
+            }
+          }).catch(() => { /* silent */ });
+        }
       }
       return;
     }
