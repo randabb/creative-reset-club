@@ -193,6 +193,12 @@ function CanvasInner() {
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
+  const [timerSecs, setTimerSecs] = useState(900); // 15 minutes
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const [timerRemoved, setTimerRemoved] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
   const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
   const [statusState, setStatusState] = useState<{
@@ -440,6 +446,65 @@ function CanvasInner() {
 
 
   // Note analysis: suggest actions for notes
+  // Timer countdown
+  useEffect(() => {
+    if (timerActive && !timerPaused && timerSecs > 0) {
+      timerRef.current = setInterval(() => {
+        setTimerSecs(s => {
+          if (s <= 1) {
+            setTimerActive(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+            // Time's up nudge
+            setStatusState({ type: allDimsComplete ? "all_done" : "keep_going",
+              message: allDimsComplete ? "Perfect timing. See what you found?" : "15 minutes is up. Keep going or see what you found?",
+              dimName: statusState.dimName });
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+      return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerActive, timerPaused]);
+
+  // Load timer from session
+  useEffect(() => {
+    if (loadedExistingRef.current) return; // timer resets for returning sessions
+  }, []);
+
+  // Save timer on unload
+  useEffect(() => {
+    const handleUnload = () => {
+      if (timerStarted && sessionIdRef.current) {
+        navigator.sendBeacon?.("/api/sessions", JSON.stringify({
+          method: "PATCH", sessionId: sessionIdRef.current,
+          canvas_state: { notes, connections, discoveries, patterns, dimStatus, dimQAs, timerRemaining: timerSecs },
+        }));
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerSecs, timerStarted]);
+
+  const startTimer = () => {
+    setTimerStarted(true);
+    setTimerActive(true);
+    setTimerPaused(false);
+    // Also trigger first dimension question
+    if (dimensions[0] && !activeDimQuestion) {
+      setActiveDimQuestion(dimensions[0].label);
+    }
+  };
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
   // Keep refs in sync
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
@@ -938,6 +1003,42 @@ function CanvasInner() {
           onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
         >&larr; Studio</button>
 
+        {/* TIMER */}
+        {!timerRemoved && (
+          <div className="timer-wrap" style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
+            {!timerStarted ? (
+              <button
+                onClick={startTimer}
+                style={{
+                  background: "none", border: "1px solid rgba(0,3,50,0.1)", borderRadius: 100,
+                  padding: "4px 14px", fontSize: 13, fontFamily: "'DM Mono', monospace",
+                  color: "rgba(0,3,50,0.5)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <span>15:00</span>
+                <span style={{ fontSize: 11, color: "#FF9090", fontWeight: 600 }}>Start</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => { if (timerSecs > 0) setTimerPaused(!timerPaused); }}
+                style={{
+                  background: "none", border: "none", padding: "4px 8px",
+                  fontSize: 14, fontFamily: "'DM Mono', monospace", cursor: "pointer",
+                  color: timerSecs <= 120 ? "#FF9090" : "rgba(0,3,50,0.4)",
+                  animation: timerSecs <= 120 && timerSecs > 0 ? "timerPulse 2s ease-in-out infinite" : timerPaused ? "timerBreathe 2s ease-in-out infinite" : undefined,
+                }}
+              >
+                {timerSecs <= 0 ? "Time\u2019s up" : timerPaused ? "Paused" : formatTime(timerSecs)}
+              </button>
+            )}
+            <button
+              className="timer-x"
+              onClick={() => { setTimerRemoved(true); setTimerActive(false); if (timerRef.current) clearInterval(timerRef.current); }}
+              style={{ background: "none", border: "none", fontSize: 12, color: "rgba(0,3,50,0.15)", cursor: "pointer", opacity: 0, transition: "opacity 0.15s", padding: 2 }}
+            >&times;</button>
+          </div>
+        )}
+
         {/* CENTER: Toolbar */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <button onClick={addNote} style={{ padding: "4px 12px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
@@ -1414,7 +1515,7 @@ function CanvasInner() {
 
           {/* FIRST DRAFTS NUDGE */}
           <div style={{ position: "absolute", left: 60, top: 192, fontSize: 11, color: "rgba(0,3,50,0.25)", fontFamily: "'DM Mono', monospace", pointerEvents: "none" }}>
-            first drafts only.
+            {timerStarted ? "first drafts only." : "15 minutes. messy thinking only."}
           </div>
 
           {/* DIMENSION COLUMN LINES */}
@@ -1925,6 +2026,9 @@ function CanvasInner() {
         @keyframes dotPop { 0% { transform:scale(0); } 70% { transform:scale(1.1); } 100% { transform:scale(1); } }
         @keyframes dimGlow { 0% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.2), 0 2px 8px rgba(0,0,0,0.1); } 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } }
         @keyframes synthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 8px rgba(255,144,144,0.25); } }
+        @keyframes timerPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+        @keyframes timerBreathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.7; } }
+        .timer-wrap:hover .timer-x { opacity: 1 !important; }
         .done-btn:active { transform: scale(0.97); }
         @keyframes coachIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes q4Glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0), 0 1px 3px rgba(0,3,50,0.03); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.12), 0 1px 3px rgba(0,3,50,0.03); } }
