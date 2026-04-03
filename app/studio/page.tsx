@@ -341,7 +341,7 @@ export default function Studio() {
                       <div
                         key={c.id}
                         className="studio-card"
-                        onClick={() => { if (deleteConfirm !== c.id) router.push(`/session/canvas?session_id=${c.id}`); }}
+                        onClick={() => { if (deleteConfirm !== c.id) { const isMobile = window.innerWidth < 768; router.push(`/session/${isMobile ? "mobile-canvas" : "canvas"}?session_id=${c.id}`); } }}
                         style={{
                           background: "#fff", borderRadius: 16, padding: "24px 24px",
                           border: "1px solid rgba(0,3,50,0.06)",
