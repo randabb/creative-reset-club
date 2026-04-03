@@ -1838,23 +1838,11 @@ function CanvasInner() {
                     fontSize: 13, lineHeight: 1.55, color: "#000332",
                     fontFamily: "'Codec Pro',sans-serif",
                     whiteSpace: "pre-wrap", wordBreak: "break-word",
-                    ...(isAi && n.action === "express" ? { borderLeft: `3px solid ${ACT.express.color}`, paddingLeft: 10 } : {}),
+                    ...(isAi && n.action ? { borderLeft: `3px solid ${ACT[n.action].color}`, paddingLeft: 10, fontStyle: "italic" } : {}),
                     ...(n.source === "goal" && !goalExpanded ? { maxHeight: 80, overflow: "hidden" } : {}),
                   }}>
                     {isAi && n.text ? (
-                      n.text.split("\n").map((line, li) => {
-                        const isBoldLine = li === 0 && (n.action === "clarify" || n.action === "decide");
-                        const isProvocation = line.trim().startsWith("→");
-                        return (
-                          <div key={li} style={{
-                            fontWeight: isBoldLine ? 600 : 400,
-                            marginBottom: 4,
-                            ...(isProvocation ? { paddingLeft: 4, color: ACT.expand.color } : {}),
-                          }}>
-                            {line}
-                          </div>
-                        );
-                      })
+                      n.text
                     ) : (
                       n.text || <span style={{ color: "rgba(0,3,50,0.25)" }}>Double-click to edit</span>
                     )}

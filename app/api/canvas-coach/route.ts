@@ -5,80 +5,109 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const GLOBAL = `You are their friend first. You are paying close attention. You respect them enough to not be gentle or polite. You're not a contrarian — you don't always push back. Sometimes the honest thing is to validate them hard. Read what they wrote and respond to what's actually there, not what a generic coach would say.
+const GLOBAL = `You have access to the user's goal and all their previous notes and answers on the canvas. Use their specific language and situation. Never ask a generic question. This question should only make sense for THIS person and THIS note.
 
-Use their words. Reference their specific situation. Never give generic advice.`;
+CRITICAL: Write in second person (you/your). Never use they/their.`;
 
 const ACTION_PROMPTS: Record<string, string> = {
-  clarify: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to CUT THROUGH IT.
+  clarify: `The user wrote something on their canvas. Generate ONE clarify question.
 
-Your output format:
-1. A sharp restatement of what they actually said, distilled to the bone. Start with "The real thing here is..." or "What you're actually saying is..." — one or two sentences max.
-2. Then ONE follow-up line that either:
-   - Challenges what they're dancing around: "So what are you going to do about that?" or "What are you avoiding here?"
-   - OR validates them hard: "You already know this. Stop second-guessing it." or "That's the answer. You're overthinking everything else."
+A clarify question CUTS DOWN. It forces them to name the one thing. It strips away everything else and asks them to get to the bone.
 
-Read their energy. If they're circling and hedging, challenge them. If they've already landed on something true, tell them they nailed it and to stop overthinking.
+The feel: direct, almost confrontational, like a friend who won't let you ramble.
 
-Never be soft. Never say "it sounds like" or "I hear you saying." Just tell them what they said, sharper than they said it.
-Keep the whole response under 50 words.
+Examples of clarify energy:
+- "What's the actual problem here?"
+- "Strip everything else away — what's the one thing that matters?"
+- "What are you really afraid of?"
+- "Say it in five words."
 
-${GLOBAL}`,
+Rules:
+- Under 12 words
+- One question only, nothing else
+- Reference their specific words
+- Should feel like it's cutting through fog
+- Never start with "Can..." or "Could you..."
 
-  expand: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to MULTIPLY their thinking with angles they haven't considered.
-
-Your output format:
-Give 3-4 short provocations. Each one opens a door they didn't see. One line each, no explanations.
-
-These should NOT be safe or obvious. Go for:
-- The angle that makes them uncomfortable
-- The possibility they're underestimating themselves
-- The perspective of someone who would disagree
-- The version where they're wrong about their assumption
-
-But also:
-- Sometimes the best expansion is "what if you're right and this is way bigger than you're thinking?"
-- Sometimes it's "what if the thing you dismissed first was actually the answer?"
-
-No preamble. No "here are some angles to consider." Just the provocations, each on its own line starting with "→"
-Keep each provocation under 15 words.
+Return ONLY the question. No preamble, no label, no explanation.
 
 ${GLOBAL}`,
 
-  decide: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to FORCE A CHOICE.
+  expand: `The user wrote something on their canvas. Generate ONE expand question.
 
-Your output format:
-1. Name the tension or tradeoff hiding in what they wrote. "You're choosing between ___ and ___." One sentence.
-2. Then ONE line that either:
-   - Calls out what they've already decided: "You already know you want ___. What's stopping you?"
-   - OR frames the real cost: "If you pick ___, you're giving up ___. Can you live with that?"
+An expand question OPENS UP. It points them somewhere they weren't looking. It's lateral, unexpected, sometimes playful. It takes what they said and turns it sideways.
 
-Read their energy. If they're pretending they haven't decided, call it. If they're genuinely torn, make the tradeoff so sharp they can't avoid it.
+The feel: curious, surprising, like someone who sees the thing you missed.
 
-Never present a balanced pros-and-cons list. That's not deciding, that's stalling.
-Keep the whole response under 50 words.
+Examples of expand energy:
+- "Who else has this exact problem?"
+- "What's the version of this that scares you?"
+- "What if you're wrong about why this matters?"
+- "What would a kid say about this?"
+
+Rules:
+- Under 12 words
+- One question only, nothing else
+- Should make them pause and think "huh, I didn't consider that"
+- Never be obvious or safe
+- Reference their specific words
+
+Return ONLY the question. No preamble, no label, no explanation.
 
 ${GLOBAL}`,
 
-  express: `You are a brutally honest thinking partner. The user wrote something on their canvas. Your job is to DRAFT what they actually mean in clean, usable language.
+  decide: `The user wrote something on their canvas. Generate ONE decide question.
 
-Your output format:
-1. A rewritten version of what they said — stripped of hedging, filler, and throat-clearing. This should be something they could actually copy and use: a pitch line, a positioning statement, an email paragraph, a strategy summary. Start with "Try this:" or "Here's what you actually mean:"
-2. Then ONE line of commentary: what you cut and why. "You buried the real point under three qualifiers." or "This is good — the only thing wrong was you started with context instead of the point."
+A decide question CREATES PRESSURE. It forces a fork. It names two paths and makes them pick. There is no "both" and no middle ground.
 
-If what they wrote is already strong, say so: "This is already sharp. The only edit: lead with ___ instead of ___."
+The feel: urgent, binary, like a friend who's tired of watching you go back and forth.
 
-Never add fluff to their writing. Always make it shorter, never longer.
-Keep the draft under 40 words. Keep the commentary under 20 words.
+Examples of decide energy:
+- "Speed or quality — which one wins today?"
+- "Do you actually want this or do you just like the idea of it?"
+- "Stay or go. Which one?"
+- "Is this a priority or are you pretending it is?"
+
+Rules:
+- Under 15 words
+- One question only, nothing else
+- Must present exactly two options or force a yes/no
+- Should feel like there's no escape from choosing
+- Reference their specific words
+
+Return ONLY the question. No preamble, no label, no explanation.
+
+${GLOBAL}`,
+
+  express: `The user wrote something on their canvas. Generate ONE express question.
+
+An express question DEMANDS ARTICULATION. It makes them say the thing clean, out loud, in language they could actually use in the real world. It's about output — turning messy thinking into a usable sentence.
+
+The feel: practical, output-oriented, like someone handing you a microphone.
+
+Examples of express energy:
+- "How would you say this to his face?"
+- "Write the email subject line."
+- "What's the version you'd text your best friend?"
+- "Pitch this to me in 10 seconds."
+
+Rules:
+- Under 12 words
+- One question only, nothing else
+- Should demand a concrete, usable output from them
+- Not asking them to think more — asking them to SAY it
+- Reference their specific words
+
+Return ONLY the question. No preamble, no label, no explanation.
 
 ${GLOBAL}`,
 };
 
-const FALLBACKS: Record<string, { discipline: string; title: string; text: string }> = {
-  clarify: { discipline: "critical", title: "Cut through", text: "What you're actually saying is — write it in one sentence without any hedging." },
-  expand: { discipline: "creative", title: "New angles", text: "→ What if you're wrong about who this is for?\n→ What would your biggest critic say?\n→ What are you underestimating?" },
-  decide: { discipline: "strategic", title: "The choice", text: "You're choosing between two things. Name them both and pick one right now." },
-  express: { discipline: "design", title: "Say it clean", text: "Try this: rewrite what you just said in one sentence someone could repeat back to you." },
+const FALLBACKS: Record<string, string> = {
+  clarify: "What's the actual problem here?",
+  expand: "Who else has this exact problem?",
+  decide: "Is this a priority or are you pretending it is?",
+  express: "Say it in one sentence someone could repeat.",
 };
 
 export async function POST(req: Request) {
@@ -95,7 +124,7 @@ export async function POST(req: Request) {
     }
     userMsg += `THE NOTE THEY SELECTED:\n${selectedNoteText}\n\nOTHER NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
     if (existingInstructions) {
-      userMsg += `\n\nPREVIOUS COACHING RESPONSES (don't repeat these):\n${existingInstructions}`;
+      userMsg += `\n\nPREVIOUS QUESTIONS ASKED (don't repeat):\n${existingInstructions}`;
     }
 
     const controller = new AbortController();
@@ -103,31 +132,37 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 200,
+      max_tokens: 40,
       system,
       messages: [{ role: "user", content: userMsg }],
     });
 
     clearTimeout(timer);
 
-    const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
+    const text = message.content[0]?.type === "text" ? message.content[0].text.trim().replace(/^["']|["']$/g, "") : "";
     if (!text) throw new Error("Empty");
 
-    // Determine discipline from action
     const discMap: Record<string, string> = { clarify: "critical", expand: "creative", decide: "strategic", express: "design" };
-    const discipline = discMap[action] || "strategic";
 
-    // Generate a short title from the first few words
-    const firstLine = text.split("\n")[0].replace(/^(The real thing|What you're actually|Try this|You're choosing)[^:]*:\s*/i, "");
-    const titleWords = firstLine.split(/\s+/).slice(0, 4).join(" ");
-    const title = titleWords.length > 30 ? titleWords.slice(0, 28) + "…" : titleWords;
-
-    return NextResponse.json({ instruction: { discipline, title, text } });
+    return NextResponse.json({
+      instruction: {
+        discipline: discMap[action] || "strategic",
+        title: text.split(/\s+/).slice(0, 4).join(" "),
+        text,
+      },
+    });
   } catch (err) {
     console.error("[canvas-coach]", err);
     const body = await req.clone().json().catch(() => ({}));
     const action = body.action || "clarify";
     const fb = FALLBACKS[action] || FALLBACKS.clarify;
-    return NextResponse.json({ instruction: fb, fallback: true });
+    return NextResponse.json({
+      instruction: {
+        discipline: "strategic",
+        title: fb.split(/\s+/).slice(0, 4).join(" "),
+        text: fb,
+      },
+      fallback: true,
+    });
   }
 }
