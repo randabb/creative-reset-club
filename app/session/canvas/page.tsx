@@ -791,8 +791,9 @@ function CanvasInner() {
           existingPatterns: patterns,
         }),
       }).then(r => r.json()).then(data => {
+        console.log("[canvas] Pattern detection:", data);
         if (data.pattern) setPatterns(prev => [...prev, data.pattern]);
-      }).catch(() => { /* silent */ });
+      }).catch(err => { console.error("[canvas] Pattern detection error:", err); });
     }
 
     // Assess dimension progression

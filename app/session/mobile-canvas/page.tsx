@@ -99,6 +99,7 @@ function MobileCanvasInner() {
           const res = await fetch(`/api/sessions?id=${sessionId}`);
           const data = await res.json();
           if (data.canvas_state?.discoveries?.length) setDiscoveries(data.canvas_state.discoveries);
+          if (data.canvas_state?.patterns?.length) setPatterns(data.canvas_state.patterns);
         } catch { /* continue */ }
       }
     };
@@ -239,8 +240,9 @@ function MobileCanvasInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
       }).then(r => r.json()).then(data => {
+        console.log("[mobile] Pattern detection:", data);
         if (data.pattern) setPatterns(prev => [...prev, data.pattern]);
-      }).catch(() => { /* silent */ });
+      }).catch(err => { console.error("[mobile] Pattern detection error:", err); });
     }
 
     // Generate next question in background (if not editing and not complete)
