@@ -47,6 +47,12 @@ function MobileCanvasInner() {
   const [currentDiscovery, setCurrentDiscovery] = useState("");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const [briefLines, setBriefLines] = useState<{ dimLabel: string; line: string }[]>([]);
+  const [transitioning, setTransitioning] = useState(false);
+  const [transDir, setTransDir] = useState<"left" | "right" | "up" | "fade" | "dark">("right");
+  const [listening, setListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  const [hasSpeech] = useState(() => typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
   const [synthText, setSynthText] = useState("");
   const [synthLines, setSynthLines] = useState<string[]>([]);
   const [synthRevealed, setSynthRevealed] = useState(0);
@@ -120,7 +126,7 @@ function MobileCanvasInner() {
   // Navigate to stickies for a dimension
   const openDimension = async (dimLabel: string) => {
     setActiveDim(dimLabel);
-    setScreen("stickies");
+    goTo("stickies", "right");
 
     if (!dimQuestions[dimLabel]) {
       setLoadingStickies(true);
@@ -147,8 +153,8 @@ function MobileCanvasInner() {
   const openWrite = (qIdx: number) => {
     setActiveQIdx(qIdx);
     setWriteText("");
-    setScreen("write");
-    setTimeout(() => textareaRef.current?.focus(), 200);
+    goTo("write", "up");
+    setTimeout(() => textareaRef.current?.focus(), 400);
   };
 
   // Submit answer
@@ -169,7 +175,7 @@ function MobileCanvasInner() {
     setWriteText("");
     setCurrentDiscovery("");
     setDiscoveryVisible(false);
-    setScreen("discovery");
+    goTo("discovery", "fade");
 
     try {
       const dRes = await fetch("/api/mobile-discovery", {
@@ -220,9 +226,43 @@ function MobileCanvasInner() {
     ? "You covered everything."
     : "Where next?";
 
+  // Screen transition helper
+  const goTo = (next: Screen, dir: "left" | "right" | "up" | "fade" | "dark" = "right") => {
+    setTransDir(dir);
+    setTransitioning(true);
+    setTimeout(() => { setScreen(next); setTransitioning(false); }, 300);
+  };
+
+  // Voice input
+  const toggleVoice = () => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    r.onresult = (e: any) => {
+      let transcript = "";
+      for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
+      setWriteText(transcript);
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    r.start();
+    recognitionRef.current = r;
+    setListening(true);
+  };
+
   // Open synthesis
   const openSynthesis = async () => {
-    setScreen("synthesis");
+    goTo("synthesis", "dark");
+    await new Promise(r => setTimeout(r, 350));
     setSynthText("");
     setSynthLines([]);
     setSynthRevealed(0);
@@ -448,9 +488,9 @@ function MobileCanvasInner() {
         <button
           onClick={() => {
             if (dimComplete) {
-              setScreen("picker");
+              goTo("picker", "left");
             } else {
-              setScreen("stickies");
+              goTo("stickies", "left");
             }
           }}
           style={{
@@ -472,7 +512,7 @@ function MobileCanvasInner() {
     return (
       <div style={{ minHeight: "100vh", background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
-          <button onClick={() => setScreen("stickies")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; back</button>
+          <button onClick={() => goTo("stickies", "left")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; back</button>
           <div style={{ display: "flex", gap: 4 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{ width: 20, height: 3, borderRadius: 2, background: i < activeAnswers.length + 1 ? activeColor : "rgba(0,3,50,0.08)" }} />
@@ -496,6 +536,7 @@ function MobileCanvasInner() {
             ref={textareaRef}
             value={writeText}
             onChange={e => setWriteText(e.target.value)}
+            onFocus={e => { setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }}
             placeholder={placeholder}
             style={{
               flex: 1, width: "100%", border: "none", outline: "none",
@@ -509,19 +550,34 @@ function MobileCanvasInner() {
             <div style={{ fontSize: 11, color: "rgba(0,3,50,0.2)", fontFamily: "'DM Mono', monospace", textAlign: "center", marginBottom: 12 }}>
               first drafts only.
             </div>
-            <button
-              onClick={submitAnswer}
-              disabled={!writeText.trim()}
-              className="done-btn"
-              style={{
-                width: "100%", padding: "16px", borderRadius: 100,
-                background: writeText.trim() ? activeColor : "rgba(0,3,50,0.06)",
-                color: writeText.trim() ? "#000332" : "rgba(0,3,50,0.25)",
-                border: "none", fontSize: 15, fontWeight: 700,
-                cursor: writeText.trim() ? "pointer" : "default",
-                fontFamily: "inherit", transition: "all 0.2s, transform 0.1s",
-              }}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              {hasSpeech && (
+                <button
+                  onClick={toggleVoice}
+                  style={{
+                    width: 52, height: 52, borderRadius: "50%", border: "none", flexShrink: 0,
+                    background: listening ? activeColor : "rgba(0,3,50,0.06)",
+                    color: listening ? "#000332" : "rgba(0,3,50,0.3)",
+                    fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.2s",
+                    animation: listening ? "mMicPulse 1s ease-in-out infinite" : undefined,
+                  }}
+                >🎙</button>
+              )}
+              <button
+                onClick={submitAnswer}
+                disabled={!writeText.trim()}
+                className="done-btn"
+                style={{
+                  flex: 1, padding: "16px", borderRadius: 100,
+                  background: writeText.trim() ? activeColor : "rgba(0,3,50,0.06)",
+                  color: writeText.trim() ? "#000332" : "rgba(0,3,50,0.25)",
+                  border: "none", fontSize: 15, fontWeight: 700,
+                  cursor: writeText.trim() ? "pointer" : "default",
+                  fontFamily: "inherit", transition: "all 0.2s, transform 0.1s",
+                }}
             >Done</button>
+            </div>
           </div>
         </div>
 
@@ -536,7 +592,7 @@ function MobileCanvasInner() {
     return (
       <div style={{ minHeight: "100vh", background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
-          <button onClick={() => setScreen("picker")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; dimensions</button>
+          <button onClick={() => goTo("picker", "left")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; dimensions</button>
           <div style={{ display: "flex", gap: 4 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{ width: 20, height: 3, borderRadius: 2, background: i < activeAnswers.length ? activeColor : "rgba(0,3,50,0.08)", transition: "background 0.3s" }} />
@@ -565,6 +621,7 @@ function MobileCanvasInner() {
                 return (
                   <button
                     key={i}
+                    className="m-sticky"
                     onClick={() => { if (!isAnswered) openWrite(i); }}
                     style={{
                       width: "100%", padding: "20px 20px",
@@ -723,6 +780,7 @@ function MobileCanvasInner() {
             return (
               <button
                 key={dim.label}
+                className="m-dim"
                 onClick={() => { if (!isComplete) openDimension(dim.label); }}
                 style={{
                   display: "flex", alignItems: "center", gap: 14,
@@ -811,6 +869,9 @@ function MobileCanvasInner() {
         @keyframes mSynthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.25); } }
         @keyframes mBriefFadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
         @keyframes mShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .m-sticky:active { transform: scale(0.98) !important; }
+        .m-dim:active { transform: scale(0.98) !important; }
+        @keyframes mMicPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 8px rgba(255,144,144,0.15); } }
       `}</style>
     </div>
   );
