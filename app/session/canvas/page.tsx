@@ -414,9 +414,9 @@ function CanvasInner() {
     const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
-    setStatusState({ type: "landing", dimName: dimensions[0]?.label, message: pick(["Let\u2019s start here. Say whatever\u2019s in your head.", "First things first. Don\u2019t think, just write.", `Let\u2019s start with ${dimensions[0]?.label}. Say what comes to mind.`]) });
+    setStatusState({ type: "landing", dimName: dimensions[0]?.label, message: "Tap start when you\u2019re ready." });
 
-    // Fetch AI suggestions for each dimension
+    // Pre-fetch AI suggestions for each dimension (don't open yet — wait for timer)
     fetch("/api/suggest-dimension-actions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -428,8 +428,7 @@ function CanvasInner() {
           map[s.dimension] = { action: s.action as Action, question: s.question };
         });
         setDimSuggestions(map);
-        // Auto-open first dimension
-        if (dimensions[0]) setActiveDimQuestion(dimensions[0].label);
+        // Don't auto-open — timer start will open first dimension
       }
     }).catch(() => { /* silent */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -511,9 +510,10 @@ function CanvasInner() {
     setTimerStarted(true);
     setTimerActive(true);
     setTimerPaused(false);
-    // Also trigger first dimension question
+    // Trigger first dimension question
     if (dimensions[0] && !activeDimQuestion) {
       setActiveDimQuestion(dimensions[0].label);
+      setStatusState({ type: "keep_going", dimName: dimensions[0].label, message: `Let\u2019s start with ${dimensions[0].label}. Say what comes to mind.` });
     }
   };
 
@@ -593,6 +593,8 @@ function CanvasInner() {
   };
 
   const addNote = () => {
+    // Auto-start timer if not started
+    if (!timerStarted && !timerRemoved) startTimer();
     const id = uid();
     setNotes(ns => [...ns, { id, x: 300 + Math.random() * 200, y: 100 + Math.random() * 200, text: "", source: "user" }]);
     setEditId(id);
@@ -1028,13 +1030,16 @@ function CanvasInner() {
               <button
                 onClick={startTimer}
                 style={{
-                  background: "none", border: "1px solid rgba(0,3,50,0.1)", borderRadius: 100,
-                  padding: "4px 14px", fontSize: 13, fontFamily: "'DM Mono', monospace",
-                  color: "rgba(0,3,50,0.5)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,144,144,0.06)", border: "1.5px solid rgba(255,144,144,0.2)", borderRadius: 100,
+                  padding: "6px 18px", fontSize: 18, fontFamily: "'DM Mono', monospace",
+                  color: "#000332", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                  transition: "all 0.2s",
                 }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,144,144,0.12)"; e.currentTarget.style.borderColor = "#FF9090"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,144,144,0.06)"; e.currentTarget.style.borderColor = "rgba(255,144,144,0.2)"; }}
               >
-                <span>15:00</span>
-                <span style={{ fontSize: 11, color: "#FF9090", fontWeight: 600 }}>Start</span>
+                <span style={{ opacity: 0.6 }}>15:00</span>
+                <span style={{ fontSize: 13, color: "#FF9090", fontWeight: 700 }}>Start</span>
               </button>
             ) : (
               <button
