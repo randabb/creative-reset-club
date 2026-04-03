@@ -1263,6 +1263,7 @@ function CanvasInner() {
               ) : (
                 <>
                   {/* Patterns first */}
+                  {patterns.length > 0 && console.log("[canvas] Rendering patterns:", patterns.length)}
                   {patterns.map((p, i) => (
                     <div key={`pat-${i}`} style={{
                       borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8,
@@ -1692,6 +1693,32 @@ function CanvasInner() {
                               setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                             }
                             setDimLoading(false);
+
+                            // Pattern detection from dimension question
+                            const allUserNotes = [...notes.filter(nn => nn.source === "user"), { id: noteId, text: answerText, x: n.x + 5, y: lastNoteY, source: "user" as const }];
+                            if (allUserNotes.length >= 3 && patterns.length < 4) {
+                              console.log("[canvas-dim] Calling pattern detection...", { totalNotes: allUserNotes.length });
+                              const patAnswers: Record<string, string[]> = {};
+                              allUserNotes.forEach(nn => {
+                                const dd = findNoteDim(nn as Note);
+                                if (!patAnswers[dd.label]) patAnswers[dd.label] = [];
+                                patAnswers[dd.label].push(nn.text);
+                              });
+                              fetch("/api/detect-patterns", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ goal: capture, allAnswers: patAnswers, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
+                              }).then(r => r.json()).then(patData => {
+                                console.log("[canvas-dim] Pattern result:", patData);
+                                if (patData.pattern) {
+                                  setPatterns(prev => [...prev, { ...patData.pattern, noteId }]);
+                                  if (patData.pattern.suggestedAction) {
+                                    setNoteActionSuggestions(prev => ({ ...prev, [noteId]: patData.pattern.suggestedAction }));
+                                  }
+                                }
+                              }).catch(err => console.error("[canvas-dim] Pattern error:", err));
+                            }
+
                             scheduleSave();
                           }}
                           onMouseDown={e => e.stopPropagation()}
