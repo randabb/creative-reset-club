@@ -20,6 +20,8 @@ function DimensionsInner() {
   const [newLabel, setNewLabel] = useState("");
   const [minWarning, setMinWarning] = useState(false);
   const [removingIdx, setRemovingIdx] = useState<number | null>(null);
+  const [editingLabel, setEditingLabel] = useState<number | null>(null);
+  const [editingDesc, setEditingDesc] = useState<number | null>(null);
 
   const removeDim = (idx: number) => {
     if (dimensions.length <= 2) {
@@ -102,12 +104,50 @@ function DimensionsInner() {
                   padding: 4,
                 }}
               >&times;</button>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#000332", marginBottom: 4, paddingRight: 28 }}>
-                {dim.label}
-              </div>
-              {dim.description && (
-                <p style={{ fontSize: 13, color: "rgba(0,3,50,0.45)", fontWeight: 300, lineHeight: 1.5 }}>
-                  {dim.description}
+              {/* Editable title */}
+              {editingLabel === i ? (
+                <input
+                  autoFocus
+                  value={dim.label}
+                  onChange={e => setDimensions(prev => prev.map((d, j) => j === i ? { ...d, label: e.target.value } : d))}
+                  onBlur={() => setEditingLabel(null)}
+                  onKeyDown={e => { if (e.key === "Enter") setEditingLabel(null); }}
+                  style={{
+                    fontSize: 16, fontWeight: 700, color: "#000332", border: "none",
+                    borderBottom: "1.5px solid #FF9090", outline: "none", background: "transparent",
+                    width: "calc(100% - 32px)", fontFamily: "inherit", marginBottom: 4, padding: 0,
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => setEditingLabel(i)}
+                  style={{ fontSize: 16, fontWeight: 700, color: "#000332", marginBottom: 4, paddingRight: 28, cursor: "text", display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  {dim.label}
+                  <span style={{ fontSize: 12, color: "rgba(0,3,50,0.15)" }}>&#9998;</span>
+                </div>
+              )}
+              {/* Editable description */}
+              {editingDesc === i ? (
+                <input
+                  autoFocus
+                  value={dim.description}
+                  onChange={e => setDimensions(prev => prev.map((d, j) => j === i ? { ...d, description: e.target.value } : d))}
+                  onBlur={() => setEditingDesc(null)}
+                  onKeyDown={e => { if (e.key === "Enter") setEditingDesc(null); }}
+                  style={{
+                    fontSize: 13, color: "rgba(0,3,50,0.55)", border: "none",
+                    borderBottom: "1px solid rgba(0,3,50,0.1)", outline: "none", background: "transparent",
+                    width: "100%", fontFamily: "inherit", fontWeight: 300, padding: 0,
+                  }}
+                  placeholder="Add a description..."
+                />
+              ) : (
+                <p
+                  onClick={() => setEditingDesc(i)}
+                  style={{ fontSize: 13, color: dim.description ? "rgba(0,3,50,0.45)" : "rgba(0,3,50,0.2)", fontWeight: 300, lineHeight: 1.5, cursor: "text" }}
+                >
+                  {dim.description || "Tap to add description..."}
                 </p>
               )}
             </div>
