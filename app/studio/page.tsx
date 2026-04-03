@@ -49,12 +49,16 @@ export default function Studio() {
   const [firstName, setFirstName] = useState("");
   const [canvases, setCanvases] = useState<CanvasItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | Mode>("all");
+  const [filter, setFilter] = useState<"all" | Mode | "thoughts">("all");
   const [arcModal, setArcModal] = useState(false);
   const [arcEmail, setArcEmail] = useState("");
   const [arcSubmitted, setArcSubmitted] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const [themes, setThemes] = useState<{ label: string; sessionIds: string[] }[]>([]);
+  const [themesLoading, setThemesLoading] = useState(false);
+  const [themesLoaded, setThemesLoaded] = useState(false);
+  const [expandedTheme, setExpandedTheme] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -93,8 +97,25 @@ export default function Studio() {
     load();
   }, [router]);
 
+  const loadThemes = async () => {
+    if (themesLoaded || canvases.length < 3) return;
+    setThemesLoading(true);
+    try {
+      const res = await fetch("/api/generate-themes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessions: canvases.map(c => ({ id: c.id, goal: c.goal, mode: c.mode })) }),
+      });
+      const data = await res.json();
+      if (data.themes?.length) setThemes(data.themes);
+      setThemesLoaded(true);
+    } catch { /* silent */ }
+    setThemesLoading(false);
+  };
+
   const handleDelete = async (id: string) => {
     setCanvases(prev => prev.filter(c => c.id !== id));
+    setThemes(prev => prev.map(t => ({ ...t, sessionIds: t.sessionIds.filter(sid => sid !== id) })).filter(t => t.sessionIds.length > 0));
     setDeleteConfirm(null);
     try {
       await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
@@ -120,14 +141,15 @@ export default function Studio() {
   }
 
   const isFirstTime = canvases.length === 0;
-  const filtered = filter === "all" ? canvases : canvases.filter((c) => c.mode === filter);
+  const filtered = filter === "thoughts" ? canvases : filter === "all" ? canvases : canvases.filter((c) => c.mode === filter);
 
-  const filters: { key: "all" | Mode; label: string }[] = [
+  const filters: { key: "all" | Mode | "thoughts"; label: string }[] = [
     { key: "all", label: "All" },
     { key: "clarity", label: "◎ Clarity" },
     { key: "expansion", label: "✦ Expansion" },
     { key: "decision", label: "⟁ Decision" },
     { key: "expression", label: "◈ Expression" },
+    ...(canvases.length >= 3 ? [{ key: "thoughts" as const, label: "Thoughts" }] : []),
   ];
 
   return (
@@ -303,7 +325,7 @@ export default function Studio() {
                   {filters.map((f) => (
                     <button
                       key={f.key}
-                      onClick={() => setFilter(f.key)}
+                      onClick={() => { setFilter(f.key); if (f.key === "thoughts") loadThemes(); }}
                       style={{
                         padding: "6px 14px", borderRadius: 100, border: "none",
                         background: filter === f.key ? "#fff" : "transparent",
@@ -320,7 +342,86 @@ export default function Studio() {
                 </div>
               </div>
 
-              {filtered.length === 0 ? (
+              {/* THOUGHTS VIEW */}
+              {filter === "thoughts" ? (
+                <div>
+                  {themesLoading ? (
+                    <div style={{ textAlign: "center", padding: "48px 0" }}>
+                      <div style={{ width: 18, height: 18, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "studioSpin 0.7s linear infinite", margin: "0 auto 10px" }} />
+                      <p style={{ fontSize: 13, color: "rgba(0,3,50,0.35)" }}>Organizing your thinking...</p>
+                    </div>
+                  ) : themes.length === 0 ? (
+                    <p style={{ fontSize: 14, color: "rgba(0,3,50,0.35)", textAlign: "center", padding: "32px 0" }}>Not enough sessions to group yet.</p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {themes.map((theme) => {
+                        const themeSessions = canvases.filter(c => theme.sessionIds.includes(c.id));
+                        const isExpanded = expandedTheme === theme.label;
+                        return (
+                          <div key={theme.label}>
+                            <button
+                              onClick={() => setExpandedTheme(isExpanded ? null : theme.label)}
+                              style={{
+                                width: "100%", textAlign: "left", padding: "18px 20px",
+                                background: "#fff", border: "1px solid rgba(0,3,50,0.06)", borderRadius: 14,
+                                cursor: "pointer", fontFamily: "inherit",
+                                transition: "box-shadow 0.2s",
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.04)")}
+                              onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div>
+                                  <div style={{ fontSize: 16, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{theme.label}</div>
+                                  <span style={{ fontSize: 12, color: "rgba(0,3,50,0.35)" }}>{themeSessions.length} session{themeSessions.length !== 1 ? "s" : ""}</span>
+                                </div>
+                                <span style={{ fontSize: 14, color: "rgba(0,3,50,0.2)", transform: isExpanded ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s" }}>&rsaquo;</span>
+                              </div>
+                              {!isExpanded && themeSessions.length > 0 && (
+                                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                                  {themeSessions.slice(0, 2).map(s => (
+                                    <p key={s.id} style={{ fontSize: 12, color: "rgba(0,3,50,0.3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {s.goal}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </button>
+                            {isExpanded && (
+                              <div style={{ paddingLeft: 16, borderLeft: "2px solid rgba(0,3,50,0.06)", marginLeft: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+                                {themeSessions.map(c => {
+                                  const m = MODE_META[c.mode] || MODE_META.clarity;
+                                  return (
+                                    <div
+                                      key={c.id}
+                                      className="studio-card"
+                                      onClick={() => { const isMobile = window.innerWidth < 768; router.push(`/session/${isMobile ? "mobile-canvas" : "canvas"}?session_id=${c.id}`); }}
+                                      style={{
+                                        background: "#fff", borderRadius: 12, padding: "16px 18px",
+                                        border: "1px solid rgba(0,3,50,0.04)", cursor: "pointer",
+                                        transition: "transform 0.2s",
+                                      }}
+                                      onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-2px)")}
+                                      onMouseLeave={e => (e.currentTarget.style.transform = "")}
+                                    >
+                                      <div style={{ fontSize: 14, fontWeight: 600, color: "#000332", marginBottom: 4 }}>{c.goal || "Untitled"}</div>
+                                      <div style={{ display: "flex", gap: 8, fontSize: 11, color: "rgba(0,3,50,0.3)" }}>
+                                        <span>{c.note_count || 0} notes</span>
+                                        <span style={{ color: m.color }}>{m.icon}</span>
+                                        <span>{formatDate(c.created_at)}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : filtered.length === 0 ? (
                 <div style={{
                   padding: "56px 32px", textAlign: "center",
                   border: "1.5px dashed rgba(0,3,50,0.1)", borderRadius: 16,
@@ -500,6 +601,7 @@ export default function Studio() {
           border-color: #FF9090 !important;
           background: rgba(255,144,144,0.04) !important;
         }
+        @keyframes studioSpin { to { transform: rotate(360deg); } }
         .studio-card:hover .card-del { opacity: 0.5 !important; }
         .card-del:hover { opacity: 1 !important; }
       `}</style>
