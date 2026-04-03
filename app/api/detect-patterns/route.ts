@@ -28,8 +28,14 @@ Rules:
 - Keep the pattern description under 40 words.
 - If no pattern is detected, return null.
 
+Also determine which single action would best help resolve this pattern:
+- CLARIFY for contradictions, vagueness, borrowed language
+- EXPAND for surface-level thinking, single perspective, anchoring
+- DECIDE for fence-sitting, unnamed tradeoffs, hedging between options
+- EXPRESS for messy articulation, buried insights, ready to crystallize
+
 Respond with ONLY a JSON object or the word null:
-{"type":"contradiction|hedging|scope_creep|two_audiences|circular|assumption|solving_before_diagnosing|anchoring","label":"Short 2-3 word label","description":"The specific pattern with their quoted words","suggestion":"One sentence suggesting which action would help."}`;
+{"type":"contradiction|hedging|scope_creep|two_audiences|circular|assumption|solving_before_diagnosing|anchoring","label":"Short 2-3 word label","description":"The specific pattern with their quoted words","suggestion":"One sentence suggesting which action would help.","suggestedAction":"clarify|expand|decide|express"}`;
 
 export async function POST(req: Request) {
   try {
@@ -82,12 +88,14 @@ export async function POST(req: Request) {
     const validTypes = ["contradiction", "hedging", "scope_creep", "two_audiences", "circular", "assumption", "solving_before_diagnosing", "anchoring"];
     if (!validTypes.includes(parsed.type)) return NextResponse.json({ pattern: null });
 
+    const validActions = ["clarify", "expand", "decide", "express"];
     return NextResponse.json({
       pattern: {
         type: parsed.type,
         label: parsed.label || "Pattern detected",
         description: parsed.description || "",
         suggestion: parsed.suggestion || "",
+        suggestedAction: validActions.includes(parsed.suggestedAction) ? parsed.suggestedAction : "clarify",
         detected_at: new Date().toISOString(),
       },
     });

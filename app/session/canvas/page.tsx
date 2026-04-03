@@ -215,7 +215,7 @@ function CanvasInner() {
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
-  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; detected_at: string }[]>([]);
+  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; suggestedAction?: string; noteId?: string; detected_at: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
   const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
@@ -784,17 +784,15 @@ function CanvasInner() {
     }).catch(() => { /* skip */ });
 
     // Pattern detection (after 3+ total user notes, max 4 patterns)
-    const userNotes = notes.filter(n => n.source === "user");
-    if (userNotes.length >= 2 && patterns.length < 4) {
+    const userNotes = [...notes.filter(n => n.source === "user"), respNote];
+    if (userNotes.length >= 3 && patterns.length < 4) {
+      console.log("[canvas] Calling pattern detection...", { totalNotes: userNotes.length });
       const allAnswers: Record<string, string[]> = {};
       userNotes.forEach(n => {
-        const dim = findNoteDim(n);
-        if (!allAnswers[dim.label]) allAnswers[dim.label] = [];
-        allAnswers[dim.label].push(n.text);
+        const d = findNoteDim(n);
+        if (!allAnswers[d.label]) allAnswers[d.label] = [];
+        allAnswers[d.label].push(n.text);
       });
-      // Add the new response
-      if (!allAnswers[dim.label]) allAnswers[dim.label] = [];
-      allAnswers[dim.label].push(respNote.text);
 
       fetch("/api/detect-patterns", {
         method: "POST",
@@ -807,7 +805,14 @@ function CanvasInner() {
         }),
       }).then(r => r.json()).then(data => {
         console.log("[canvas] Pattern detection:", data);
-        if (data.pattern) setPatterns(prev => [...prev, data.pattern]);
+        if (data.pattern) {
+          const patternWithNote = { ...data.pattern, noteId: respId };
+          setPatterns(prev => [...prev, patternWithNote]);
+          // Glow the suggested action on the note that triggered the pattern
+          if (data.pattern.suggestedAction) {
+            setNoteActionSuggestions(prev => ({ ...prev, [respId]: data.pattern.suggestedAction }));
+          }
+        }
       }).catch(err => { console.error("[canvas] Pattern detection error:", err); });
     }
 
@@ -1872,7 +1877,7 @@ function CanvasInner() {
                 )}
                 {/* Action icons on user notes */}
                 {n.source === "user" && editId !== n.id && (
-                  <div className="note-actions" style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 6, opacity: 0, transition: "opacity 0.15s" }}>
+                  <div className="note-actions" style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 6 }}>
                     {(Object.keys(ACT) as Action[]).map(a => {
                       const suggested = noteActionSuggestions[n.id] === a;
                       return (
@@ -1888,9 +1893,9 @@ function CanvasInner() {
                             style={{
                               background: "none", border: "none", padding: 2,
                               fontSize: 15, color: ACT[a].color, cursor: "pointer",
-                              opacity: suggested ? 1 : 0.35,
+                              opacity: suggested ? 1 : 0.4,
                               transition: "opacity 0.2s, transform 0.2s",
-                              animation: suggested ? `actGlow${a} 2s ease-in-out infinite` : undefined,
+                              animation: suggested ? `actGlow${a} ${patterns.some(p => p.noteId === n.id && p.suggestedAction === a) ? "1s" : "2s"} ease-in-out infinite` : undefined,
                             }}
                           >{ACT[a].icon}</button>
                           <div className="act-tip" style={{
@@ -2007,7 +2012,6 @@ function CanvasInner() {
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
         .cn:hover .cn-edit { opacity: 0.5 !important; }
-        .cn:hover .note-actions { opacity: 1 !important; }
         .note-actions button:hover { opacity: 1 !important; transform: scale(1.15); }
         @keyframes actGlowclarify { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(107,138,254,0.4); } }
         @keyframes actGlowexpand { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(255,144,144,0.4); } }
