@@ -115,7 +115,8 @@ function GuidedInner() {
     setAnswer("");
     setTyping(false);
     setCaptureOpen(false);
-    setLoadingQ(true);
+    setCurrentQuestion("");
+    setLoadingQ(currentQNum < 2); // only show loading for non-final questions
 
     // Fetch reflection (non-blocking, 3s timeout)
     let reflectionText = "";
