@@ -42,6 +42,8 @@ function MobileCanvasInner() {
   const [activeQIdx, setActiveQIdx] = useState<number>(0);
   const [writeText, setWriteText] = useState("");
   const [loadingStickies, setLoadingStickies] = useState(false);
+  const [loadingNextQ, setLoadingNextQ] = useState(false);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [placeholder] = useState(pick(RAW_PH));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [currentDiscovery, setCurrentDiscovery] = useState("");
@@ -123,36 +125,51 @@ function MobileCanvasInner() {
   const activeQuestions = dimQuestions[activeDim] || [];
   const activeAnswers = dimAnswers[activeDim] || [];
 
+  // Fetch one question for a dimension
+  const fetchQuestion = async (dimLabel: string, prevQAs: { question: string; answer: string }[]) => {
+    try {
+      const res = await fetch("/api/mobile-stickies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: capture, mode, qas: qasParam,
+          dimension: dimLabel,
+          previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined,
+        }),
+      });
+      const data = await res.json();
+      return data.question || "What comes to mind?";
+    } catch {
+      return "What comes to mind?";
+    }
+  };
+
   // Navigate to stickies for a dimension
   const openDimension = async (dimLabel: string) => {
     setActiveDim(dimLabel);
+    setEditingIdx(null);
     goTo("stickies", "right");
 
-    if (!dimQuestions[dimLabel]) {
+    const existing = dimQuestions[dimLabel] || [];
+    const answers = dimAnswers[dimLabel] || [];
+    // Only fetch first question if none exist yet
+    if (existing.length === 0) {
       setLoadingStickies(true);
       try {
-        const res = await fetch("/api/mobile-stickies", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            goal: capture, mode, qas: qasParam,
-            dimension: dimLabel,
-            previousAnswers: (dimAnswers[dimLabel] || []).map(a => a.answer).join("\n") || undefined,
-          }),
-        });
-        const data = await res.json();
-        setDimQuestions(prev => ({ ...prev, [dimLabel]: data.questions || [] }));
+        const q = await fetchQuestion(dimLabel, []);
+        setDimQuestions(prev => ({ ...prev, [dimLabel]: [q] }));
       } catch {
-        setDimQuestions(prev => ({ ...prev, [dimLabel]: ["What's the real situation here?", "What scares you about this?", "What would you do if no one was watching?"] }));
+        setDimQuestions(prev => ({ ...prev, [dimLabel]: ["What comes to mind?"] }));
       }
       setLoadingStickies(false);
     }
   };
 
   // Open write screen
-  const openWrite = (qIdx: number) => {
+  const openWrite = (qIdx: number, existingAnswer?: string) => {
     setActiveQIdx(qIdx);
-    setWriteText("");
+    setEditingIdx(existingAnswer !== undefined ? qIdx : null);
+    setWriteText(existingAnswer || "");
     goTo("write", "up");
     setTimeout(() => textareaRef.current?.focus(), 400);
   };
@@ -162,8 +179,18 @@ function MobileCanvasInner() {
     if (!writeText.trim()) return;
     const question = activeQuestions[activeQIdx] || "";
     const newAnswer = { question, answer: writeText.trim() };
-    const updated = [...(dimAnswers[activeDim] || []), newAnswer];
+    const isEditing = editingIdx !== null;
+
+    let updated: { question: string; answer: string }[];
+    if (isEditing) {
+      // Replace existing answer
+      updated = [...(dimAnswers[activeDim] || [])];
+      updated[activeQIdx] = newAnswer;
+    } else {
+      updated = [...(dimAnswers[activeDim] || []), newAnswer];
+    }
     setDimAnswers(prev => ({ ...prev, [activeDim]: updated }));
+    setEditingIdx(null);
 
     if (updated.length >= 3) {
       setDimStatus(prev => ({ ...prev, [activeDim]: "complete" }));
@@ -198,6 +225,13 @@ function MobileCanvasInner() {
 
     // Trigger reveal animation
     setTimeout(() => setDiscoveryVisible(true), 100);
+
+    // Generate next question in background (if not editing and not complete)
+    if (!isEditing && updated.length < 3) {
+      fetchQuestion(activeDim, updated).then(q => {
+        setDimQuestions(prev => ({ ...prev, [activeDim]: [...(prev[activeDim] || []), q] }));
+      });
+    }
 
     // If dimension complete, generate brief line
     if (updated.length >= 3) {
@@ -510,7 +544,7 @@ function MobileCanvasInner() {
   // ─── WRITE SCREEN ───
   if (screen === "write") {
     return (
-      <div style={{ minHeight: "100vh", background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "fixed", inset: 0, background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
           <button onClick={() => goTo("stickies", "left")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; back</button>
           <div style={{ display: "flex", gap: 4 }}>
@@ -520,7 +554,7 @@ function MobileCanvasInner() {
           </div>
         </div>
 
-        <div style={{ padding: "0 24px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "0 24px", flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: activeColor, marginBottom: 12, fontFamily: "'DM Mono', monospace" }}>
             {activeDim.toUpperCase()}
           </div>
@@ -611,50 +645,73 @@ function MobileCanvasInner() {
           {loadingStickies ? (
             <div style={{ textAlign: "center", padding: "48px 0" }}>
               <div style={{ width: 20, height: 20, border: `2px solid ${activeColor}30`, borderTopColor: activeColor, borderRadius: "50%", animation: "mSpin 0.7s linear infinite", margin: "0 auto 12px" }} />
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.35)" }}>Generating questions...</p>
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.35)" }}>Generating your first question...</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {activeQuestions.map((q, i) => {
-                const isAnswered = i < activeAnswers.length;
-                const isNext = i === activeAnswers.length;
-                return (
-                  <button
-                    key={i}
-                    className="m-sticky"
-                    onClick={() => { if (!isAnswered) openWrite(i); }}
-                    style={{
-                      width: "100%", padding: "20px 20px",
-                      background: "#fff", border: "none", borderRadius: 16,
-                      textAlign: "left", cursor: isAnswered ? "default" : "pointer",
-                      fontFamily: "inherit",
-                      opacity: isAnswered ? 0.5 : 1,
-                      transform: isNext ? "scale(1.02)" : "scale(1)",
-                      boxShadow: isNext ? `0 4px 16px ${activeColor}15` : "0 1px 4px rgba(0,0,0,0.03)",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <p style={{
-                        fontFamily: "'Codec Pro', sans-serif", fontSize: 17, fontWeight: 700,
-                        color: "#000332", lineHeight: 1.4, flex: 1,
-                      }}>
-                        {q}
-                      </p>
-                      {isAnswered && <span style={{ color: activeColor, fontSize: 16, marginLeft: 8, flexShrink: 0 }}>✓</span>}
-                    </div>
-                    {isAnswered && activeAnswers[i] && (
-                      <p style={{ fontSize: 13, color: "rgba(0,3,50,0.4)", fontWeight: 300, marginTop: 6, lineHeight: 1.45 }}>
-                        {activeAnswers[i].answer.slice(0, 80)}{activeAnswers[i].answer.length > 80 ? "..." : ""}
-                      </p>
-                    )}
-                  </button>
-                );
-              })}
+              {/* Answered stickies — tappable to edit */}
+              {activeAnswers.map((a, i) => (
+                <button
+                  key={`a-${i}`}
+                  className="m-sticky"
+                  onClick={() => openWrite(i, a.answer)}
+                  style={{
+                    width: "100%", padding: "16px 20px",
+                    background: "#fff", border: "none", borderRadius: 16,
+                    textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                    opacity: 0.6, transition: "all 0.2s",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: "#000332", lineHeight: 1.4, flex: 1 }}>{a.question}</p>
+                    <span style={{ color: activeColor, fontSize: 14, marginLeft: 8, flexShrink: 0 }}>✓</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: "rgba(0,3,50,0.4)", fontWeight: 300, marginTop: 4, lineHeight: 1.45 }}>
+                    {a.answer.slice(0, 100)}{a.answer.length > 100 ? "..." : ""}
+                  </p>
+                  <span style={{ fontSize: 11, color: activeColor, marginTop: 4, display: "inline-block" }}>tap to edit</span>
+                </button>
+              ))}
+
+              {/* Current unanswered question */}
+              {activeAnswers.length < 3 && activeQuestions[activeAnswers.length] && (
+                <button
+                  className="m-sticky"
+                  onClick={() => openWrite(activeAnswers.length)}
+                  style={{
+                    width: "100%", padding: "20px 20px",
+                    background: "#fff", border: "none", borderRadius: 16,
+                    textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                    transform: "scale(1.02)",
+                    boxShadow: `0 4px 16px ${activeColor}15`,
+                    transition: "all 0.2s",
+                    animation: "mBriefFadeUp 0.3s ease-out",
+                  }}
+                >
+                  <p style={{ fontSize: 17, fontWeight: 700, color: "#000332", lineHeight: 1.4 }}>
+                    {activeQuestions[activeAnswers.length]}
+                  </p>
+                </button>
+              )}
+
+              {/* Loading next question */}
+              {activeAnswers.length < 3 && !activeQuestions[activeAnswers.length] && activeAnswers.length > 0 && (
+                <div style={{ height: 60, borderRadius: 16, background: `${activeColor}08`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: "60%", height: 4, borderRadius: 2, background: `${activeColor}15`, animation: "mShimmer 1.5s ease-in-out infinite", backgroundSize: "200% 100%", backgroundImage: `linear-gradient(90deg, ${activeColor}10 0%, ${activeColor}25 50%, ${activeColor}10 100%)` }} />
+                </div>
+              )}
+
+              {/* Locked future questions */}
+              {activeAnswers.length < 2 && (
+                <div style={{ height: 50, borderRadius: 16, background: "rgba(0,3,50,0.02)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 12, color: "rgba(0,3,50,0.15)" }}>{activeAnswers.length === 0 ? "2 more after this" : "1 more after this"}</span>
+                </div>
+              )}
             </div>
           )}
 
-          {activeAnswers.length === 0 && !loadingStickies && (
+          {activeAnswers.length === 0 && !loadingStickies && activeQuestions.length > 0 && (
             <p style={{ textAlign: "center", fontSize: 12, color: "rgba(0,3,50,0.25)", marginTop: 24, fontFamily: "'DM Mono', monospace" }}>
               tap a question to answer it
             </p>
@@ -781,13 +838,13 @@ function MobileCanvasInner() {
               <button
                 key={dim.label}
                 className="m-dim"
-                onClick={() => { if (!isComplete) openDimension(dim.label); }}
+                onClick={() => openDimension(dim.label)}
                 style={{
                   display: "flex", alignItems: "center", gap: 14,
                   width: "100%", padding: "16px 18px",
                   background: "#fff", border: "none", borderRadius: 14,
                   borderLeft: `4px solid ${color}`,
-                  cursor: isComplete ? "default" : "pointer",
+                  cursor: "pointer",
                   opacity: isComplete ? 0.65 : 1,
                   fontFamily: "inherit", textAlign: "left",
                   transition: "opacity 0.3s",
