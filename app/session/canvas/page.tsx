@@ -192,8 +192,6 @@ function CanvasInner() {
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
-  const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
-  const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
   const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
@@ -207,8 +205,6 @@ function CanvasInner() {
     firstNoteLabel?: string;
     message?: string;
   }>({ type: "landing" });
-  const [symbolHintShown, setSymbolHintShown] = useState(false);
-  const [showSymbolHint, setShowSymbolHint] = useState(false);
   const [exampleNoteId, setExampleNoteId] = useState<string | null>(null);
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
@@ -224,12 +220,11 @@ function CanvasInner() {
   const [dimQAs, setDimQAs] = useState<Record<string, { question: string; answer: string; action: string }[]>>({});
   const [dimLoading, setDimLoading] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState(false);
-  const analyzeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAnalyzeRef = useRef(0);
   const [zoom, setZoom] = useState(1);
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
   const sessionIdRef = useRef<string | null>(sp.get("session_id"));
   const sessionCreatedRef = useRef(!!sp.get("session_id"));
+  const loadedExistingRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -269,7 +264,14 @@ function CanvasInner() {
           if (data.canvas_state?.patterns?.length) {
             setPatterns(data.canvas_state.patterns);
           }
+          if (data.canvas_state?.dimStatus) {
+            setDimStatus(data.canvas_state.dimStatus);
+          }
+          if (data.canvas_state?.dimQAs) {
+            setDimQAs(data.canvas_state.dimQAs);
+          }
           if (data.synthesis) setSynthesis(data.synthesis);
+          loadedExistingRef.current = true;
         } catch (err) {
           console.error("[canvas] Load error:", err);
         }
@@ -291,7 +293,7 @@ function CanvasInner() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               userId: uid, goal: capture, mode, qas, dimensions,
-              canvas_state: { notes, connections, discoveries, patterns },
+              canvas_state: { notes, connections, discoveries, patterns, dimStatus, dimQAs },
             }),
           });
           const data = await res.json();
@@ -335,7 +337,7 @@ function CanvasInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: sid,
-          canvas_state: { notes, connections, discoveries, patterns },
+          canvas_state: { notes, connections, discoveries, patterns, dimStatus, dimQAs },
           synthesis: synthesis || undefined,
         }),
       });
@@ -352,7 +354,7 @@ function CanvasInner() {
       console.error("[canvas] Save error:", err);
       setSaveStatus("unsaved");
     }
-  }, [notes, connections, synthesis, discoveries]);
+  }, [notes, connections, synthesis, discoveries, patterns, dimStatus, dimQAs]);
 
   const scheduleSave = useCallback(() => {
     dirtyRef.current = true;
@@ -370,6 +372,21 @@ function CanvasInner() {
   // Initialize dimension tracking, landing status, and fetch dimension suggestions
   useEffect(() => {
     if (!canvasReady || dimensions.length === 0) return;
+
+    // If loading existing session, determine status from saved data
+    if (loadedExistingRef.current) {
+      const completedCount = Object.values(dimStatus).filter(s => s === "complete").length;
+      if (completedCount >= dimensions.length) {
+        setAllDimsComplete(true);
+        setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
+      } else {
+        const nextDim = dimensions.find(d => dimStatus[d.label] !== "complete");
+        setStatusState({ type: "keep_going", dimName: nextDim?.label, message: pick(["Pick up where you left off.", "Welcome back. Keep going.", `Continue with ${nextDim?.label || "your thinking"}.`]) });
+      }
+      return;
+    }
+
+    // New session — initialize everything
     const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
@@ -394,23 +411,6 @@ function CanvasInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
 
-  // Show suggestion from analyze-notes when user selects a note
-  useEffect(() => {
-    if (selected.size !== 1 || responseFlow || aiLoading) return;
-    const selId = [...selected][0];
-    const selNote = notes.find(n => n.id === selId);
-    if (!selNote || selNote.source === "dimension" || selNote.source === "goal") return;
-    const sug = noteSuggestions[selId];
-    if (sug) {
-      setStatusState({
-        type: "suggesting",
-        nextAction: sug,
-        actionColor: ACT[sug].color,
-        message: `Try ${ACT[sug].label.toLowerCase()} on this. This note could use it.`,
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, noteSuggestions]);
 
   // Periodic autosave every 30s if dirty
   useEffect(() => {
@@ -440,52 +440,6 @@ function CanvasInner() {
 
 
   // Note analysis: suggest actions for notes
-  const analyzeNotes = useCallback(async (force = false) => {
-    const now = Date.now();
-    if (!force && now - lastAnalyzeRef.current < 8000) return;
-    lastAnalyzeRef.current = now;
-    const eligible = notes.filter(n =>
-      n.source !== "dimension" && n.source !== "goal" && !n.aiInstruction && n.text.trim().length > 5
-    );
-    if (eligible.length === 0) return;
-    try {
-      const res = await fetch("/api/analyze-notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal: capture,
-          notes: eligible.map(n => ({ id: n.id, text: n.text, label: n.source === "thinking" ? "guided thinking answer" : undefined })),
-        }),
-      });
-      const data = await res.json();
-      if (data.suggestions && Array.isArray(data.suggestions)) {
-        const map: Record<string, Action> = {};
-        const ids = new Set<string>();
-        data.suggestions.forEach((s: { id: string; action: Action }) => {
-          map[s.id] = s.action;
-          ids.add(s.id);
-        });
-        setNoteSuggestions(map);
-        setFreshSuggestions(ids);
-        setTimeout(() => setFreshSuggestions(new Set()), 1500);
-        // Show first-time symbol hint
-        if (ids.size > 0 && !symbolHintShown && !localStorage.getItem("primer_symbol_hint_shown")) {
-          setSymbolHintShown(true);
-          setShowSymbolHint(true);
-          setTimeout(() => setShowSymbolHint(false), 5000);
-        }
-      }
-    } catch { /* silent */ }
-  }, [notes, capture]);
-
-  // Trigger analysis on canvas load (3s delay)
-  useEffect(() => {
-    if (!canvasReady || notes.length < 2) return;
-    const t = setTimeout(() => analyzeNotes(), 3000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvasReady]);
-
   // Keep refs in sync
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
@@ -570,9 +524,6 @@ function CanvasInner() {
     justFinishedEditRef.current = true;
     setTimeout(() => { justFinishedEditRef.current = false; }, 300);
     setNotes(ns => ns.filter(n => n.id !== id || n.text.trim()));
-    // Re-analyze after editing (force bypass debounce)
-    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
   };
 
   const finishConnection = () => {
@@ -601,7 +552,6 @@ function CanvasInner() {
     const selId = [...selected][0];
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
-    setNoteSuggestions(prev => { const n = { ...prev }; delete n[selId]; return n; });
 
     const dim = findNoteDim(selNote);
     if (dim.label) {
@@ -659,8 +609,6 @@ function CanvasInner() {
       setStatusState({ type: "working", dimName: dim.label, message: pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."]) });
     } catch { /* handled by API fallback */ }
     setAiLoading(false);
-    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
   };
 
   // Export helpers
@@ -752,8 +700,6 @@ function CanvasInner() {
     }, 100);
 
     // Re-analyze notes (force bypass debounce)
-    if (analyzeTimerRef.current) clearTimeout(analyzeTimerRef.current);
-    analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
 
     // Generate discovery line
     fetch("/api/generate-discovery", {
@@ -1307,21 +1253,6 @@ function CanvasInner() {
         </div>
       )}
 
-      {/* SYMBOL HINT */}
-      {showSymbolHint && (
-        <div style={{
-          position: "fixed", top: 80, right: 40, zIndex: 40,
-          background: "#fff", borderRadius: 10, padding: "12px 16px",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxWidth: 240,
-          animation: "noteIn 0.3s ease-out forwards",
-          borderLeft: "3px solid #FF9090",
-        }}>
-          <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.55, fontWeight: 300, fontFamily: "'Codec Pro',sans-serif" }}>
-            These icons suggest what to do next. Click one to start.
-          </p>
-        </div>
-      )}
-
       {/* STATUS BAR */}
       {dimensions.length > 0 && (
         <div style={{
@@ -1774,48 +1705,6 @@ function CanvasInner() {
                         padding: 0,
                       }}
                     >&#9998;</button>
-                    {noteSuggestions[n.id] && !isAi && n.source !== "goal" && (() => {
-                      const sugAction = noteSuggestions[n.id];
-                      const sugColor = ACT[sugAction].color;
-                      const sugIcon = ACT[sugAction].icon;
-                      const sugLabel = ACT[sugAction].label.toLowerCase();
-                      const isFresh = freshSuggestions.has(n.id);
-                      const isSuggested = statusState.type === "suggesting" && statusState.nextAction === sugAction && selected.has(n.id);
-                      return (
-                        <div
-                          className="sug-dot-wrap"
-                          style={{ position: "relative" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelected(new Set([n.id]));
-                            setNoteSuggestions(prev => { const next = { ...prev }; delete next[n.id]; return next; });
-                            localStorage.setItem("primer_symbol_hint_shown", "true");
-                            setTimeout(() => runAction(sugAction), 100);
-                          }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        >
-                          <div className="sug-dot" style={{
-                            width: 28, height: 28, borderRadius: "50%",
-                            background: `${sugColor}18`,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer",
-                            transition: "all 0.15s",
-                            animation: isFresh ? "sugPulse 0.6s ease-in-out 2" : isSuggested ? "sugPulse 0.8s ease-in-out infinite" : undefined,
-                          }}>
-                            <span style={{ fontSize: 18, color: sugColor, opacity: 0.7, lineHeight: 1 }}>{sugIcon}</span>
-                          </div>
-                          <div className="sug-tip" style={{
-                            position: "absolute", bottom: "100%", right: 0,
-                            marginBottom: 6, background: "#000332", color: "#FAF7F0", fontSize: 11,
-                            padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap",
-                            pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
-                            fontWeight: 400,
-                          }}>
-                            Click to {sugLabel} this note
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
                 )}
                 {sl && !isAi && (
@@ -2028,9 +1917,6 @@ function CanvasInner() {
         @keyframes actGlowexpress { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(196,166,255,0.4); } }
         .cn-edit:hover { opacity: 1 !important; }
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
-        .sug-dot-wrap:hover .sug-dot { transform: scale(1.1); }
-        .sug-dot-wrap:hover .sug-dot span { opacity: 1 !important; }
-        .sug-dot-wrap:hover .sug-tip { opacity: 1 !important; }
         @keyframes sugPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.15); } }
         @keyframes arrowDraw { to { stroke-dashoffset: 0; } }
         @keyframes rfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.15); } }
