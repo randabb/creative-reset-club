@@ -14,7 +14,7 @@ interface QA { question: string; answer: string; }
 interface Dimension { label: string; description: string; }
 interface Discovery { id: string; text: string; dimLabel: string; discipline?: string; createdAt: string; }
 
-type Screen = "picker" | "stickies" | "write";
+type Screen = "picker" | "stickies" | "write" | "discovery";
 
 function uid() { return crypto.randomUUID(); }
 
@@ -44,6 +44,9 @@ function MobileCanvasInner() {
   const [loadingStickies, setLoadingStickies] = useState(false);
   const [placeholder] = useState(pick(RAW_PH));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [currentDiscovery, setCurrentDiscovery] = useState("");
+  const [discoveryVisible, setDiscoveryVisible] = useState(false);
+  const [briefLines, setBriefLines] = useState<{ dimLabel: string; line: string }[]>([]);
 
   // Init
   useEffect(() => {
@@ -156,32 +159,53 @@ function MobileCanvasInner() {
       setDimStatus(prev => ({ ...prev, [activeDim]: "in_progress" }));
     }
 
-    // Generate discovery
+    // Generate discovery and show discovery moment
+    setWriteText("");
+    setCurrentDiscovery("");
+    setDiscoveryVisible(false);
+    setScreen("discovery");
+
     try {
-      const dRes = await fetch("/api/generate-discovery", {
+      const dRes = await fetch("/api/mobile-discovery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userResponse: writeText.trim(),
-          dimensionLabel: activeDim,
+          goal: capture, dimension: activeDim,
+          question: activeQuestions[activeQIdx] || "",
+          answer: newAnswer.answer,
           previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
         }),
       });
       const dData = await dRes.json();
       if (dData.discovery) {
-        setDiscoveries(prev => [...prev, { id: uid(), text: dData.discovery, dimLabel: activeDim, createdAt: new Date().toISOString() }]);
+        const disc: Discovery = { id: uid(), text: dData.discovery, dimLabel: activeDim, createdAt: new Date().toISOString() };
+        setDiscoveries(prev => [...prev, disc]);
+        setCurrentDiscovery(dData.discovery);
       }
     } catch { /* silent */ }
 
-    setWriteText("");
-    save();
+    // Trigger reveal animation
+    setTimeout(() => setDiscoveryVisible(true), 100);
 
-    // Go back to stickies or picker
+    // If dimension complete, generate brief line
     if (updated.length >= 3) {
-      setScreen("picker");
-    } else {
-      setScreen("stickies");
+      try {
+        const bRes = await fetch("/api/mobile-brief-line", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal: capture, dimension: activeDim,
+            answers: updated.map(a => a.answer).join("\n"),
+            discoveries: discoveries.filter(d => d.dimLabel === activeDim).map(d => d.text).join("\n"),
+            previousBriefLines: briefLines.map(b => b.line).join("\n") || undefined,
+          }),
+        });
+        const bData = await bRes.json();
+        if (bData.line) setBriefLines(prev => [...prev, { dimLabel: activeDim, line: bData.line }]);
+      } catch { /* silent */ }
     }
+
+    save();
   };
 
   const heading = completedCount === 0
@@ -189,6 +213,83 @@ function MobileCanvasInner() {
     : completedCount >= dimensions.length
     ? "You covered everything."
     : "Where next?";
+
+  // ─── DISCOVERY MOMENT SCREEN ───
+  if (screen === "discovery") {
+    const dimComplete = (dimAnswers[activeDim] || []).length >= 3;
+    return (
+      <div style={{
+        minHeight: "100vh", background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "40px 28px", textAlign: "center",
+      }}>
+        {/* Colored line */}
+        <div style={{
+          width: 40, height: 3, borderRadius: 2, background: activeColor, marginBottom: 24,
+          opacity: discoveryVisible ? 1 : 0, transform: discoveryVisible ? "scaleX(1)" : "scaleX(0)",
+          transition: "all 0.5s ease",
+        }} />
+
+        {/* DISCOVERY label */}
+        <div style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: activeColor,
+          fontFamily: "'DM Mono', monospace", marginBottom: 16,
+          opacity: discoveryVisible ? 1 : 0, transform: discoveryVisible ? "translateY(0)" : "translateY(8px)",
+          transition: "all 0.5s ease 0.15s",
+        }}>
+          DISCOVERY
+        </div>
+
+        {/* Discovery text */}
+        <p style={{
+          fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 700,
+          color: "#000332", lineHeight: 1.4, maxWidth: 320, marginBottom: 32,
+          opacity: discoveryVisible ? 1 : 0, transform: discoveryVisible ? "translateY(0)" : "translateY(10px)",
+          transition: "all 0.6s ease 0.3s",
+        }}>
+          {currentDiscovery || "Processing your thinking..."}
+        </p>
+
+        {/* Discovery dots */}
+        <div style={{
+          display: "flex", gap: 6, marginBottom: 40,
+          opacity: discoveryVisible ? 1 : 0,
+          transition: "opacity 0.5s ease 0.5s",
+        }}>
+          {discoveries.map((d, i) => {
+            const dIdx = dimensions.findIndex(dim => dim.label === d.dimLabel);
+            return (
+              <div key={d.id || i} style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: dIdx >= 0 ? DIM_COLORS[dIdx % DIM_COLORS.length] : "#FF9090",
+                boxShadow: `0 0 6px ${dIdx >= 0 ? DIM_COLORS[dIdx % DIM_COLORS.length] : "#FF9090"}40`,
+              }} />
+            );
+          })}
+        </div>
+
+        {/* Continue button */}
+        <button
+          onClick={() => {
+            if (dimComplete) {
+              setScreen("picker");
+            } else {
+              setScreen("stickies");
+            }
+          }}
+          style={{
+            padding: "14px 32px", borderRadius: 100, border: "none",
+            background: activeColor, color: "#000332", fontSize: 14, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+            opacity: discoveryVisible ? 1 : 0, transform: discoveryVisible ? "translateY(0)" : "translateY(8px)",
+            transition: "all 0.5s ease 0.6s",
+          }}
+        >
+          {dimComplete ? "Back to dimensions \u2192" : "Next question \u2192"}
+        </button>
+      </div>
+    );
+  }
 
   // ─── WRITE SCREEN ───
   if (screen === "write") {
@@ -383,6 +484,61 @@ function MobileCanvasInner() {
           {heading}
         </h1>
 
+        {/* BRIEF PREVIEW */}
+        {briefLines.length > 0 && (
+          <div style={{
+            background: "#000332", borderRadius: 16, padding: "18px 20px",
+            marginBottom: 20,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#FF9090", fontFamily: "'DM Mono', monospace" }}>YOUR BRIEF</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                {dimensions.map((d, i) => (
+                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: dimStatus[d.label] === "complete" ? DIM_COLORS[i % DIM_COLORS.length] : "rgba(250,247,240,0.15)" }} />
+                ))}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(250,247,240,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 14 }}>
+              {completedCount >= dimensions.length ? "your thinking, crystallized." : `${dimensions.length - completedCount} more dimension${dimensions.length - completedCount > 1 ? "s" : ""} to reveal your full brief`}
+            </div>
+            {/* Revealed lines */}
+            {briefLines.map((bl, i) => (
+              <p key={i} style={{
+                fontFamily: "Georgia, serif", fontSize: 15, color: "#FAF7F0",
+                lineHeight: 1.55, marginBottom: 10,
+                animation: "mBriefFadeUp 0.5s ease-out forwards",
+              }}>
+                {bl.line}
+              </p>
+            ))}
+            {/* Shimmer bars for unrevealed */}
+            {Array.from({ length: Math.max(0, dimensions.length - briefLines.length) }).map((_, i) => (
+              <div key={`shim-${i}`} style={{
+                height: 14, borderRadius: 4, marginBottom: 10,
+                width: `${70 + Math.random() * 30}%`,
+                background: "linear-gradient(90deg, rgba(250,247,240,0.06) 0%, rgba(250,247,240,0.12) 50%, rgba(250,247,240,0.06) 100%)",
+                backgroundSize: "200% 100%",
+                animation: "mShimmer 1.5s ease-in-out infinite",
+              }} />
+            ))}
+            {completedCount >= dimensions.length && (
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams({ capture, mode });
+                  if (sessionId) params.set("session_id", sessionId);
+                  router.push(`/session/canvas?${params.toString()}`);
+                }}
+                style={{
+                  marginTop: 8, padding: "12px 24px", borderRadius: 100,
+                  background: "#FF9090", color: "#000332", border: "none",
+                  fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  width: "100%",
+                }}
+              >Read your full brief &rarr;</button>
+            )}
+          </div>
+        )}
+
         {/* DIMENSION CARDS */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 }}>
           {dimensions.map((dim, i) => {
@@ -483,7 +639,11 @@ function MobileCanvasInner() {
         )}
       </div>
 
-      <style>{`@keyframes mSynthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.25); } }`}</style>
+      <style>{`
+        @keyframes mSynthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.25); } }
+        @keyframes mBriefFadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes mShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      `}</style>
     </div>
   );
 }
