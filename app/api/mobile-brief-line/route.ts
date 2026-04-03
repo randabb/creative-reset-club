@@ -4,13 +4,15 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Generate one line for the user's brief based on this completed dimension of their thinking. This line should be a sharp, actionable insight — something they could take and use immediately.
+const SYSTEM = `CRITICAL: Always write in second person. Use "you/your/you're" — NEVER "they/their/they're". You are talking directly to the user.
+
+Generate one line for the user's brief based on this completed dimension of their thinking. This line should be a sharp, actionable insight — something they could take and use immediately.
 
 Rules:
 - One sentence, 15-25 words
 - Specific to what they said, not generic advice
 - Should feel like the conclusion of this dimension's thinking
-- Write in second person (you/your)
+- ALWAYS use you/your — never they/their or generic third person
 - Each line should stand alone as a useful insight
 
 Return ONLY the line as a string.`;

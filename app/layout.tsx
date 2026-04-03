@@ -18,6 +18,7 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: "Primer",
   description: "Your daily practice for creative thinking, in the age of AI.",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({

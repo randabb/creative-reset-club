@@ -4,7 +4,12 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `The user just answered a thinking question. Generate a single discovery — a sharp, crystallized insight from what they wrote. This should feel like their own thinking reflected back to them, clearer than they said it.
+const SYSTEM = `CRITICAL: Always write in second person. Use "you/your/you're" — NEVER "they/their/they're". You are talking directly to the user about their own thinking.
+
+Wrong: "They're exhausted by having to repackage content"
+Right: "You're exhausted by having to repackage content"
+
+The user just answered a thinking question. Generate a single discovery — a sharp, crystallized insight from what they wrote. This should feel like their own thinking reflected back to them, clearer than they said it.
 
 Rules:
 - One sentence, max 20 words
@@ -12,7 +17,7 @@ Rules:
 - It should feel like a realization, not a summary
 - No "You said..." or "It seems like..." — just state the insight directly
 - It should make them think "holy shit, yeah"
-- Write in second person (you/your)
+- ALWAYS use you/your — never they/their or generic third person
 
 Return ONLY the discovery text as a string, no quotes, no JSON.`;
 

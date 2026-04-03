@@ -5,7 +5,9 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are assessing whether a thinking dimension has been sufficiently explored.
+const SYSTEM = `CRITICAL: All text you generate must use second person (you/your/you're). NEVER use they/their/they're. You are talking directly to the user.
+
+You are assessing whether a thinking dimension has been sufficiently explored.
 
 RULES:
 - After 2 substantive responses (more than a few words each), the dimension is READY TO MOVE. Don't ask for more.

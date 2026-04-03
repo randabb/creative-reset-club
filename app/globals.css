@@ -35,3 +35,10 @@ body {
   font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
   overflow-x: hidden;
 }
+
+/* Prevent iOS auto-zoom on input focus */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

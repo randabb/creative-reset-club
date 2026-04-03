@@ -5,20 +5,26 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `The user just wrote a thinking response on their canvas. Summarize their key insight in ONE short line (under 15 words) that feels like a discovery. Write it in second person present tense, like they just realized something.
+const SYSTEM = `CRITICAL: Always write in second person. Use "you/your/you're" — NEVER "they/their/they're". You are talking directly to the user about their own thinking.
+
+The user just wrote a thinking response on their canvas. Summarize their key insight in ONE short line (under 15 words) that feels like a discovery. Write in second person present tense.
 
 RULES:
 - Start with a bold label that names what was discovered, followed by a colon
 - Under 15 words total
 - Make it feel like progress, not a summary
 - Use their actual words/concepts
+- ALWAYS use "you/your" — never "they/their" or generic third person
+
+Wrong: "They're exhausted by having to repackage content"
+Right: "You're exhausted by having to repackage content"
 
 Examples:
-- "Your real user: solo founders who think in multiple directions"
-- "The trigger: when AI output feels technically right but not them"
-- "Biggest risk: lag kills trust faster than missing features"
-- "The gap: people want thinking tools, not just output tools"
-- "First move: find 5 founders who already complain about this"
+- "Your real user: you're building for founders who think in circles"
+- "The trigger: when your AI output feels technically right but not you"
+- "Your biggest risk: you lose trust faster than you lose features"
+- "The gap: you want a thinking tool, not just an output tool"
+- "Your first move: find 5 founders you know who complain about this"
 
 Respond with ONLY the discovery line, nothing else.`;
 
