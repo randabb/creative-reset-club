@@ -1487,7 +1487,12 @@ function CanvasInner() {
                   )}
                 </div>
                 {/* First question below dimension */}
-                {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && (() => {
+                {activeDimQuestion === n.dimLabel && dimLoading && (
+                  <div style={{ position: "absolute", left: n.x + 80, top: n.y + 150, zIndex: 10 }}>
+                    <div style={{ width: 16, height: 16, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite" }} />
+                  </div>
+                )}
+                {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && !dimLoading && (() => {
                   // Find the lowest note in this dimension's column
                   const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
                   let questionY = n.y + 140; // default: below dimension header
@@ -1496,7 +1501,7 @@ function CanvasInner() {
                     questionY = lowestNote.y + charOffset(lowestNote.text);
                   }
                   return (
-                  <div style={{
+                  <div key={`q-${n.id}-${dimSuggestions[n.dimLabel || ""].question.slice(0,20)}`} style={{
                     position: "absolute", left: n.x, top: questionY,
                     width: 220, zIndex: 10,
                     animation: "slideIn 0.3s ease-out forwards",
@@ -1723,7 +1728,7 @@ function CanvasInner() {
                     })()}
                   </div>
                 )}
-                {sl && (
+                {sl && !isAi && (
                   <div
                     onMouseDown={e => startDrag(n.id, e)}
                     style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: sl.color, marginBottom: 4, opacity: 0.7, cursor: "grab", userSelect: "none" }}
@@ -1799,62 +1804,6 @@ function CanvasInner() {
                     onMouseDown={e => e.stopPropagation()}
                     style={{ background: "none", border: "none", fontSize: 11, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit", padding: 0, marginTop: 4 }}
                   >{goalExpanded ? "show less" : "show more..."}</button>
-                )}
-                {/* Show me an example — AI instruction notes only */}
-                {isAi && editId !== n.id && (
-                  <div style={{ position: "relative", marginTop: 8 }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (exampleNoteId === n.id) { setExampleNoteId(null); return; }
-                        setExampleNoteId(n.id);
-                        setExampleText("");
-                        setExampleLoading(true);
-                        const dim = findNoteDim(n);
-                        fetch("/api/instruction-example", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ instruction: n.text, goal: capture, dimensionLabel: dim.label }),
-                        }).then(r => r.json()).then(d => {
-                          setExampleText(d.example || "");
-                          setExampleLoading(false);
-                        }).catch(() => { setExampleLoading(false); setExampleNoteId(null); });
-                      }}
-                      onMouseDown={e => e.stopPropagation()}
-                      style={{
-                        background: "none", border: "none", fontSize: 11,
-                        color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit",
-                        textDecoration: "underline", textUnderlineOffset: 2, padding: 0,
-                      }}
-                    >Show me an example</button>
-                    {exampleNoteId === n.id && (
-                      <div
-                        onClick={e => e.stopPropagation()}
-                        onMouseDown={e => e.stopPropagation()}
-                        style={{
-                          marginTop: 6, background: "rgba(0,3,50,0.03)", borderRadius: 8,
-                          padding: 12, maxWidth: 250,
-                        }}
-                      >
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 4 }}>EXAMPLE</div>
-                        {exampleLoading ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ width: 12, height: 12, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite" }} />
-                            <span style={{ fontSize: 11, color: "rgba(0,3,50,0.35)" }}>Loading...</span>
-                          </div>
-                        ) : (
-                          <>
-                            <div style={{ fontSize: 12, color: "#000332", fontStyle: "italic", lineHeight: 1.55, marginBottom: 6 }}>{exampleText}</div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setExampleNoteId(null); }}
-                              onMouseDown={e => e.stopPropagation()}
-                              style={{ background: "none", border: "none", fontSize: 10, color: "rgba(0,3,50,0.3)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline", textUnderlineOffset: 2, padding: 0 }}
-                            >Got it</button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
                 )}
               </div>
             );

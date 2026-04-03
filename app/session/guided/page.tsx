@@ -368,12 +368,13 @@ function GuidedInner() {
                 Taking a while? Continue with next question
               </button>
             )}
-            <style>{`@keyframes qSpin { to { transform: rotate(360deg); } }`}</style>
+            <style>{`@keyframes qSpin { to { transform: rotate(360deg); } }
+            @keyframes guidedFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
           </div>
         ) : (
           <>
             {/* Question */}
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <div key={`q${questionNumber}`} style={{ textAlign: "center", marginBottom: 28, animation: "guidedFadeIn 0.3s ease-out forwards" }}>
               <p style={{
                 fontSize: 21, fontWeight: 400, fontStyle: "italic",
                 color: "#000332", lineHeight: 1.45, letterSpacing: "-0.01em",
