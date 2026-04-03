@@ -14,7 +14,7 @@ interface QA { question: string; answer: string; }
 interface Dimension { label: string; description: string; }
 interface Discovery { id: string; text: string; dimLabel: string; discipline?: string; createdAt: string; }
 
-type Screen = "picker" | "stickies" | "write" | "discovery";
+type Screen = "picker" | "stickies" | "write" | "discovery" | "synthesis";
 
 function uid() { return crypto.randomUUID(); }
 
@@ -47,6 +47,12 @@ function MobileCanvasInner() {
   const [currentDiscovery, setCurrentDiscovery] = useState("");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const [briefLines, setBriefLines] = useState<{ dimLabel: string; line: string }[]>([]);
+  const [synthText, setSynthText] = useState("");
+  const [synthLines, setSynthLines] = useState<string[]>([]);
+  const [synthRevealed, setSynthRevealed] = useState(0);
+  const [synthDone, setSynthDone] = useState(false);
+  const [showExports, setShowExports] = useState(false);
+  const [toast, setToast] = useState("");
 
   // Init
   useEffect(() => {
@@ -213,6 +219,176 @@ function MobileCanvasInner() {
     : completedCount >= dimensions.length
     ? "You covered everything."
     : "Where next?";
+
+  // Open synthesis
+  const openSynthesis = async () => {
+    setScreen("synthesis");
+    setSynthText("");
+    setSynthLines([]);
+    setSynthRevealed(0);
+    setSynthDone(false);
+    setShowExports(false);
+
+    try {
+      const allAnswers = Object.entries(dimAnswers).map(([dim, ans]) =>
+        `${dim}:\n${ans.map(a => `- ${a.answer}`).join("\n")}`
+      ).join("\n\n");
+
+      const res = await fetch("/api/session-synthesis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: capture, mode, dimensions,
+          allNotes: allAnswers + "\n\nDiscoveries:\n" + discoveries.map(d => `- ${d.text}`).join("\n"),
+        }),
+      });
+      const data = await res.json();
+      if (data.sections) {
+        const full = data.sections.map((s: { heading: string; content: string }) => `${s.heading}\n${s.content}`).join("\n\n");
+        setSynthText(full);
+        const lines = full.split("\n").filter((l: string) => l.trim());
+        setSynthLines(lines);
+        // Staggered reveal
+        lines.forEach((_: string, i: number) => {
+          setTimeout(() => setSynthRevealed(i + 1), 400 * (i + 1));
+        });
+        setTimeout(() => setSynthDone(true), 400 * lines.length + 500);
+      }
+    } catch {
+      setSynthLines(["Your synthesis couldn't be generated. Try again."]);
+      setSynthRevealed(1);
+      setTimeout(() => setSynthDone(true), 1000);
+    }
+  };
+
+  const copySynthPrompt = () => {
+    let md = `Here's my thinking on "${capture}". I used Primer to work through this.\n\n`;
+    md += `Key discoveries:\n${discoveries.map(d => `- ${d.text}`).join("\n")}\n\n`;
+    md += `Brief:\n${synthText}\n\n`;
+    md += "Help me take the next step.";
+    navigator.clipboard.writeText(md);
+    setToast("Copied to clipboard");
+    setTimeout(() => setToast(""), 2000);
+  };
+
+  const saveSynthToStudio = async () => {
+    await save();
+    setToast("Saved to Studio");
+    setTimeout(() => { setToast(""); router.push("/studio"); }, 1500);
+  };
+
+  const downloadSynth = () => {
+    const blob = new Blob([`# ${capture}\n\n${synthText}\n\n## Discoveries\n${discoveries.map(d => `- ${d.text}`).join("\n")}`], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "primer-session.md";
+    a.click();
+  };
+
+  // ─── SYNTHESIS SCREEN ───
+  if (screen === "synthesis") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#000332", fontFamily: "'Codec Pro', sans-serif", padding: "0 0 48px" }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
+          <button onClick={() => setScreen("picker")} style={{ background: "none", border: "none", fontSize: 13, color: "rgba(250,247,240,0.4)", cursor: "pointer", fontFamily: "inherit" }}>&larr; back</button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#FAF7F0", letterSpacing: "-0.01em" }}>primer</span>
+          <div style={{ width: 40 }} />
+        </div>
+
+        <div style={{ padding: "0 24px" }}>
+          {/* Discovery constellation */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 28, marginTop: 16 }}>
+            {discoveries.map((d, i) => {
+              const dIdx = dimensions.findIndex(dim => dim.label === d.dimLabel);
+              const c = dIdx >= 0 ? DIM_COLORS[dIdx % DIM_COLORS.length] : "#FF9090";
+              return (
+                <div key={d.id || i} style={{
+                  width: 8, height: 8, borderRadius: "50%", background: c,
+                  boxShadow: `0 0 8px ${c}50`,
+                  animation: `mDotScale 0.3s ease-out ${i * 0.08}s both`,
+                }} />
+              );
+            })}
+          </div>
+
+          {/* Label */}
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#FF9090", fontFamily: "'DM Mono', monospace", textAlign: "center", marginBottom: 24 }}>
+            WHAT YOU FOUND
+          </div>
+
+          {/* Synthesis text */}
+          <div style={{ maxWidth: 400, margin: "0 auto" }}>
+            {synthLines.map((line, i) => {
+              const isHeading = !line.includes(" ") || line.length < 30;
+              const isFirst = i === 0;
+              return (
+                <p key={i} style={{
+                  fontFamily: "Georgia, serif",
+                  fontSize: isFirst ? 20 : isHeading ? 15 : 17,
+                  fontWeight: isFirst || isHeading ? 700 : 400,
+                  color: "#FAF7F0",
+                  lineHeight: 1.8,
+                  marginBottom: isHeading ? 8 : 14,
+                  opacity: i < synthRevealed ? 1 : 0,
+                  transform: i < synthRevealed ? "translateY(0)" : "translateY(10px)",
+                  transition: `opacity 0.4s ease, transform 0.4s ease`,
+                }}>
+                  {line}
+                </p>
+              );
+            })}
+          </div>
+
+          {/* Loading state */}
+          {synthLines.length === 0 && (
+            <div style={{ textAlign: "center", padding: "48px 0" }}>
+              <div style={{ width: 20, height: 20, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "mSpin 0.7s linear infinite", margin: "0 auto 12px" }} />
+              <p style={{ fontSize: 13, color: "rgba(250,247,240,0.35)" }}>Crystallizing your thinking...</p>
+            </div>
+          )}
+
+          {/* "This is mine" button */}
+          {synthDone && !showExports && (
+            <div style={{ textAlign: "center", marginTop: 32, animation: "mBriefFadeUp 0.5s ease-out forwards" }}>
+              <button
+                onClick={() => setShowExports(true)}
+                className="done-btn"
+                style={{
+                  padding: "14px 36px", borderRadius: 100, border: "none",
+                  background: "#FF9090", color: "#000332", fontSize: 15, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit", transition: "transform 0.1s",
+                }}
+              >This is mine</button>
+            </div>
+          )}
+
+          {/* Export options */}
+          {showExports && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24, animation: "mBriefFadeUp 0.4s ease-out forwards" }}>
+              <button onClick={copySynthPrompt} style={{ padding: "14px", borderRadius: 12, border: "none", background: "#FF9090", color: "#000332", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
+              <button onClick={saveSynthToStudio} style={{ padding: "14px", borderRadius: 12, border: "none", background: "rgba(250,247,240,0.08)", color: "#FAF7F0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
+              <button onClick={downloadSynth} style={{ padding: "14px", borderRadius: 12, border: "1px solid rgba(250,247,240,0.12)", background: "transparent", color: "rgba(250,247,240,0.6)", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Download</button>
+            </div>
+          )}
+        </div>
+
+        {/* Toast */}
+        {toast && (
+          <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 50, background: "#FAF7F0", color: "#000332", padding: "10px 24px", borderRadius: 100, fontSize: 13, fontWeight: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+            {toast}
+          </div>
+        )}
+
+        <style>{`
+          @keyframes mDotScale { from { transform: scale(0); } to { transform: scale(1); } }
+          @keyframes mSpin { to { transform: rotate(360deg); } }
+          @keyframes mBriefFadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+          .done-btn:active { transform: scale(0.97); }
+        `}</style>
+      </div>
+    );
+  }
 
   // ─── DISCOVERY MOMENT SCREEN ───
   if (screen === "discovery") {
@@ -523,11 +699,7 @@ function MobileCanvasInner() {
             ))}
             {completedCount >= dimensions.length && (
               <button
-                onClick={() => {
-                  const params = new URLSearchParams({ capture, mode });
-                  if (sessionId) params.set("session_id", sessionId);
-                  router.push(`/session/canvas?${params.toString()}`);
-                }}
+                onClick={openSynthesis}
                 style={{
                   marginTop: 8, padding: "12px 24px", borderRadius: 100,
                   background: "#FF9090", color: "#000332", border: "none",
@@ -595,11 +767,7 @@ function MobileCanvasInner() {
         {/* SYNTHESIS BUTTON */}
         {completedCount >= dimensions.length && (
           <button
-            onClick={() => {
-              const params = new URLSearchParams({ capture, mode });
-              if (sessionId) params.set("session_id", sessionId);
-              router.push(`/session/canvas?${params.toString()}`);
-            }}
+            onClick={openSynthesis}
             style={{
               width: "100%", padding: "16px", borderRadius: 100,
               background: "#FF9090", color: "#000332", border: "none",
