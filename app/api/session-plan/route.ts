@@ -8,7 +8,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SYSTEM = `You are the session architect for Primer. Based on the user's goal and their guided thinking answers, generate a focused session plan.
 
 RULES:
-- Generate exactly 4-5 thinking dimensions specific to their goal
+- Generate exactly 4 dimensions. Each dimension should be a distinct area of thinking the user needs to explore. No overlap between dimensions. 4 is the max — be selective about what matters most.
 - Each dimension is a specific aspect of their goal they need to think through
 - Dimensions should follow a logical progression (not random)
 - Use the user's exact language where possible
