@@ -193,6 +193,7 @@ function CanvasInner() {
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
   const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
+  const [noteActionSuggestions, setNoteActionSuggestions] = useState<Record<string, Action | null>>({});
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
@@ -736,6 +737,21 @@ function CanvasInner() {
       text: responseText.trim(), source: "user", discipline: instNote.discipline,
     };
     setNotes(ns => [...ns, respNote]);
+
+    // Suggest next action for this note (async, non-blocking)
+    const dim = findNoteDim(instNote);
+    fetch("/api/suggest-note-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goal: capture, noteText: respNote.text, dimensionLabel: dim.label }),
+    }).then(r => r.json()).then(data => {
+      if (data.suggest && data.action) {
+        setNoteActionSuggestions(prev => ({ ...prev, [respId]: data.action }));
+      } else {
+        setNoteActionSuggestions(prev => ({ ...prev, [respId]: null }));
+      }
+    }).catch(() => { /* silent */ });
+
     setConnections(cs => [...cs, {
       id: uid(), from: instId, to: respId, label: "", color: "rgba(0,3,50,0.1)",
     }]);
@@ -753,7 +769,6 @@ function CanvasInner() {
     analyzeTimerRef.current = setTimeout(() => analyzeNotes(true), 3000);
 
     // Generate discovery line
-    const dim = findNoteDim(instNote);
     fetch("/api/generate-discovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1855,6 +1870,40 @@ function CanvasInner() {
                     style={{ background: "none", border: "none", fontSize: 11, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit", padding: 0, marginTop: 4 }}
                   >{goalExpanded ? "show less" : "show more..."}</button>
                 )}
+                {/* Action icons on user notes */}
+                {n.source === "user" && editId !== n.id && (
+                  <div className="note-actions" style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 6, opacity: 0, transition: "opacity 0.15s" }}>
+                    {(Object.keys(ACT) as Action[]).map(a => {
+                      const suggested = noteActionSuggestions[n.id] === a;
+                      return (
+                        <div key={a} className="act-tip-wrap" style={{ position: "relative" }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setNoteActionSuggestions(prev => ({ ...prev, [n.id]: null }));
+                              setSelected(new Set([n.id]));
+                              setTimeout(() => runAction(a), 100);
+                            }}
+                            onMouseDown={e => e.stopPropagation()}
+                            style={{
+                              background: "none", border: "none", padding: 2,
+                              fontSize: 15, color: ACT[a].color, cursor: "pointer",
+                              opacity: suggested ? 1 : 0.35,
+                              transition: "opacity 0.2s, transform 0.2s",
+                              animation: suggested ? `actGlow${a} 2s ease-in-out infinite` : undefined,
+                            }}
+                          >{ACT[a].icon}</button>
+                          <div className="act-tip" style={{
+                            position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)",
+                            marginBottom: 4, background: "#000332", color: "#FAF7F0", fontSize: 10,
+                            padding: "4px 8px", borderRadius: 4, whiteSpace: "nowrap",
+                            pointerEvents: "none", zIndex: 100, opacity: 0, transition: "opacity 0.15s",
+                          }}>{ACT[a].label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1958,6 +2007,12 @@ function CanvasInner() {
         @keyframes cSpin { to { transform:rotate(360deg); } }
         .cn:hover .cn-del { opacity: 1 !important; }
         .cn:hover .cn-edit { opacity: 0.5 !important; }
+        .cn:hover .note-actions { opacity: 1 !important; }
+        .note-actions button:hover { opacity: 1 !important; transform: scale(1.15); }
+        @keyframes actGlowclarify { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(107,138,254,0.4); } }
+        @keyframes actGlowexpand { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(255,144,144,0.4); } }
+        @keyframes actGlowdecide { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(126,214,168,0.4); } }
+        @keyframes actGlowexpress { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(196,166,255,0.4); } }
         .cn-edit:hover { opacity: 1 !important; }
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
         .sug-dot-wrap:hover .sug-dot { transform: scale(1.1); }
