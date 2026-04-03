@@ -198,6 +198,7 @@ function CanvasInner() {
   const [timerStarted, setTimerStarted] = useState(false);
   const [timerRemoved, setTimerRemoved] = useState(false);
   const [timerPaused, setTimerPaused] = useState(false);
+  const [timerFlicker, setTimerFlicker] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
   const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
@@ -415,6 +416,9 @@ function CanvasInner() {
     dimensions.forEach(d => { initial[d.label] = "unexplored"; });
     setDimStatus(initial);
     setStatusState({ type: "landing", dimName: dimensions[0]?.label, message: "Tap start when you\u2019re ready." });
+    // Flicker timer for 7 seconds to draw attention
+    setTimerFlicker(true);
+    setTimeout(() => setTimerFlicker(false), 7000);
 
     // Pre-fetch AI suggestions for each dimension (don't open yet — wait for timer)
     fetch("/api/suggest-dimension-actions", {
@@ -510,6 +514,7 @@ function CanvasInner() {
     setTimerStarted(true);
     setTimerActive(true);
     setTimerPaused(false);
+    setTimerFlicker(false);
     // Trigger first dimension question
     if (dimensions[0] && !activeDimQuestion) {
       setActiveDimQuestion(dimensions[0].label);
@@ -1030,16 +1035,15 @@ function CanvasInner() {
               <button
                 onClick={startTimer}
                 style={{
-                  background: "rgba(255,144,144,0.06)", border: "1.5px solid rgba(255,144,144,0.2)", borderRadius: 100,
-                  padding: "6px 18px", fontSize: 18, fontFamily: "'DM Mono', monospace",
-                  color: "#000332", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                  background: "none", border: "1px solid rgba(0,3,50,0.1)", borderRadius: 100,
+                  padding: "4px 14px", fontSize: 14, fontFamily: "'DM Mono', monospace",
+                  color: "rgba(0,3,50,0.5)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
                   transition: "all 0.2s",
+                  animation: timerFlicker ? "timerEntryFlicker 1.5s ease-in-out infinite" : undefined,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,144,144,0.12)"; e.currentTarget.style.borderColor = "#FF9090"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,144,144,0.06)"; e.currentTarget.style.borderColor = "rgba(255,144,144,0.2)"; }}
               >
-                <span style={{ opacity: 0.6 }}>15:00</span>
-                <span style={{ fontSize: 13, color: "#FF9090", fontWeight: 700 }}>Start</span>
+                <span>15:00</span>
+                <span style={{ fontSize: 11, color: "#FF9090", fontWeight: 600 }}>Start</span>
               </button>
             ) : (
               <button
@@ -2050,6 +2054,7 @@ function CanvasInner() {
         @keyframes dimGlow { 0% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.2), 0 2px 8px rgba(0,0,0,0.1); } 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } }
         @keyframes synthGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 8px rgba(255,144,144,0.25); } }
         @keyframes timerPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+        @keyframes timerEntryFlicker { 0%,100% { opacity: 0.4; box-shadow: none; } 50% { opacity: 1; box-shadow: 0 0 8px rgba(255,144,144,0.2); } }
         @keyframes timerBreathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.7; } }
         .timer-wrap:hover .timer-x { opacity: 1 !important; }
         .done-btn:active { transform: scale(0.97); }
