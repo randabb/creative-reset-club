@@ -33,6 +33,7 @@ function MobileCanvasInner() {
   const [dimAnswers, setDimAnswers] = useState<Record<string, { question: string; answer: string }[]>>({});
   const [dimQuestions, setDimQuestions] = useState<Record<string, string[]>>({});
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
+  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; detected_at: string }[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(sp.get("session_id"));
   const sessionIdRef = useRef<string | null>(sp.get("session_id"));
 
@@ -112,7 +113,7 @@ function MobileCanvasInner() {
       await fetch("/api/sessions", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: sid, canvas_state: { notes: [], connections: [], discoveries, dimAnswers } }),
+        body: JSON.stringify({ sessionId: sid, canvas_state: { notes: [], connections: [], discoveries, dimAnswers, patterns } }),
       });
     } catch { /* silent */ }
   };
@@ -225,6 +226,22 @@ function MobileCanvasInner() {
 
     // Trigger reveal animation
     setTimeout(() => setDiscoveryVisible(true), 100);
+
+    // Pattern detection (3+ answers, max 4 patterns)
+    const totalAns = Object.values(dimAnswers).reduce((s, a) => s + a.length, 0) + (isEditing ? 0 : 1);
+    if (totalAns >= 3 && patterns.length < 4) {
+      const allAns: Record<string, string[]> = {};
+      Object.entries(dimAnswers).forEach(([dim, ans]) => { allAns[dim] = ans.map(a => a.answer); });
+      if (!allAns[activeDim]) allAns[activeDim] = [];
+      if (!isEditing) allAns[activeDim] = [...(allAns[activeDim] || []), newAnswer.answer];
+      fetch("/api/detect-patterns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
+      }).then(r => r.json()).then(data => {
+        if (data.pattern) setPatterns(prev => [...prev, data.pattern]);
+      }).catch(() => { /* silent */ });
+    }
 
     // Generate next question in background (if not editing and not complete)
     if (!isEditing && updated.length < 3) {
@@ -917,6 +934,18 @@ function MobileCanvasInner() {
                   </div>
                 );
               })}
+              {/* Patterns */}
+              {patterns.map((p, i) => (
+                <div key={`pat-${i}`} style={{
+                  borderLeft: "3px dashed #000332", paddingLeft: 12,
+                  background: "rgba(0,3,50,0.04)", borderRadius: "0 8px 8px 0", padding: "10px 12px 10px 14px",
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>PATTERN</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{p.label}</div>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.55)", lineHeight: 1.45, marginBottom: 3 }}>{p.description}</p>
+                  <p style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontStyle: "italic" }}>{p.suggestion}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}

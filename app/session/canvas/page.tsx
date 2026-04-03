@@ -214,6 +214,7 @@ function CanvasInner() {
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
+  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; detected_at: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
   const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
@@ -265,6 +266,9 @@ function CanvasInner() {
           if (data.canvas_state?.discoveries?.length) {
             setDiscoveries(data.canvas_state.discoveries);
           }
+          if (data.canvas_state?.patterns?.length) {
+            setPatterns(data.canvas_state.patterns);
+          }
           if (data.synthesis) setSynthesis(data.synthesis);
         } catch (err) {
           console.error("[canvas] Load error:", err);
@@ -287,7 +291,7 @@ function CanvasInner() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               userId: uid, goal: capture, mode, qas, dimensions,
-              canvas_state: { notes, connections, discoveries },
+              canvas_state: { notes, connections, discoveries, patterns },
             }),
           });
           const data = await res.json();
@@ -331,7 +335,7 @@ function CanvasInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: sid,
-          canvas_state: { notes, connections, discoveries },
+          canvas_state: { notes, connections, discoveries, patterns },
           synthesis: synthesis || undefined,
         }),
       });
@@ -764,6 +768,33 @@ function CanvasInner() {
       }
     }).catch(() => { /* skip */ });
 
+    // Pattern detection (after 3+ total user notes, max 4 patterns)
+    const userNotes = notes.filter(n => n.source === "user");
+    if (userNotes.length >= 2 && patterns.length < 4) {
+      const allAnswers: Record<string, string[]> = {};
+      userNotes.forEach(n => {
+        const dim = findNoteDim(n);
+        if (!allAnswers[dim.label]) allAnswers[dim.label] = [];
+        allAnswers[dim.label].push(n.text);
+      });
+      // Add the new response
+      if (!allAnswers[dim.label]) allAnswers[dim.label] = [];
+      allAnswers[dim.label].push(respNote.text);
+
+      fetch("/api/detect-patterns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: capture,
+          allAnswers,
+          dimensions: dimensions.map(d => d.label).join(", "),
+          existingPatterns: patterns,
+        }),
+      }).then(r => r.json()).then(data => {
+        if (data.pattern) setPatterns(prev => [...prev, data.pattern]);
+      }).catch(() => { /* silent */ });
+    }
+
     // Assess dimension progression
     if (dimensions.length > 0) {
       setStatusState({ type: "loading" });
@@ -1087,6 +1118,18 @@ function CanvasInner() {
               )}
             </div>
           )}
+          {synthesis && !synthLoading && patterns.length > 0 && (
+            <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 14, paddingTop: 12, marginBottom: 14, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.3s forwards" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "#000332", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>WORTH REVISITING</div>
+              {patterns.map((p, i) => (
+                <div key={i} style={{ borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8 }}>
+                  <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.5 }}>
+                    <strong>{p.label}:</strong> {p.suggestion}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
           {synthesis && !synthLoading && (
             <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.5s forwards" }}>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
@@ -1228,6 +1271,19 @@ function CanvasInner() {
                       );
                     });
                   })()}
+                  {/* Thinking patterns */}
+                  {patterns.map((p, i) => (
+                    <div key={`pat-${i}`} style={{
+                      borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8,
+                      background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 12px",
+                      animation: "noteIn 0.3s ease-out forwards",
+                    }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>PATTERN</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{p.label}</div>
+                      <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.45, marginBottom: 3 }}>{p.description}</p>
+                      <p style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontStyle: "italic" }}>{p.suggestion}</p>
+                    </div>
+                  ))}
                   {allDimsComplete && (
                     <p style={{ fontSize: 12, color: "#FF9090", fontWeight: 600, marginTop: 8 }}>
                       All dimensions explored. Hit See what you found → for your full brief.
