@@ -193,7 +193,6 @@ function CanvasInner() {
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
   const [noteSuggestions, setNoteSuggestions] = useState<Record<string, Action>>({});
-  const [noteActionSuggestions, setNoteActionSuggestions] = useState<Record<string, Action | null>>({});
   const [freshSuggestions, setFreshSuggestions] = useState<Set<string>>(new Set());
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
@@ -738,19 +737,7 @@ function CanvasInner() {
     };
     setNotes(ns => [...ns, respNote]);
 
-    // Suggest next action for this note (async, non-blocking)
     const dim = findNoteDim(instNote);
-    fetch("/api/suggest-note-action", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ goal: capture, noteText: respNote.text, dimensionLabel: dim.label }),
-    }).then(r => r.json()).then(data => {
-      if (data.suggest && data.action) {
-        setNoteActionSuggestions(prev => ({ ...prev, [respId]: data.action }));
-      } else {
-        setNoteActionSuggestions(prev => ({ ...prev, [respId]: null }));
-      }
-    }).catch(() => { /* silent */ });
 
     setConnections(cs => [...cs, {
       id: uid(), from: instId, to: respId, label: "", color: "rgba(0,3,50,0.1)",
@@ -809,9 +796,6 @@ function CanvasInner() {
           const patternWithNote = { ...data.pattern, noteId: respId };
           setPatterns(prev => [...prev, patternWithNote]);
           // Glow the suggested action on the note that triggered the pattern
-          if (data.pattern.suggestedAction) {
-            setNoteActionSuggestions(prev => ({ ...prev, [respId]: data.pattern.suggestedAction }));
-          }
         }
       }).catch(err => { console.error("[canvas] Pattern detection error:", err); });
     }
@@ -1712,9 +1696,6 @@ function CanvasInner() {
                                 console.log("[canvas-dim] Pattern result:", patData);
                                 if (patData.pattern) {
                                   setPatterns(prev => [...prev, { ...patData.pattern, noteId }]);
-                                  if (patData.pattern.suggestedAction) {
-                                    setNoteActionSuggestions(prev => ({ ...prev, [noteId]: patData.pattern.suggestedAction }));
-                                  }
                                 }
                               }).catch(err => console.error("[canvas-dim] Pattern error:", err));
                             }
@@ -1906,13 +1887,14 @@ function CanvasInner() {
                 {n.source === "user" && editId !== n.id && (
                   <div className="note-actions" style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 6 }}>
                     {(Object.keys(ACT) as Action[]).map(a => {
-                      const suggested = noteActionSuggestions[n.id] === a;
+                      const patternGlow = patterns.some(p => p.noteId === n.id && p.suggestedAction === a);
                       return (
                         <div key={a} className="act-tip-wrap" style={{ position: "relative" }}>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setNoteActionSuggestions(prev => ({ ...prev, [n.id]: null }));
+                              // Clear pattern glow for this note
+                              if (patternGlow) setPatterns(prev => prev.map(p => p.noteId === n.id ? { ...p, noteId: undefined } : p));
                               setSelected(new Set([n.id]));
                               setTimeout(() => runAction(a), 100);
                             }}
@@ -1920,9 +1902,9 @@ function CanvasInner() {
                             style={{
                               background: "none", border: "none", padding: 2,
                               fontSize: 15, color: ACT[a].color, cursor: "pointer",
-                              opacity: suggested ? 1 : 0.4,
+                              opacity: patternGlow ? 1 : 0.4,
                               transition: "opacity 0.2s, transform 0.2s",
-                              animation: suggested ? `actGlow${a} ${patterns.some(p => p.noteId === n.id && p.suggestedAction === a) ? "1s" : "2s"} ease-in-out infinite` : undefined,
+                              animation: patternGlow ? `actGlow${a} 1s ease-in-out infinite` : undefined,
                             }}
                           >{ACT[a].icon}</button>
                           <div className="act-tip" style={{
