@@ -1236,12 +1236,30 @@ function CanvasInner() {
                   }} />
                 ))}
               </div>
-              {discoveries.length === 0 ? (
+              {discoveries.length === 0 && patterns.length === 0 ? (
                 <p style={{ fontSize: 12, color: "rgba(0,3,50,0.35)", fontStyle: "italic", lineHeight: 1.55 }}>
                   Your discoveries will appear here as you work through each dimension.
                 </p>
               ) : (
                 <>
+                  {/* Patterns first */}
+                  {patterns.map((p, i) => (
+                    <div key={`pat-${i}`} style={{
+                      borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8,
+                      background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 12px",
+                      animation: "noteIn 0.3s ease-out forwards",
+                    }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>PATTERN</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{p.label}</div>
+                      <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.45, marginBottom: 3 }}>{p.description}</p>
+                      <p style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontStyle: "italic" }}>{p.suggestion}</p>
+                    </div>
+                  ))}
+                  {/* Divider between patterns and insights */}
+                  {patterns.length > 0 && discoveries.length > 0 && (
+                    <div style={{ height: 1, background: "rgba(0,3,50,0.06)", margin: "6px 0 10px" }} />
+                  )}
+                  {/* Insights */}
                   {(() => {
                     let lastDim = "";
                     return discoveries.map((d, i) => {
@@ -1272,19 +1290,6 @@ function CanvasInner() {
                       );
                     });
                   })()}
-                  {/* Thinking patterns */}
-                  {patterns.map((p, i) => (
-                    <div key={`pat-${i}`} style={{
-                      borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8,
-                      background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 12px",
-                      animation: "noteIn 0.3s ease-out forwards",
-                    }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>PATTERN</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{p.label}</div>
-                      <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.45, marginBottom: 3 }}>{p.description}</p>
-                      <p style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontStyle: "italic" }}>{p.suggestion}</p>
-                    </div>
-                  ))}
                   {allDimsComplete && (
                     <p style={{ fontSize: 12, color: "#FF9090", fontWeight: 600, marginTop: 8 }}>
                       All dimensions explored. Hit See what you found → for your full brief.
