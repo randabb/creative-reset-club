@@ -63,7 +63,7 @@ const DISC_COLORS: Record<string, { bg: string; border: string; label: string; d
 const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE", strategic: "#7ED6A8", critical: "#C4A6FF", creative: "#E8C97A" };
 
 const RAW_PLACEHOLDERS = ["just dump it...", "don't edit yourself...", "say it ugly first...", "what's the gut reaction...", "think out loud...", "no one's grading this...", "messy is the point..."];
-const rawPh = () => RAW_PLACEHOLDERS[Math.floor(Math.random() * RAW_PLACEHOLDERS.length)];
+const rawPh = (seed?: string) => { if (!seed) return RAW_PLACEHOLDERS[0]; let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0; return RAW_PLACEHOLDERS[Math.abs(h) % RAW_PLACEHOLDERS.length]; };
 const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 function uid() { return crypto.randomUUID(); }
@@ -1647,7 +1647,7 @@ function CanvasInner() {
                         value={dimQuestionAnswer}
                         onChange={e => setDimQuestionAnswer(e.target.value)}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={rawPh()}
+                        placeholder={rawPh(n.dimLabel || n.id)}
                         style={{
                           width: "100%", minHeight: 50, border: "none", outline: "none",
                           resize: "none", background: "rgba(0,3,50,0.02)", borderRadius: 6,
@@ -1976,7 +1976,7 @@ function CanvasInner() {
                   value={responseText}
                   onChange={e => setResponseText(e.target.value)}
                   onMouseDown={e => e.stopPropagation()}
-                  placeholder={rawPh()}
+                  placeholder={rawPh(instId)}
                   style={{
                     width: "100%", minHeight: 60, border: "none", outline: "none",
                     resize: "none", background: "transparent",
