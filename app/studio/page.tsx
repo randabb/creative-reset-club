@@ -100,16 +100,50 @@ export default function Studio() {
   const loadThemes = async () => {
     if (themesLoaded || canvases.length < 3) return;
     setThemesLoading(true);
+    const sessionsToSend = canvases.map(c => ({ id: c.id, goal: c.goal, mode: c.mode }));
+    console.log("[studio] Sessions being sent to themes:", sessionsToSend.length);
     try {
       const res = await fetch("/api/generate-themes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessions: canvases.map(c => ({ id: c.id, goal: c.goal, mode: c.mode })) }),
+        body: JSON.stringify({ sessions: sessionsToSend }),
       });
       const data = await res.json();
-      if (data.themes?.length) setThemes(data.themes);
+      console.log("[studio] Themes response:", data);
+      if (data.themes?.length) {
+        setThemes(data.themes);
+      } else {
+        // Fallback: group by mode
+        const modeGroups: Record<string, string[]> = {};
+        canvases.forEach(c => {
+          const label = c.mode || "clarity";
+          if (!modeGroups[label]) modeGroups[label] = [];
+          modeGroups[label].push(c.id);
+        });
+        const fallbackThemes = Object.entries(modeGroups)
+          .filter(([, ids]) => ids.length > 0)
+          .map(([label, sessionIds]) => ({
+            label: `${label} sessions`,
+            sessionIds,
+          }));
+        if (fallbackThemes.length > 0) setThemes(fallbackThemes);
+      }
       setThemesLoaded(true);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("[studio] Themes error:", err);
+      // Fallback: group by mode
+      const modeGroups: Record<string, string[]> = {};
+      canvases.forEach(c => {
+        const label = c.mode || "clarity";
+        if (!modeGroups[label]) modeGroups[label] = [];
+        modeGroups[label].push(c.id);
+      });
+      const fallbackThemes = Object.entries(modeGroups)
+        .filter(([, ids]) => ids.length > 0)
+        .map(([label, sessionIds]) => ({ label: `${label} sessions`, sessionIds }));
+      if (fallbackThemes.length > 0) setThemes(fallbackThemes);
+      setThemesLoaded(true);
+    }
     setThemesLoading(false);
   };
 
