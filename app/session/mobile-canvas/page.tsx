@@ -67,6 +67,7 @@ function MobileCanvasInner() {
   const [synthDone, setSynthDone] = useState(false);
   const [showExports, setShowExports] = useState(false);
   const [toast, setToast] = useState("");
+  const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
 
   // Init
   useEffect(() => {
@@ -354,6 +355,11 @@ function MobileCanvasInner() {
           setTimeout(() => setSynthRevealed(i + 1), 400 * (i + 1));
         });
         setTimeout(() => setSynthDone(true), 400 * lines.length + 500);
+        // Detect resistance
+        fetch("/api/detect-resistance", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goal: capture, synthesis: full, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
+        }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(() => {});
       }
     } catch {
       setSynthLines(["Your synthesis couldn't be generated. Try again."]);
@@ -470,6 +476,28 @@ function MobileCanvasInner() {
               <button onClick={copySynthPrompt} style={{ padding: "14px", borderRadius: 12, border: "none", background: "#FF9090", color: "#000332", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
               <button onClick={saveSynthToStudio} style={{ padding: "14px", borderRadius: 12, border: "none", background: "rgba(250,247,240,0.08)", color: "#FAF7F0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
               <button onClick={downloadSynth} style={{ padding: "14px", borderRadius: 12, border: "1px solid rgba(250,247,240,0.12)", background: "transparent", color: "rgba(250,247,240,0.6)", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Download</button>
+              {/* Resistance follow-up */}
+              {resistancePrompt && (
+                <div style={{ borderTop: "1px solid rgba(250,247,240,0.08)", marginTop: 20, paddingTop: 16, animation: "mBriefFadeUp 0.4s ease-out 1.5s both" }}>
+                  <p style={{ fontSize: 15, color: "#FAF7F0", textAlign: "center", lineHeight: 1.55, fontStyle: "italic", marginBottom: 14 }}>
+                    {resistancePrompt}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      const params = new URLSearchParams({
+                        capture: `What's making it hard to act on: ${capture}`,
+                        mode: "clarity",
+                      });
+                      router.push(`/session/guided?${params.toString()}`);
+                    }}
+                    style={{
+                      width: "100%", padding: "14px", borderRadius: 12,
+                      border: "1.5px solid rgba(250,247,240,0.2)", background: "transparent",
+                      color: "#FAF7F0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    }}
+                  >Think this through &rarr;</button>
+                </div>
+              )}
             </div>
           )}
         </div>

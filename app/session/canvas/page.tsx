@@ -189,6 +189,7 @@ function CanvasInner() {
   const [synthEditing, setSynthEditing] = useState(false);
   const [synthRevealed, setSynthRevealed] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
+  const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
@@ -1125,6 +1126,12 @@ function CanvasInner() {
                 setSynthesis(data);
                 setSynthRevealed(false);
                 setTimeout(() => setSynthRevealed(true), 100);
+                // Detect resistance
+                const synthText = data.sections.map((s: { heading: string; content: string }) => `${s.heading}: ${s.content}`).join("\n");
+                fetch("/api/detect-resistance", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ goal: capture, synthesis: synthText, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
+                }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(() => {});
               }
             } catch { /* use without synthesis */ }
             setSynthLoading(false);
@@ -1217,6 +1224,46 @@ function CanvasInner() {
                 <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
                 <button onClick={downloadMd} style={{ padding: "12px", borderRadius: 10, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Download as text</button>
               </div>
+              {/* Resistance follow-up */}
+              {resistancePrompt && (
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 20, paddingTop: 16, opacity: 0, animation: "synthExportFadeIn 0.4s ease 1.5s forwards" }}>
+                  <p style={{ fontSize: 15, color: "#000332", textAlign: "center", lineHeight: 1.55, fontStyle: "italic", marginBottom: 14 }}>
+                    {resistancePrompt}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      // Create follow-up session
+                      try {
+                        const res = await fetch("/api/sessions", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            userId, goal: `What's making it hard to act on: ${capture}`,
+                            mode: "clarity", qas: [], dimensions: [],
+                            canvas_state: { notes: [], connections: [], discoveries: [], patterns: [] },
+                            parent_session_id: sessionIdRef.current,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (data.id) {
+                          const params = new URLSearchParams({
+                            capture: `What's making it hard to act on: ${capture}`,
+                            mode: "clarity",
+                            followup: "true",
+                            originalGoal: capture,
+                            originalSynthesis: synthesis?.sections?.map(s => s.content).join(" ") || "",
+                          });
+                          router.push(`/session/guided?${params.toString()}`);
+                        }
+                      } catch { /* silent */ }
+                    }}
+                    style={{
+                      display: "block", width: "100%", padding: "12px", borderRadius: 10,
+                      border: "1.5px solid rgba(0,3,50,0.15)", background: "transparent",
+                      color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    }}
+                  >Think this through &rarr;</button>
+                </div>
+              )}
             </div>
           )}
         </div>
