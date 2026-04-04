@@ -32,6 +32,9 @@ function GuidedInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const capture = searchParams.get("capture") || "";
+  const isFollowup = searchParams.get("followup") === "true";
+  const originalGoal = searchParams.get("originalGoal") || "";
+  const originalSynthesis = searchParams.get("originalSynthesis") || "";
   const [mode, setMode] = useState(searchParams.get("mode") || "clarity");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -80,6 +83,7 @@ function GuidedInner() {
           capture,
           previousQAs: prevQAs,
           questionNumber: qNum,
+          ...(isFollowup ? { followupContext: { originalGoal, originalSynthesis } } : {}),
         }),
         signal: controller.signal,
       });

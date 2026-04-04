@@ -19,7 +19,7 @@ interface PreviousQA {
 
 export async function POST(req: Request) {
   try {
-    const { mode, capture, previousQAs, questionNumber, arcContext } =
+    const { mode, capture, previousQAs, questionNumber, arcContext, followupContext } =
       await req.json();
 
     if (!capture || !mode) {
@@ -46,6 +46,10 @@ export async function POST(req: Request) {
 
     if (arcContext) {
       userMessage += `\nARC CONTEXT (previous sessions):\n${arcContext}\n`;
+    }
+
+    if (followupContext) {
+      userMessage += `\nIMPORTANT: This is a FOLLOW-UP session. The user already completed a full thinking session on this topic. Here is what they already said and concluded:\n\nOriginal goal: ${followupContext.originalGoal || ""}\nTheir synthesis/brief: ${followupContext.originalSynthesis || ""}\n\nDO NOT ask about anything they already covered. They've already done that thinking. Your questions should go to the NEW territory — the emotional resistance, the fear, the practical blockers, the thing that's stopping them from acting on what they already know.\n\nBad question: "What debts are you carrying?" (they already told you)\nGood question: "You know exactly what the debts are. What's the first one you keep avoiding?"\n\nThe user should feel like Primer remembers everything from last session and is now going deeper, not starting over.\n`;
     }
 
     userMessage += `\nGenerate question ${qNum} for ${safeMode} mode.`;
