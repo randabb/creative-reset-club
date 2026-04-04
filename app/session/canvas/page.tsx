@@ -190,6 +190,7 @@ function CanvasInner() {
   const [synthRevealed, setSynthRevealed] = useState(false);
   const [synthLoading, setSynthLoading] = useState(false);
   const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
+  const [sessionAnalysis, setSessionAnalysis] = useState<{ assumptions: string[]; avoidance: string | null; crossTensions: { from: string; to: string; tension: string }[]; strongestFragment: string | null } | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
@@ -1116,11 +1117,20 @@ function CanvasInner() {
             setShowExport(true);
             setSynthesis(null);
             setSynthLoading(true);
+            setSessionAnalysis(null);
             try {
+              // Run session analysis in parallel with synthesis
+              const allDimAnswers = Object.entries(dimQAs).map(([k, v]) => `${k}:\n${v.map(q => q.answer).join("\n")}`).join("\n\n");
+              const analysisPromise = fetch("/api/analyze-session", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ goal: capture, mode, allDimensionAnswers: allDimAnswers || notes.filter(n => n.source === "user").map(n => n.text).join("\n\n"), allDiscoveries: discoveries.map(d => d.text).join("\n"), allPatterns: patterns.map(p => p.description).join("\n") }),
+              }).then(r => r.json()).then(a => setSessionAnalysis(a)).catch(() => {});
+
               const res = await fetch("/api/session-synthesis", {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
               });
+              await analysisPromise;
               const data = await res.json();
               if (data.deliverable_label || data.sections) {
                 setSynthesis(data);
@@ -1214,6 +1224,40 @@ function CanvasInner() {
                   </p>
                 </div>
               ))}
+            </div>
+          )}
+          {/* Session analysis sections */}
+          {synthesis && !synthLoading && sessionAnalysis && (
+            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
+              {sessionAnalysis.strongestFragment && (
+                <div style={{ borderLeft: "3px solid #FF9090", paddingLeft: 12, marginBottom: 14 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>YOUR SHARPEST THOUGHT</div>
+                  <p style={{ fontSize: 14, color: "#000332", fontStyle: "italic", lineHeight: 1.55 }}>&ldquo;{sessionAnalysis.strongestFragment}&rdquo;</p>
+                </div>
+              )}
+              {sessionAnalysis.assumptions.length > 0 && (
+                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>BUILT ON THESE ASSUMPTIONS</div>
+                  {sessionAnalysis.assumptions.map((a, i) => (
+                    <p key={i} style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5, marginBottom: 2 }}>• {a}</p>
+                  ))}
+                  <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", marginTop: 4 }}>None of these have been tested.</p>
+                </div>
+              )}
+              {sessionAnalysis.avoidance && (
+                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>WORTH EXPLORING</div>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5 }}>{sessionAnalysis.avoidance}</p>
+                </div>
+              )}
+              {sessionAnalysis.crossTensions.length > 0 && (
+                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>UNRESOLVED</div>
+                  {sessionAnalysis.crossTensions.map((t, i) => (
+                    <p key={i} style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5, marginBottom: 4 }}>&ldquo;{t.from}&rdquo; vs &ldquo;{t.to}&rdquo; — {t.tension}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {synthesis && !synthLoading && (
@@ -1757,6 +1801,19 @@ function CanvasInner() {
                                 setDimStatus(prev => ({ ...prev, [dimLabel]: "complete" }));
                                 setActiveDimQuestion(null);
                                 setActiveDimAction(null);
+                                // Analyze completed dimension
+                                const otherAnswers = Object.entries(dimQAs).filter(([k]) => k !== dimLabel).map(([k, v]) => `${k}:\n${v.map(q => q.answer).join("\n")}`).join("\n\n");
+                                fetch("/api/analyze-dimension", {
+                                  method: "POST", headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
+                                }).then(r => r.json()).then(ad => {
+                                  if (ad.crossTension) {
+                                    setPatterns(prev => [...prev, { type: "cross_tension", label: "Tension spotted", description: `"${ad.crossTension.from}" vs "${ad.crossTension.to}" — ${ad.crossTension.tension}`, suggestion: "It might be worth clarifying which one you actually believe.", detected_at: new Date().toISOString() }]);
+                                  }
+                                  if (ad.keyInsight) {
+                                    setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
+                                  }
+                                }).catch(() => {});
                                 // Find next unexplored dimension
                                 const nextDim = dimensions.find(d => d.label !== dimLabel && dimStatus[d.label] !== "complete");
                                 if (nextDim) {
