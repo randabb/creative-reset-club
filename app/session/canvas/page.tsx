@@ -27,6 +27,7 @@ interface Note {
   dimDesc?: string;
   aiTitle?: string;
   discipline?: "design" | "systems" | "strategic" | "critical" | "creative";
+  promptQuestion?: string;
 }
 
 interface ResponseFlow {
@@ -773,7 +774,7 @@ function CanvasInner() {
     const respId = uid();
     const respNote: Note = {
       id: respId, x: instNote.x, y: instNote.y + charOffset(instNote.text),
-      text: responseText.trim(), source: "user", discipline: instNote.discipline,
+      text: responseText.trim(), source: "user", discipline: instNote.discipline, promptQuestion: instNote.text,
     };
     setNotes(ns => [...ns, respNote]);
 
@@ -1759,7 +1760,7 @@ function CanvasInner() {
                             const noteId = uid();
                             const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
                             const lastNoteY = colNotes.length > 0 ? Math.max(...colNotes.map(cn => cn.y + charOffset(cn.text))) : n.y + 160;
-                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user" }]);
+                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user", promptQuestion: currentQ }]);
                             setDimQuestionAnswer("");
                             setDimStatus(prev => ({ ...prev, [dimLabel]: "in_progress" }));
 
@@ -1842,7 +1843,7 @@ function CanvasInner() {
                             setDimLoading(false);
 
                             // Pattern detection from dimension question
-                            const allUserNotes = [...notes.filter(nn => nn.source === "user"), { id: noteId, text: answerText, x: n.x + 5, y: lastNoteY, source: "user" as const }];
+                            const allUserNotes = [...notes.filter(nn => nn.source === "user"), { id: noteId, text: answerText, x: n.x + 5, y: lastNoteY, source: "user" as const, promptQuestion: currentQ }];
                             if (allUserNotes.length >= 3 && patterns.length < 4) {
                               console.log("[canvas-dim] Calling pattern detection...", { totalNotes: allUserNotes.length });
                               const patAnswers: Record<string, string[]> = {};
@@ -1946,6 +1947,15 @@ function CanvasInner() {
                   >
                     {sl.text}
                   </div>
+                )}
+                {n.promptQuestion && editId !== n.id && (
+                  <p style={{
+                    fontSize: 11, color: "rgba(0,3,50,0.35)", fontStyle: "italic",
+                    lineHeight: 1.4, marginBottom: 6,
+                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+                  }}>
+                    {n.promptQuestion}
+                  </p>
                 )}
                 {isAi && (
                   <div
