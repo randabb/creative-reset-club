@@ -239,7 +239,7 @@ function MobileCanvasInner() {
 
     // Pattern detection (3+ answers, max 4 patterns)
     const totalAns = Object.values(dimAnswers).reduce((s, a) => s + a.length, 0) + (isEditing ? 0 : 1);
-    if (totalAns >= 3 && patterns.length < 4) {
+    if (totalAns >= 3 && patterns.length < 3) {
       const allAns: Record<string, string[]> = {};
       Object.entries(dimAnswers).forEach(([dim, ans]) => { allAns[dim] = ans.map(a => a.answer); });
       if (!allAns[activeDim]) allAns[activeDim] = [];

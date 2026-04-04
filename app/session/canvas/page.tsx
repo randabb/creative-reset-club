@@ -809,35 +809,7 @@ function CanvasInner() {
       }
     }).catch(() => { /* skip */ });
 
-    // Pattern detection (after 3+ total user notes, max 4 patterns)
-    const userNotes = [...notes.filter(n => n.source === "user"), respNote];
-    if (userNotes.length >= 3 && patterns.length < 4) {
-      console.log("[canvas] Calling pattern detection...", { totalNotes: userNotes.length });
-      const allAnswers: Record<string, string[]> = {};
-      userNotes.forEach(n => {
-        const d = findNoteDim(n);
-        if (!allAnswers[d.label]) allAnswers[d.label] = [];
-        allAnswers[d.label].push(n.text);
-      });
-
-      fetch("/api/detect-patterns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal: capture,
-          allAnswers,
-          dimensions: dimensions.map(d => d.label).join(", "),
-          existingPatterns: patterns,
-        }),
-      }).then(r => r.json()).then(data => {
-        console.log("[canvas] Pattern detection:", data);
-        if (data.pattern) {
-          const patternWithNote = { ...data.pattern, noteId: respId };
-          setPatterns(prev => [...prev, patternWithNote]);
-          // Glow the suggested action on the note that triggered the pattern
-        }
-      }).catch(err => { console.error("[canvas] Pattern detection error:", err); });
-    }
+    // Pattern detection moved to dimension completion only
 
     // Assess dimension progression
     if (dimensions.length > 0) {
@@ -1808,8 +1780,8 @@ function CanvasInner() {
                                   method: "POST", headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
-                                  if (ad.crossTension) {
-                                    setPatterns(prev => [...prev, { type: "cross_tension", label: "Tension spotted", description: `"${ad.crossTension.from}" vs "${ad.crossTension.to}" — ${ad.crossTension.tension}`, suggestion: "It might be worth clarifying which one you actually believe.", detected_at: new Date().toISOString() }]);
+                                  if (ad.crossTension && patterns.length < 3) {
+                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "cross_tension", label: "Tension spotted", description: `"${ad.crossTension.from}" vs "${ad.crossTension.to}" — ${ad.crossTension.tension}`, suggestion: `You said both. Which one wins?`, detected_at: new Date().toISOString() }] : prev);
                                   }
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
@@ -1841,28 +1813,6 @@ function CanvasInner() {
                               setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                             }
                             setDimLoading(false);
-
-                            // Pattern detection from dimension question
-                            const allUserNotes = [...notes.filter(nn => nn.source === "user"), { id: noteId, text: answerText, x: n.x + 5, y: lastNoteY, source: "user" as const, promptQuestion: currentQ }];
-                            if (allUserNotes.length >= 3 && patterns.length < 4) {
-                              console.log("[canvas-dim] Calling pattern detection...", { totalNotes: allUserNotes.length });
-                              const patAnswers: Record<string, string[]> = {};
-                              allUserNotes.forEach(nn => {
-                                const dd = findNoteDim(nn as Note);
-                                if (!patAnswers[dd.label]) patAnswers[dd.label] = [];
-                                patAnswers[dd.label].push(nn.text);
-                              });
-                              fetch("/api/detect-patterns", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ goal: capture, allAnswers: patAnswers, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
-                              }).then(r => r.json()).then(patData => {
-                                console.log("[canvas-dim] Pattern result:", patData);
-                                if (patData.pattern) {
-                                  setPatterns(prev => [...prev, { ...patData.pattern, noteId }]);
-                                }
-                              }).catch(err => console.error("[canvas-dim] Pattern error:", err));
-                            }
 
                             scheduleSave();
                           }}
