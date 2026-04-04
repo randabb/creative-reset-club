@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 type Action = "clarify" | "expand" | "decide" | "express";
 
 const DIM_COLORS = ["#FF9090", "#6B8AFE", "#7ED6A8", "#C4A6FF", "#E8C97A"];
+const DIM_BG = ["#FFE5E0", "#E0E8FF", "#DFF5E8", "#E8E0FF", "#F5EFD8"];
 const RAW_PH = ["just dump it...", "don't edit yourself...", "say it ugly first...", "what's the gut reaction...", "think out loud...", "no one's grading this...", "messy is the point..."];
 const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -47,6 +48,10 @@ function MobileCanvasInner() {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [placeholder] = useState(pick(RAW_PH));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [cardIdx, setCardIdx] = useState(0);
+  const [cardWriting, setCardWriting] = useState(false);
+  const [swipeY, setSwipeY] = useState(0);
+  const touchStartRef = useRef(0);
   const [currentDiscovery, setCurrentDiscovery] = useState("");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const [briefLines, setBriefLines] = useState<{ dimLabel: string; line: string }[]>([]);
@@ -150,6 +155,9 @@ function MobileCanvasInner() {
   const openDimension = async (dimLabel: string) => {
     setActiveDim(dimLabel);
     setEditingIdx(null);
+    setCardIdx(0);
+    setCardWriting(false);
+    setWriteText("");
     goTo("stickies", "right");
 
     const existing = dimQuestions[dimLabel] || [];
@@ -543,6 +551,8 @@ function MobileCanvasInner() {
             if (dimComplete) {
               goTo("picker", "left");
             } else {
+              setCardIdx(activeAnswers.length); // advance to next unanswered card
+              setCardWriting(false);
               goTo("stickies", "left");
             }
           }}
@@ -640,104 +650,151 @@ function MobileCanvasInner() {
     );
   }
 
-  // ─── STICKIES BROWSE SCREEN ───
+  // ─── SWIPEABLE CARDS SCREEN ───
   if (screen === "stickies") {
+    const cardBg = DIM_BG[activeDimIdx % DIM_BG.length] || DIM_BG[0];
+    const totalCards = Math.max(activeQuestions.length, activeAnswers.length + 1, 1);
+    const currentCard = Math.min(cardIdx, totalCards - 1);
+    const isAnswered = currentCard < activeAnswers.length;
+    const hasQuestion = currentCard < activeQuestions.length;
+    const isLast = currentCard >= 2;
+
+    const handleTouchStart = (e: React.TouchEvent) => { touchStartRef.current = e.touches[0].clientY; setSwipeY(0); };
+    const handleTouchMove = (e: React.TouchEvent) => { if (!cardWriting) setSwipeY(touchStartRef.current - e.touches[0].clientY); };
+    const handleTouchEnd = () => {
+      if (cardWriting) return;
+      if (swipeY > 80 && currentCard < totalCards - 1) {
+        setCardIdx(currentCard + 1);
+      } else if (swipeY > 80 && isLast) {
+        goTo("picker", "left");
+      } else if (swipeY < -80 && currentCard > 0) {
+        setCardIdx(currentCard - 1);
+      }
+      setSwipeY(0);
+    };
+
     return (
-      <div style={{ minHeight: "100vh", background: "#FAF7F0", fontFamily: "'Codec Pro', sans-serif" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
-          <button onClick={() => goTo("picker", "left")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr; dimensions</button>
-          <div style={{ display: "flex", gap: 4 }}>
+      <div
+        style={{ height: "100vh", background: cardBg, fontFamily: "'Codec Pro', sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}
+        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+      >
+        {/* Top bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", flexShrink: 0 }}>
+          <button onClick={() => goTo("picker", "left")} style={{ background: "none", border: "none", fontSize: 13, color: "#000332", cursor: "pointer", fontFamily: "inherit", opacity: 0.5 }}>&larr;</button>
+          <div style={{ display: "flex", gap: 6 }}>
             {[0, 1, 2].map(i => (
-              <div key={i} style={{ width: 20, height: 3, borderRadius: 2, background: i < activeAnswers.length ? activeColor : "rgba(0,3,50,0.08)", transition: "background 0.3s" }} />
+              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < activeAnswers.length ? activeColor : i === currentCard ? `${activeColor}60` : "rgba(0,3,50,0.1)", transition: "all 0.3s" }} />
             ))}
           </div>
+          <span style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", color: "rgba(0,3,50,0.3)" }}>{currentCard + 1} of 3</span>
         </div>
 
-        <div style={{ padding: "0 20px 40px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: activeColor, marginBottom: 8, fontFamily: "'DM Mono', monospace" }}>
-            {activeDim.toUpperCase()}
-          </div>
-          <p style={{ fontSize: 14, color: "rgba(0,3,50,0.4)", marginBottom: 24, fontWeight: 300 }}>
-            Pick the question that pulls you
-          </p>
-
+        {/* Card area */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 20px 20px", transform: `translateY(${-swipeY * 0.3}px)`, transition: swipeY === 0 ? "transform 0.3s ease-out" : "none" }}>
           {loadingStickies ? (
-            <div style={{ textAlign: "center", padding: "48px 0" }}>
-              <div style={{ width: 20, height: 20, border: `2px solid ${activeColor}30`, borderTopColor: activeColor, borderRadius: "50%", animation: "mSpin 0.7s linear infinite", margin: "0 auto 12px" }} />
-              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.35)" }}>Generating your first question...</p>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+              <div style={{ width: 20, height: 20, border: `2px solid ${activeColor}30`, borderTopColor: activeColor, borderRadius: "50%", animation: "mSpin 0.7s linear infinite", marginBottom: 12 }} />
+              <p style={{ fontSize: 13, color: "rgba(0,3,50,0.35)" }}>Generating...</p>
+            </div>
+          ) : !hasQuestion && !isAnswered ? (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+              <div style={{ width: "50%", height: 4, borderRadius: 2, background: `${activeColor}20`, animation: "mShimmer 1.5s ease-in-out infinite", backgroundSize: "200% 100%", backgroundImage: `linear-gradient(90deg, ${activeColor}10 0%, ${activeColor}30 50%, ${activeColor}10 100%)` }} />
+              <p style={{ fontSize: 12, color: "rgba(0,3,50,0.3)", marginTop: 12 }}>Next question loading...</p>
+            </div>
+          ) : cardWriting ? (
+            /* Writing mode */
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: activeColor, fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>
+                {activeDim.toUpperCase()}
+              </div>
+              <p style={{ fontSize: 15, color: "rgba(0,3,50,0.4)", marginBottom: 16, lineHeight: 1.4 }}>
+                {activeQuestions[currentCard] || ""}
+              </p>
+              <textarea
+                ref={textareaRef}
+                value={writeText}
+                onChange={e => setWriteText(e.target.value)}
+                onFocus={e => { setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }}
+                placeholder={placeholder}
+                style={{
+                  flex: 1, width: "100%", border: "none", outline: "none",
+                  resize: "none", background: "rgba(255,255,255,0.5)", borderRadius: 12,
+                  padding: 16, fontFamily: "'Codec Pro', sans-serif", fontSize: 17,
+                  lineHeight: 1.65, color: "#000332", minHeight: 150,
+                }}
+              />
+              <div style={{ paddingTop: 16, flexShrink: 0 }}>
+                <div style={{ fontSize: 11, color: "rgba(0,3,50,0.2)", fontFamily: "'DM Mono', monospace", textAlign: "center", marginBottom: 10 }}>first drafts only.</div>
+                <button
+                  onClick={() => { if (writeText.trim()) { setCardWriting(false); setActiveQIdx(currentCard); submitAnswer(); } }}
+                  disabled={!writeText.trim()}
+                  className="done-btn"
+                  style={{
+                    width: "100%", padding: "16px", borderRadius: 100,
+                    background: writeText.trim() ? activeColor : "rgba(0,3,50,0.08)",
+                    color: writeText.trim() ? "#000332" : "rgba(0,3,50,0.2)",
+                    border: "none", fontSize: 15, fontWeight: 700,
+                    cursor: writeText.trim() ? "pointer" : "default",
+                    fontFamily: "inherit", transition: "all 0.2s, transform 0.1s",
+                  }}
+                >Done</button>
+              </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Answered stickies — tappable to edit */}
-              {activeAnswers.map((a, i) => (
-                <button
-                  key={`a-${i}`}
-                  className="m-sticky"
-                  onClick={() => openWrite(i, a.answer)}
-                  style={{
-                    width: "100%", padding: "16px 20px",
-                    background: "#fff", border: "none", borderRadius: 16,
-                    textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                    opacity: 0.6, transition: "all 0.2s",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: "#000332", lineHeight: 1.4, flex: 1 }}>{a.question}</p>
-                    <span style={{ color: activeColor, fontSize: 14, marginLeft: 8, flexShrink: 0 }}>✓</span>
-                  </div>
-                  <p style={{ fontSize: 13, color: "rgba(0,3,50,0.4)", fontWeight: 300, marginTop: 4, lineHeight: 1.45 }}>
-                    {a.answer.slice(0, 100)}{a.answer.length > 100 ? "..." : ""}
+            /* Card view */
+            <div
+              onClick={() => {
+                if (isAnswered) { setWriteText(activeAnswers[currentCard].answer); setCardWriting(true); setTimeout(() => textareaRef.current?.focus(), 200); }
+                else if (hasQuestion) { setWriteText(""); setCardWriting(true); setTimeout(() => textareaRef.current?.focus(), 200); }
+              }}
+              style={{
+                flex: 1, background: "rgba(255,255,255,0.5)", borderRadius: 20,
+                padding: 24, display: "flex", flexDirection: "column",
+                justifyContent: "center", cursor: "pointer",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+                transition: "transform 0.3s ease-out",
+                position: "relative",
+              }}
+            >
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: activeColor, fontFamily: "'DM Mono', monospace", marginBottom: 16 }}>
+                {activeDim.toUpperCase()}
+              </div>
+
+              {isAnswered ? (
+                <>
+                  <p style={{ fontSize: 14, color: "rgba(0,3,50,0.4)", marginBottom: 8, lineHeight: 1.4 }}>
+                    {activeAnswers[currentCard].question}
                   </p>
-                  <span style={{ fontSize: 11, color: activeColor, marginTop: 4, display: "inline-block" }}>tap to edit</span>
-                </button>
-              ))}
-
-              {/* Current unanswered question */}
-              {activeAnswers.length < 3 && activeQuestions[activeAnswers.length] && (
-                <button
-                  className="m-sticky"
-                  onClick={() => openWrite(activeAnswers.length)}
-                  style={{
-                    width: "100%", padding: "20px 20px",
-                    background: "#fff", border: "none", borderRadius: 16,
-                    textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                    transform: "scale(1.02)",
-                    boxShadow: `0 4px 16px ${activeColor}15`,
-                    transition: "all 0.2s",
-                    animation: "mBriefFadeUp 0.3s ease-out",
-                  }}
-                >
-                  <p style={{ fontSize: 17, fontWeight: 700, color: "#000332", lineHeight: 1.4 }}>
-                    {activeQuestions[activeAnswers.length]}
+                  <p style={{ fontSize: 17, color: "#000332", lineHeight: 1.55, fontWeight: 400 }}>
+                    {activeAnswers[currentCard].answer}
                   </p>
-                </button>
-              )}
-
-              {/* Loading next question */}
-              {activeAnswers.length < 3 && !activeQuestions[activeAnswers.length] && activeAnswers.length > 0 && (
-                <div style={{ height: 60, borderRadius: 16, background: `${activeColor}08`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: "60%", height: 4, borderRadius: 2, background: `${activeColor}15`, animation: "mShimmer 1.5s ease-in-out infinite", backgroundSize: "200% 100%", backgroundImage: `linear-gradient(90deg, ${activeColor}10 0%, ${activeColor}25 50%, ${activeColor}10 100%)` }} />
-                </div>
-              )}
-
-              {/* Locked future questions */}
-              {activeAnswers.length < 2 && (
-                <div style={{ height: 50, borderRadius: 16, background: "rgba(0,3,50,0.02)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 12, color: "rgba(0,3,50,0.15)" }}>{activeAnswers.length === 0 ? "2 more after this" : "1 more after this"}</span>
-                </div>
+                  <span style={{ position: "absolute", top: 20, right: 20, color: activeColor, fontSize: 16 }}>✓</span>
+                  <span style={{ fontSize: 11, color: activeColor, marginTop: 12 }}>tap to edit</span>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 22, fontWeight: 700, color: "#000332", lineHeight: 1.4, textAlign: "center", maxWidth: 300, margin: "0 auto" }}>
+                    {activeQuestions[currentCard] || ""}
+                  </p>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.3)", textAlign: "center", marginTop: 16 }}>tap to answer</p>
+                </>
               )}
             </div>
           )}
 
-          {activeAnswers.length === 0 && !loadingStickies && activeQuestions.length > 0 && (
-            <p style={{ textAlign: "center", fontSize: 12, color: "rgba(0,3,50,0.25)", marginTop: 24, fontFamily: "'DM Mono', monospace" }}>
-              tap a question to answer it
-            </p>
+          {/* Swipe hint */}
+          {!cardWriting && (
+            <div style={{ textAlign: "center", paddingTop: 16, flexShrink: 0 }}>
+              <p style={{ fontSize: 11, color: "rgba(0,3,50,0.2)", fontFamily: "'DM Mono', monospace" }}>
+                {isLast && isAnswered ? "swipe up to finish ↑" : "swipe up for next ↑"}
+              </p>
+            </div>
           )}
         </div>
 
-        <style>{`@keyframes mSpin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`@keyframes mSpin { to { transform: rotate(360deg); } }
+        @keyframes mShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .done-btn:active { transform: scale(0.97); }`}</style>
       </div>
     );
   }
