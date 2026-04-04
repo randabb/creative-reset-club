@@ -359,7 +359,7 @@ export default function Homepage() {
             Expert thinking frameworks. Questions that adapt to you. A canvas where your ideas take shape.
           </p>
           <Link href="/auth" className={styles.heroCta}>
-            Start your first canvas
+            Start thinking
             <span className={styles.ctaDot}>&rarr;</span>
           </Link>
           <div className={styles.heroProofRow}>
