@@ -97,7 +97,7 @@ function MobileCanvasInner() {
             url.searchParams.set("session_id", data.id);
             window.history.replaceState({}, "", url.toString());
           }
-        } catch { /* continue */ }
+        } catch (err) { console.error("[mobile] API error:", err); }
       }
 
       if (sessionId) {
@@ -106,7 +106,7 @@ function MobileCanvasInner() {
           const data = await res.json();
           if (data.canvas_state?.discoveries?.length) setDiscoveries(data.canvas_state.discoveries);
           if (data.canvas_state?.patterns?.length) setPatterns(data.canvas_state.patterns);
-        } catch { /* continue */ }
+        } catch (err) { console.error("[mobile] API error:", err); }
       }
     };
     init();
@@ -122,7 +122,7 @@ function MobileCanvasInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: sid, canvas_state: { notes: [], connections: [], discoveries, dimAnswers, patterns } }),
       });
-    } catch { /* silent */ }
+    } catch (err) { console.error("[mobile] API error:", err); }
   };
 
   const completedCount = Object.values(dimStatus).filter(s => s === "complete").length;
@@ -232,7 +232,7 @@ function MobileCanvasInner() {
         setDiscoveries(prev => [...prev, disc]);
         setCurrentDiscovery(dData.discovery);
       }
-    } catch { /* silent */ }
+    } catch (err) { console.error("[mobile] API error:", err); }
 
     // Trigger reveal animation
     setTimeout(() => setDiscoveryVisible(true), 100);
@@ -276,7 +276,7 @@ function MobileCanvasInner() {
         });
         const bData = await bRes.json();
         if (bData.line) setBriefLines(prev => [...prev, { dimLabel: activeDim, line: bData.line }]);
-      } catch { /* silent */ }
+      } catch (err) { console.error("[mobile] API error:", err); }
     }
 
     save();
@@ -359,7 +359,7 @@ function MobileCanvasInner() {
         fetch("/api/detect-resistance", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ goal: capture, synthesis: full, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
-        }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(() => {});
+        }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(err => console.error("[mobile] API error:", err));
       }
     } catch {
       setSynthLines(["Your synthesis couldn't be generated. Try again."]);

@@ -90,7 +90,7 @@ export default function Studio() {
             created_at: s.updated_at || s.created_at || "",
           })));
         }
-      } catch { /* table may not exist yet */ }
+      } catch (err) { console.error("[studio] Fetch sessions error:", err); }
 
       setLoading(false);
     };
@@ -153,7 +153,7 @@ export default function Studio() {
     setDeleteConfirm(null);
     try {
       await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
-    } catch { /* already removed from UI */ }
+    } catch (err) { console.error("[studio] Delete error:", err); }
     setToast("Canvas deleted");
     setTimeout(() => setToast(""), 2000);
   };
@@ -162,7 +162,7 @@ export default function Studio() {
     if (!arcEmail.trim() || !user) return;
     try {
       await supabase.from("profiles").update({ arc_waitlist_email: arcEmail.trim() }).eq("id", user.id);
-    } catch { /* column may not exist */ }
+    } catch (err) { console.error("[studio] Arc waitlist error:", err); }
     setArcSubmitted(true);
   };
 

@@ -137,7 +137,7 @@ function GuidedInner() {
       });
       const reflData = await reflRes.json();
       reflectionText = reflData.reflection || "";
-    } catch { /* skip reflection */ }
+    } catch (err) { console.error("[guided] Reflection error:", err); }
 
     // Show reflection if we got one
     if (reflectionText) {
@@ -158,7 +158,7 @@ function GuidedInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goal: capture, mode, qas: updatedQAs }),
-      }).then(r => r.json()).then(data => data.dimensions || []).catch(() => []);
+      }).then(r => r.json()).then(data => data.dimensions || []).catch(err => { console.error("[guided] Dimension gen error:", err); return []; });
     }
 
     if (currentQNum >= 2) {
@@ -167,7 +167,7 @@ function GuidedInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goal: capture, mode, qas: updatedQAs }),
-      }).then(r => r.json()).then(data => data.dimensions || []).catch(() => []);
+      }).then(r => r.json()).then(data => data.dimensions || []).catch(err => { console.error("[guided] Dimension gen error:", err); return []; });
 
       // Wait for the best available dimensions (full data or Q1-only)
       let dims: { label: string; description: string }[] = [];

@@ -408,7 +408,7 @@ function CanvasInner() {
             if (data.question) {
               setDimSuggestions(prev => ({ ...prev, [nextDim.label]: { action: "clarify" as Action, question: data.question } }));
             }
-          }).catch(() => { /* silent */ });
+          }).catch(err => console.error("[canvas] API error:", err));
         }
       }
       return;
@@ -437,7 +437,7 @@ function CanvasInner() {
         setDimSuggestions(map);
         // Don't auto-open — timer start will open first dimension
       }
-    }).catch(() => { /* silent */ });
+    }).catch(err => console.error("[canvas] API error:", err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasReady]);
 
@@ -807,7 +807,7 @@ function CanvasInner() {
       if (data.discovery) {
         setDiscoveries(prev => [...prev, { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() }]);
       }
-    }).catch(() => { /* skip */ });
+    }).catch(err => console.error("[canvas] Discovery error:", err));
 
     // Pattern detection moved to dimension completion only
 
@@ -886,7 +886,8 @@ function CanvasInner() {
           } else {
             setStatusState({ type: "keep_going", dimName: dim.label, nextAction: recAction, actionColor: ACT[recAction].color, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one."]) });
           }
-        } catch {
+        } catch (err) {
+          console.error("[canvas] Dimension assessment error:", err);
           setStatusState({ type: "keep_going", dimName: dim.label, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
         }
       }
@@ -1097,7 +1098,7 @@ function CanvasInner() {
               const analysisPromise = fetch("/api/analyze-session", {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ goal: capture, mode, allDimensionAnswers: allDimAnswers || notes.filter(n => n.source === "user").map(n => n.text).join("\n\n"), allDiscoveries: discoveries.map(d => d.text).join("\n"), allPatterns: patterns.map(p => p.description).join("\n") }),
-              }).then(r => r.json()).then(a => setSessionAnalysis(a)).catch(() => {});
+              }).then(r => r.json()).then(a => setSessionAnalysis(a)).catch(err => console.error("[canvas] API error:", err));
 
               const res = await fetch("/api/session-synthesis", {
                 method: "POST", headers: { "Content-Type": "application/json" },
@@ -1114,9 +1115,13 @@ function CanvasInner() {
                 fetch("/api/detect-resistance", {
                   method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ goal: capture, synthesis: synthText, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
-                }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(() => {});
+                }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(err => console.error("[canvas] API error:", err));
               }
-            } catch { /* use without synthesis */ }
+            } catch (err) {
+              console.error("[canvas] Synthesis generation failed:", err);
+              setToast("Couldn\u2019t generate your brief. Try again.");
+              setTimeout(() => setToast(""), 3000);
+            }
             setSynthLoading(false);
           }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
@@ -1791,7 +1796,7 @@ function CanvasInner() {
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
                                   }
-                                }).catch(() => {});
+                                }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)
                                 if (patterns.length < 3) {
                                   const allAns: Record<string, string[]> = {};
@@ -1805,7 +1810,7 @@ function CanvasInner() {
                                       console.log("[canvas] Pattern from API:", pd.pattern);
                                       setPatterns(prev => prev.length < 3 ? [...prev, { ...pd.pattern, noteId }] : prev);
                                     }
-                                  }).catch(() => {});
+                                  }).catch(err => console.error("[canvas] API error:", err));
                                 }
                                 // Find next unexplored dimension
                                 const nextDim = dimensions.find(d => d.label !== dimLabel && dimStatus[d.label] !== "complete");
@@ -1829,7 +1834,8 @@ function CanvasInner() {
                                 setActiveDimAction(data.action as Action);
                                 setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                               }
-                            } catch {
+                            } catch (err) {
+                              console.error("[canvas] Dimension followup error:", err);
                               setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                             }
                             setDimLoading(false);
