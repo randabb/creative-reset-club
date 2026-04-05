@@ -593,9 +593,9 @@ function CanvasInner() {
   };
 
   // AI action — generates ONE instruction
-  const runAction = async (action: Action) => {
-    if (selected.size === 0) return;
-    const selId = [...selected][0];
+  const runAction = async (action: Action, targetNoteId?: string) => {
+    const selId = targetNoteId || [...selected][0];
+    if (!selId) return;
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
 
@@ -1958,7 +1958,7 @@ function CanvasInner() {
                               // Clear pattern glow for this note
                               if (patternGlow) dispatch({ type: "CLEAR_PATTERN_NOTE", payload: n.id });
                               setSelected(new Set([n.id]));
-                              setTimeout(() => runAction(a), 100);
+                              runAction(a, n.id);
                             }}
                             onMouseDown={e => e.stopPropagation()}
                             style={{
