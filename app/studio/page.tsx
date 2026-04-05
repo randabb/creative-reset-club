@@ -22,6 +22,7 @@ interface CanvasItem {
   note_count: number;
   connection_count: number;
   created_at: string;
+  synthesis_snippet?: string;
 }
 
 function getGreeting() {
@@ -88,6 +89,7 @@ export default function Studio() {
             note_count: s.note_count || 0,
             connection_count: 0,
             created_at: s.updated_at || s.created_at || "",
+            synthesis_snippet: (s.synthesis_snippet as string) || "",
           })));
         }
       } catch (err) { console.error("[studio] Fetch sessions error:", err); }
@@ -99,9 +101,34 @@ export default function Studio() {
 
   const loadThemes = async () => {
     if (themesLoaded || canvases.length < 3) return;
+
+    // Check localStorage cache — reuse if session count hasn't changed
+    const cacheKey = "primer_themes_cache";
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { themes: cachedThemes, sessionCount } = JSON.parse(cached);
+        if (sessionCount === canvases.length && cachedThemes?.length) {
+          // Verify all cached session IDs still exist
+          const currentIds = new Set(canvases.map(c => c.id));
+          const allValid = cachedThemes.every((t: { sessionIds: string[] }) =>
+            t.sessionIds.every((id: string) => currentIds.has(id))
+          );
+          if (allValid) {
+            setThemes(cachedThemes);
+            setThemesLoaded(true);
+            return;
+          }
+        }
+      }
+    } catch { /* ignore cache errors */ }
+
     setThemesLoading(true);
-    const sessionsToSend = canvases.map(c => ({ id: c.id, goal: c.goal, mode: c.mode }));
-    console.log("[studio] Sessions being sent to themes:", sessionsToSend.length);
+    const sessionsToSend = canvases.map(c => ({
+      id: c.id,
+      goal: c.goal,
+      synthesis_snippet: c.synthesis_snippet || "",
+    }));
     try {
       const res = await fetch("/api/generate-themes", {
         method: "POST",
@@ -109,39 +136,17 @@ export default function Studio() {
         body: JSON.stringify({ sessions: sessionsToSend }),
       });
       const data = await res.json();
-      console.log("[studio] Themes response:", data);
       if (data.themes?.length) {
         setThemes(data.themes);
+        try { localStorage.setItem(cacheKey, JSON.stringify({ themes: data.themes, sessionCount: canvases.length })); } catch { /* ignore */ }
       } else {
-        // Fallback: group by mode
-        const modeGroups: Record<string, string[]> = {};
-        canvases.forEach(c => {
-          const label = c.mode || "clarity";
-          if (!modeGroups[label]) modeGroups[label] = [];
-          modeGroups[label].push(c.id);
-        });
-        const fallbackThemes = Object.entries(modeGroups)
-          .filter(([, ids]) => ids.length > 0)
-          .map(([label, sessionIds]) => ({
-            label: `${label} sessions`,
-            sessionIds,
-          }));
-        if (fallbackThemes.length > 0) setThemes(fallbackThemes);
+        // Fallback: single "all sessions" group
+        setThemes([{ label: "your sessions", sessionIds: canvases.map(c => c.id) }]);
       }
       setThemesLoaded(true);
     } catch (err) {
       console.error("[studio] Themes error:", err);
-      // Fallback: group by mode
-      const modeGroups: Record<string, string[]> = {};
-      canvases.forEach(c => {
-        const label = c.mode || "clarity";
-        if (!modeGroups[label]) modeGroups[label] = [];
-        modeGroups[label].push(c.id);
-      });
-      const fallbackThemes = Object.entries(modeGroups)
-        .filter(([, ids]) => ids.length > 0)
-        .map(([label, sessionIds]) => ({ label: `${label} sessions`, sessionIds }));
-      if (fallbackThemes.length > 0) setThemes(fallbackThemes);
+      setThemes([{ label: "your sessions", sessionIds: canvases.map(c => c.id) }]);
       setThemesLoaded(true);
     }
     setThemesLoading(false);
@@ -151,6 +156,9 @@ export default function Studio() {
     setCanvases(prev => prev.filter(c => c.id !== id));
     setThemes(prev => prev.map(t => ({ ...t, sessionIds: t.sessionIds.filter(sid => sid !== id) })).filter(t => t.sessionIds.length > 0));
     setDeleteConfirm(null);
+    try {
+      localStorage.removeItem("primer_themes_cache");
+    } catch { /* ignore */ }
     try {
       await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
     } catch (err) { console.error("[studio] Delete error:", err); }

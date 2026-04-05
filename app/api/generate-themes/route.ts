@@ -4,15 +4,15 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are organizing someone's thinking sessions into themes. Each session has a goal and a mode. Group related sessions together and give each group a short, natural label.
+const SYSTEM = `Group these thinking sessions into 2-5 themes based on what they're ABOUT, not how they were processed. Look at the goals and synthesis content.
 
 Rules:
-- Labels should sound like how the person would describe the topic: "building your app", "go-to-market strategy", "team decisions" — not corporate jargon
-- 2-5 themes max. Don't over-split.
-- Every session must belong to exactly one theme
-- If a session doesn't fit any theme, create an "other thoughts" group
-- Labels should be lowercase, casual: "thoughts on pricing", "your app idea", "figuring out the team"
-- Keep labels under 5 words
+- Group by topic/subject matter, NOT by mode (never use "clarity sessions" or "decision sessions" as a theme)
+- Labels should feel human and casual, not corporate: "career decisions", "product positioning", "health and habits"
+- Labels should be lowercase, under 5 words
+- A session can only belong to one theme
+- If a session doesn't fit any theme, create an "everything else" theme
+- 2-5 themes max
 
 Respond with ONLY a JSON array:
 [{"label":"...","sessionIds":["...",""]}]`;
@@ -22,15 +22,16 @@ export async function POST(req: Request) {
     const { sessions } = await req.json();
     if (!sessions?.length || sessions.length < 3) return NextResponse.json({ themes: [] });
 
-    const sessionList = sessions.map((s: { id: string; goal: string; mode: string }) =>
-      `[${s.id}] (${s.mode}) ${s.goal}`
-    ).join("\n");
+    const sessionList = sessions.map((s: { id: string; goal: string; synthesis_snippet?: string }) => {
+      const snippet = s.synthesis_snippet ? ` — ${s.synthesis_snippet}` : "";
+      return `[${s.id}] ${s.goal}${snippet}`;
+    }).join("\n");
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 300,
       system: SYSTEM,
-      messages: [{ role: "user", content: `SESSIONS:\n${sessionList}` }],
+      messages: [{ role: "user", content: `Sessions:\n${sessionList}` }],
     });
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";

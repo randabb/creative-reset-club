@@ -27,19 +27,28 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("sessions")
-      .select("id, goal, mode, created_at, updated_at, canvas_state")
+      .select("id, goal, mode, created_at, updated_at, canvas_state, synthesis")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Add note_count from canvas_state
-    const sessions = (data || []).map((s: Record<string, unknown>) => ({
-      ...s,
-      note_count: Array.isArray((s.canvas_state as { notes?: unknown[] })?.notes)
-        ? ((s.canvas_state as { notes: unknown[] }).notes).length
-        : 0,
-    }));
+    // Add note_count and synthesis_snippet, strip heavy fields
+    const sessions = (data || []).map((s: Record<string, unknown>) => {
+      const synth = s.synthesis as { sections?: { heading?: string; content?: string }[] } | null;
+      const snippet = synth?.sections?.map(sec => sec.content || "").join(" ").slice(0, 150) || "";
+      return {
+        id: s.id,
+        goal: s.goal,
+        mode: s.mode,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        note_count: Array.isArray((s.canvas_state as { notes?: unknown[] })?.notes)
+          ? ((s.canvas_state as { notes: unknown[] }).notes).length
+          : 0,
+        synthesis_snippet: snippet,
+      };
+    });
 
     return NextResponse.json({ sessions });
   } catch {
