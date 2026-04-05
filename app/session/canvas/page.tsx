@@ -1789,7 +1789,8 @@ function CanvasInner() {
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
                                   if (ad.crossTension && patterns.length < 3) {
-                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "contradiction", label: "Contradiction", behavior: `you're pulling in two directions on ${dimLabel}.`, question: "Which one do you actually believe?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", detected_at: new Date().toISOString() }] : prev);
+                                    console.log("[canvas] Setting glow on note:", noteId, "action: decide");
+                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "contradiction", label: "Contradiction", behavior: `you're pulling in two directions on ${dimLabel}.`, question: "Which one do you actually believe?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", noteId, detected_at: new Date().toISOString() }] : prev);
                                   }
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
@@ -1993,7 +1994,7 @@ function CanvasInner() {
                               fontSize: 15, color: ACT[a].color, cursor: "pointer",
                               opacity: patternGlow ? 1 : 0.4,
                               transition: "opacity 0.2s, transform 0.2s",
-                              animation: patternGlow ? `actGlow${a} 1s ease-in-out infinite` : undefined,
+                              animation: patternGlow ? `actGlow${a} 1.5s ease-in-out infinite` : undefined,
                             }}
                           >{ACT[a].icon}</button>
                           <div className="act-tip" style={{
@@ -2111,10 +2112,10 @@ function CanvasInner() {
         .cn:hover .cn-del { opacity: 1 !important; }
         .cn:hover .cn-edit { opacity: 0.5 !important; }
         .note-actions button:hover { opacity: 1 !important; transform: scale(1.15); }
-        @keyframes actGlowclarify { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(107,138,254,0.4); } }
-        @keyframes actGlowexpand { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(255,144,144,0.4); } }
-        @keyframes actGlowdecide { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(126,214,168,0.4); } }
-        @keyframes actGlowexpress { 0%,100% { opacity:0.5; } 50% { opacity:1; text-shadow: 0 0 6px rgba(196,166,255,0.4); } }
+        @keyframes actGlowclarify { 0%,100% { opacity:0.4; } 50% { opacity:1; text-shadow: 0 0 8px rgba(107,138,254,0.5); } }
+        @keyframes actGlowexpand { 0%,100% { opacity:0.4; } 50% { opacity:1; text-shadow: 0 0 8px rgba(255,144,144,0.5); } }
+        @keyframes actGlowdecide { 0%,100% { opacity:0.4; } 50% { opacity:1; text-shadow: 0 0 8px rgba(126,214,168,0.5); } }
+        @keyframes actGlowexpress { 0%,100% { opacity:0.4; } 50% { opacity:1; text-shadow: 0 0 8px rgba(196,166,255,0.5); } }
         .cn-edit:hover { opacity: 1 !important; }
         .act-tip-wrap:hover .act-tip { opacity: 1 !important; }
         @keyframes sugPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.15); } }

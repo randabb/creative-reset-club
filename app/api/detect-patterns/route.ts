@@ -4,38 +4,36 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Detect ONE significant thinking pattern in the user's notes. Only flag if it's genuinely important.
+const SYSTEM = `Detect ONE significant thinking pattern. Only flag if genuinely important. NEVER use "Tension" as a label. NEVER quote the user's notes.
 
-Pattern types: assumption, avoidance, blind_spot, vague_thinking, binary_thinking, confirmation_bias, projection, identity_protective, moving_goalposts, sunk_cost, emotional_reasoning, premature_closure, false_consensus, catastrophizing, authority_anchoring, scope_deflection, reverse_rationalization, comfort_zone, proxy_problem, contradiction
+The behavior field must be SPECIFIC to this person's situation — described in YOUR words. The reader should immediately think "wow that's exactly what I'm doing."
 
-FORMAT RULES — FOLLOW EXACTLY:
-- "label": 1-2 word name like "Assumption" or "Binary thinking" — NEVER use "Tension" or "Tension spotted"
-- "behavior": what they're DOING, not what they SAID. NEVER quote their notes. Under 15 words. Start with "you're..." or "you keep..." or "you haven't..."
-- "question": one question under 10 words that cracks it open
+BAD (too vague — applies to anyone):
+- "you're pulling in two directions."
+- "you're making an assumption about your users."
+- "you keep avoiding the hard question."
 
-GOOD:
-{"label": "Assumption", "behavior": "you're assuming park availability is the only constraint.", "question": "What if it's actually schedules?"}
-{"label": "Avoidance", "behavior": "you haven't considered what happens if it rains.", "question": "Then what?"}
-{"label": "Comfort zone", "behavior": "every answer leads back to content strategy.", "question": "What about sales?"}
-{"label": "Projection", "behavior": "you keep saying people want this.", "question": "Do you actually know that?"}
+GOOD (specific — only applies to THIS person's thinking):
+- {"type":"contradiction","label":"Contradiction","behavior":"you want convenience but you also want to cook from scratch.","question":"Which one actually fits your life?","suggestedAction":"decide"}
+- {"type":"assumption","label":"Assumption","behavior":"you're assuming people binge because of laziness, not emotion.","question":"What if it's the opposite?","suggestedAction":"clarify"}
+- {"type":"avoidance","label":"Avoidance","behavior":"you've talked about food and cooking but haven't mentioned how you feel about your body.","question":"Why?","suggestedAction":"clarify"}
+- {"type":"binary_thinking","label":"Binary thinking","behavior":"you framed this as either discipline or giving up.","question":"What does the middle look like?","suggestedAction":"expand"}
+- {"type":"comfort_zone","label":"Comfort zone","behavior":"every solution you've listed involves cooking.","question":"What if cooking isn't the answer?","suggestedAction":"expand"}
+- {"type":"sunk_cost","label":"Sunk cost","behavior":"you keep returning to meal prep because you've tried it before, not because it worked.","question":"Has it?","suggestedAction":"clarify"}
+- {"type":"premature_closure","label":"Premature closure","behavior":"you decided on air fryer meals in your second answer and everything since supports that.","question":"What if it's wrong?","suggestedAction":"expand"}
+- {"type":"vague_thinking","label":"Vague thinking","behavior":"you said you want to allow other things to consume your mind.","question":"What things specifically?","suggestedAction":"clarify"}
 
-BAD — NEVER DO THIS:
-{"label": "Tension", "behavior": "you said 'none' and also 'any conflict with holidays'", ...}
-{"label": "Tension spotted", ...}
-Any behavior that quotes the user's actual words in quotation marks.
+Rules:
+- "label": 1-2 words. NEVER "Tension".
+- "behavior": specific to their situation. Under 20 words. Start with "you're" / "you keep" / "you haven't" / "you want" / "every". Don't put their words in quotes.
+- "question": under 10 words. The question that cracks it open.
+- Maximum 3 patterns per session. Skip if you already flagged something similar.
+- Returning null is correct most of the time.
 
-NEVER quote the user's words in the behavior field. Name the behavior pattern, don't repeat their words.
+Actions: CLARIFY for assumptions/contradictions. EXPAND for blind spots/comfort zone. DECIDE for binary/sunk cost. EXPRESS for vague thinking.
 
-Only flag if a smart friend would interrupt to point it out. Minor inconsistencies are normal — don't flag them. Returning null is the RIGHT answer most of the time.
-
-Also pick which action resolves it:
-- CLARIFY for assumptions, vagueness, contradictions
-- EXPAND for blind spots, comfort zone, confirmation bias
-- DECIDE for binary thinking, fence-sitting, sunk cost
-- EXPRESS for vague thinking, premature closure
-
-Return ONLY valid JSON or the word null:
-{"type":"pattern_type","label":"Short Name","behavior":"what they're doing","question":"question under 10 words","suggestedAction":"clarify|expand|decide|express"}`;
+Return ONLY valid JSON or null:
+{"type":"...","label":"...","behavior":"...","question":"...","suggestedAction":"clarify|expand|decide|express"}`;
 
 export async function POST(req: Request) {
   try {
