@@ -168,6 +168,7 @@ function CanvasInner() {
   const [synthEditing, setSynthEditing] = useState(false);
   const [synthRevealed, setSynthRevealed] = useState(false);
   const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
+  const [suggestedDeliverable, setSuggestedDeliverable] = useState<{ deliverable: string; label: string } | null>(null);
   const [sessionAnalysis, setSessionAnalysis] = useState<{ assumptions: string[]; avoidance: string | null; crossTensions: { from: string; to: string; tension: string }[]; strongestFragment: string | null } | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -692,17 +693,26 @@ function CanvasInner() {
   };
 
   const copyPrompt = () => {
-    let md = `Here's my thinking on "${capture}". I used Primer to work through this. Help me take the next step:\n\n`;
-    if (dimensions.length) {
-      md += `## Dimensions I explored\n${dimensions.map(d => `- ${d.label}: ${d.description}`).join("\n")}\n\n`;
-    }
+    let md = `Here's my thinking on "${capture}". I used Primer to work through this.\n\n`;
     if (discoveries.length) {
-      md += `## Key insights\n${discoveries.map(d => `- ${d.text}`).join("\n")}\n\n`;
+      md += `## Key discoveries\n${discoveries.map(d => `- ${d.text}`).join("\n")}\n\n`;
     }
     if (synthesis?.sections) {
-      md += `## ${synthesis.deliverable_label}\n\n${synthesis.sections.map(s => `### ${s.heading}\n${s.content}`).join("\n\n")}\n\n`;
+      md += `## My brief\n${synthesis.sections.map(s => `**${s.heading}**\n${s.content}`).join("\n\n")}\n\n`;
     }
-    md += `## Raw thinking notes\n${notes.filter(n => n.source !== "dimension" && n.source !== "goal").map(n => `- ${n.text}`).join("\n")}`;
+    if (sessionAnalysis?.assumptions?.length) {
+      md += `## Assumptions I haven't tested\n${sessionAnalysis.assumptions.map(a => `- ${a}`).join("\n")}\n\n`;
+    }
+    if (sessionAnalysis?.avoidance) {
+      md += `## What I avoided\n${sessionAnalysis.avoidance}\n\n`;
+    }
+    md += `## Now help me act on this\n`;
+    if (suggestedDeliverable?.deliverable) {
+      md += `${suggestedDeliverable.deliverable}\n\n`;
+    } else {
+      md += `Help me turn this thinking into a concrete deliverable I can use immediately.\n\n`;
+    }
+    md += `Use my brief as the foundation. Every recommendation should connect back to what I discovered about my own thinking. Don't give me generic advice — build on what I already worked through.`;
     navigator.clipboard.writeText(md);
     dispatch({ type: "SET_TOAST", payload: "✓ Copied to clipboard" });
     setTimeout(() => dispatch({ type: "SET_TOAST", payload: "" }), 2500);
@@ -1071,6 +1081,11 @@ function CanvasInner() {
                   method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ goal: capture, synthesis: synthText, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
                 }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(err => console.error("[canvas] API error:", err));
+                // Suggest deliverable for AI prompt export
+                fetch("/api/suggest-deliverable", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ goal: capture, mode, synthesis: synthText }),
+                }).then(r => r.json()).then(dd => { if (dd.deliverable) setSuggestedDeliverable({ deliverable: dd.deliverable, label: dd.label || "Action plan" }); }).catch(err => console.error("[canvas] API error:", err));
               }
             } catch (err) {
               console.error("[canvas] Synthesis generation failed:", err);
@@ -1198,7 +1213,12 @@ function CanvasInner() {
               <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
-                <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
+                <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                  Copy as AI prompt
+                  {suggestedDeliverable?.label && (
+                    <span style={{ display: "block", fontSize: 10, fontWeight: 400, color: "rgba(250,247,240,0.5)", marginTop: 2 }}>&rarr; includes: {suggestedDeliverable.label.toLowerCase()}</span>
+                  )}
+                </button>
                 <button onClick={downloadMd} style={{ padding: "12px", borderRadius: 10, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Download as text</button>
               </div>
               {/* Resistance follow-up */}
