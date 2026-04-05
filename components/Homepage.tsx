@@ -24,7 +24,7 @@ const fadeUp = (visible: boolean, delay = 0) => ({
   transition: `opacity 0.8s ease ${delay}s, transform 0.8s ease ${delay}s`,
 });
 
-const BODY_FONT = "var(--font-jakarta), 'Plus Jakarta Sans', -apple-system, sans-serif";
+const BODY_FONT = "'Codec Pro', var(--font-jakarta), 'Plus Jakarta Sans', -apple-system, sans-serif";
 const MONO_FONT = "var(--font-mono), 'DM Mono', monospace";
 
 const LABEL = (color = "#FF9090"): React.CSSProperties => ({
