@@ -1788,14 +1788,25 @@ function CanvasInner() {
                                   method: "POST", headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
-                                  if (ad.crossTension && patterns.length < 3) {
-                                    console.log("[canvas] Setting glow on note:", noteId, "action: decide");
-                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "contradiction", label: "Contradiction", behavior: `you're pulling in two directions on ${dimLabel}.`, question: "Which one do you actually believe?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", noteId, detected_at: new Date().toISOString() }] : prev);
-                                  }
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
                                   }
                                 }).catch(() => {});
+                                // Call detect-patterns API (only source of patterns)
+                                if (patterns.length < 3) {
+                                  const allAns: Record<string, string[]> = {};
+                                  Object.entries(dimQAs).forEach(([k, v]) => { allAns[k] = v.map(q => q.answer); });
+                                  allAns[dimLabel] = updatedQAs.map(q => q.answer);
+                                  fetch("/api/detect-patterns", {
+                                    method: "POST", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
+                                  }).then(r => r.json()).then(pd => {
+                                    if (pd.pattern) {
+                                      console.log("[canvas] Pattern from API:", pd.pattern);
+                                      setPatterns(prev => prev.length < 3 ? [...prev, { ...pd.pattern, noteId }] : prev);
+                                    }
+                                  }).catch(() => {});
+                                }
                                 // Find next unexplored dimension
                                 const nextDim = dimensions.find(d => d.label !== dimLabel && dimStatus[d.label] !== "complete");
                                 if (nextDim) {
