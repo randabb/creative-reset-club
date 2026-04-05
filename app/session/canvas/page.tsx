@@ -220,7 +220,7 @@ function CanvasInner() {
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
-  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; suggestedAction?: string; noteId?: string; detected_at: string }[]>([]);
+  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; behavior?: string; question?: string; suggestedAction?: string; noteId?: string; detected_at: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
   const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
@@ -1395,8 +1395,8 @@ function CanvasInner() {
                       }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{p.label}</div>
                         <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5 }}>
-                          {(p as { behavior?: string }).behavior || p.description}{" "}
-                          {(p as { question?: string }).question && <span style={{ fontWeight: 500 }}>{(p as { question?: string }).question}</span>}
+                          {p.behavior || p.description}{" "}
+                          {p.question && <span style={{ fontWeight: 500 }}>{p.question}</span>}
                         </p>
                         {allDimsComplete && actIcon && (
                           <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginTop: 6 }}>
@@ -1789,7 +1789,7 @@ function CanvasInner() {
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
                                   if (ad.crossTension && patterns.length < 3) {
-                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "cross_tension", label: "Tension spotted", description: `"${ad.crossTension.from}" vs "${ad.crossTension.to}" — ${ad.crossTension.tension}`, suggestion: `You said both. Which one wins?`, detected_at: new Date().toISOString() }] : prev);
+                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "cross_tension", label: "Tension", behavior: `you said "${ad.crossTension.from.slice(0, 40)}" and also "${ad.crossTension.to.slice(0, 40)}."`, question: "Which one wins?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", detected_at: new Date().toISOString() }] : prev);
                                   }
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
