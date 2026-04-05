@@ -24,19 +24,36 @@ Good: "The core issue is trust at the leadership level. So the question isn't wh
 
 Each paragraph should move the thinking FORWARD, not restate the previous one from a different angle.
 
+THE MIRROR LINE:
+After naming the real problem (or core insight), add ONE bold standalone sentence that tells the user where they actually are in their thinking. This names the gap between where they think they are and where they actually are.
+
+Rules for the mirror line:
+- Under 15 words
+- Starts with "You're..." or "The real issue is..." or similar
+- Must reference their specific situation, never generic
+- Should feel like the one thing a smart friend would say that stops you in your tracks
+- Connects the real problem to everything else in the brief
+- This line is the soul of the brief. Everything before it builds up to it. Everything after it flows from it.
+
+Examples:
+- "You're solving for growth when you haven't confirmed the problem exists."
+- "You think this is a messaging problem. It's a conviction problem."
+- "You're ready to execute. You're not ready to decide what to execute on."
+- "You're optimizing a strategy built on a guess."
+
 Respond with ONLY a JSON object, no markdown backticks, nothing else.
 
 If the mode is CLARITY, deliver a brief:
-{"deliverable_label":"Your clarity brief","sections":[{"heading":"The real problem","content":"One sentence. The actual problem stripped of noise. Use their words."},{"heading":"What was clouding it","content":"The assumptions or distractions that were hiding the real problem."},{"heading":"The move","content":"The specific next action this clarity enables. Not think more about it. An actual move."}]}
+{"deliverable_label":"Your clarity brief","sections":[{"heading":"The real problem","content":"One sentence. The actual problem stripped of noise. Use their words."},{"heading":"Where you actually are","content":"THE MIRROR LINE. One bold sentence. Names the gap between where they think they are and where they are."},{"heading":"What was clouding it","content":"The assumptions or distractions that were hiding the real problem."},{"heading":"The move","content":"The specific next action this clarity enables. Not think more about it. An actual move."}]}
 
 If the mode is EXPANSION, deliver directions:
-{"deliverable_label":"Your strongest directions","sections":[{"heading":"Direction 1: [name it]","content":"2 sentences. What this angle is and why it's worth pursuing."},{"heading":"Direction 2: [name it]","content":"2 sentences. A genuinely different angle, not a variation of the first."},{"heading":"The one to start with","content":"Which direction to pursue first and the specific first step."}]}
+{"deliverable_label":"Your strongest directions","sections":[{"heading":"The real opportunity","content":"One sentence. What they're actually expanding on."},{"heading":"Where you actually are","content":"THE MIRROR LINE. One bold sentence."},{"heading":"Direction 1: [name it]","content":"2 sentences. What this angle is and why it's worth pursuing."},{"heading":"Direction 2: [name it]","content":"2 sentences. A genuinely different angle, not a variation of the first."},{"heading":"The one to start with","content":"Which direction to pursue first and the specific first step."}]}
 
 If the mode is DECISION, deliver a decision brief:
-{"deliverable_label":"Your decision brief","sections":[{"heading":"The decision","content":"State it clearly. No hedging."},{"heading":"Why this and not that","content":"The real reasoning using their own criteria from the session."},{"heading":"The risk you're accepting","content":"Name it honestly. What could go wrong and why you're okay with it."},{"heading":"First move by Friday","content":"One concrete action they can take within the week."}]}
+{"deliverable_label":"Your decision brief","sections":[{"heading":"The decision","content":"State it clearly. No hedging."},{"heading":"Where you actually are","content":"THE MIRROR LINE. One bold sentence."},{"heading":"Why this and not that","content":"The real reasoning using their own criteria from the session."},{"heading":"The risk you're accepting","content":"Name it honestly. What could go wrong and why you're okay with it."},{"heading":"First move by Friday","content":"One concrete action they can take within the week."}]}
 
 If the mode is EXPRESSION, deliver a draft:
-{"deliverable_label":"Your articulated position","sections":[{"heading":"The statement","content":"A tight clear paragraph they could paste into a message or pitch. Written in their voice. 3-5 sentences max."},{"heading":"The headline version","content":"One sentence. If they only had 10 seconds."},{"heading":"The objection they should expect","content":"The strongest pushback and how their thinking already addresses it."}]}
+{"deliverable_label":"Your articulated position","sections":[{"heading":"The statement","content":"A tight clear paragraph they could paste into a message or pitch. Written in their voice. 3-5 sentences max."},{"heading":"Where you actually are","content":"THE MIRROR LINE. One bold sentence."},{"heading":"The headline version","content":"One sentence. If they only had 10 seconds."},{"heading":"The objection they should expect","content":"The strongest pushback and how their thinking already addresses it."}]}
 
 Also identify which thinking disciplines were used during this session based on the types of notes and instructions on the canvas. Add to your JSON response:
 "thinking_approaches": "This session drew from [list disciplines: design thinking, systems thinking, strategic thinking, critical thinking, creative thinking — only include ones actually used] to help you [what it achieved in one phrase]."
@@ -52,7 +69,7 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", max_tokens: 600, system: SYSTEM,
+      model: "claude-sonnet-4-20250514", max_tokens: 800, system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
     clearTimeout(timer);
