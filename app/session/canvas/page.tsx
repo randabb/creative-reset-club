@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import { useState, useReducer, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-type Action = "clarify" | "expand" | "decide" | "express";
+import { canvasReducer, createInitialState, type Action, type Note, type Connection, type Discovery, type Pattern, type SynthesisData } from "@/lib/canvas-state";
 
 const ACT: Record<Action, { icon: string; color: string; label: string }> = {
   clarify: { icon: "◎", color: "#6B8AFE", label: "Clarify" },
@@ -13,22 +12,6 @@ const ACT: Record<Action, { icon: string; color: string; label: string }> = {
   express: { icon: "◈", color: "#C4A6FF", label: "Express" },
 };
 
-interface Note {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  source?: "goal" | "thinking" | "ai" | "user" | "dimension";
-  action?: Action;
-  aiInstruction?: boolean;
-  qIndex?: number;
-  dimIndex?: number;
-  dimLabel?: string;
-  dimDesc?: string;
-  aiTitle?: string;
-  discipline?: "design" | "systems" | "strategic" | "critical" | "creative";
-  promptQuestion?: string;
-}
 
 interface ResponseFlow {
   instructionIds: string[];
@@ -43,14 +26,6 @@ const THINKING_LABELS: Record<string, string[]> = {
   decision: ["THE REAL CHOICE", "WHAT'S AT STAKE"],
   expression: ["WHAT YOU'RE SAYING", "THE TENSION"],
 };
-
-interface Connection {
-  id: string;
-  from: string;
-  to: string;
-  label: string;
-  color?: string;
-}
 
 interface QA { question: string; answer: string; }
 
@@ -167,44 +142,40 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --- Reducer: centralized canvas model state ---
   const initial = buildInitial();
-  const [notes, setNotes] = useState<Note[]>(initial.notes);
-  const [connections, setConnections] = useState<Connection[]>(initial.conns);
+  const [state, dispatch] = useReducer(canvasReducer, createInitialState(initial.notes, initial.conns));
+  const {
+    notes, connections, editingNoteId: editId, dragId,
+    timerSeconds: timerSecs, timerActive, timerStarted, timerRemoved, timerPaused,
+    aiLoading, dimStatus, dimQAs, discoveries, patterns,
+    synthesis, synthLoading, toast, saveStatus,
+  } = state;
+
+  // --- UI-only state (not in reducer) ---
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [editId, setEditId] = useState<string | null>(null);
   const editPreHeight = useRef(0);
   const [connecting, setConnecting] = useState(false);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [connLabel, setConnLabel] = useState("");
   const [connModal, setConnModal] = useState<{ from: string; to: string } | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [showGoal, setShowGoal] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [toast, setToast] = useState("");
   const [responseFlow, setResponseFlow] = useState<ResponseFlow | null>(null);
   const [responseText, setResponseText] = useState("");
   const [respCardPos, setRespCardPos] = useState<{ x: number; y: number } | null>(null);
   const [respDragOff, setRespDragOff] = useState<{ x: number; y: number } | null>(null);
-  const [synthesis, setSynthesis] = useState<{ deliverable_label: string; sections: { heading: string; content: string }[]; reflection?: string; deliverable?: string; thinking_approaches?: string } | null>(null);
   const [synthEditing, setSynthEditing] = useState(false);
   const [synthRevealed, setSynthRevealed] = useState(false);
-  const [synthLoading, setSynthLoading] = useState(false);
   const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
   const [sessionAnalysis, setSessionAnalysis] = useState<{ assumptions: string[]; avoidance: string | null; crossTensions: { from: string; to: string; tension: string }[]; strongestFragment: string | null } | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const tourCheckedRef = useRef(false);
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
-  const [timerSecs, setTimerSecs] = useState(900); // 15 minutes
-  const [timerActive, setTimerActive] = useState(false);
-  const [timerStarted, setTimerStarted] = useState(false);
-  const [timerRemoved, setTimerRemoved] = useState(false);
-  const [timerPaused, setTimerPaused] = useState(false);
   const [timerFlicker, setTimerFlicker] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [allDimsComplete, setAllDimsComplete] = useState(false);
-  const [dimStatus, setDimStatus] = useState<Record<string, "unexplored" | "in_progress" | "complete">>({});
   const [statusState, setStatusState] = useState<{
     type: "landing" | "working" | "keep_going" | "ready_to_move" | "all_done" | "loading" | "suggesting";
     dimName?: string;
@@ -219,15 +190,12 @@ function CanvasInner() {
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
-  const [discoveries, setDiscoveries] = useState<{ id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }[]>([]);
-  const [patterns, setPatterns] = useState<{ type: string; label: string; description: string; suggestion: string; behavior?: string; question?: string; suggestedAction?: string; noteId?: string; detected_at: string }[]>([]);
   const [discOpen, setDiscOpen] = useState(true);
   const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
   const [activeDimQuestion, setActiveDimQuestion] = useState<string | null>(null);
   const [activeDimAction, setActiveDimAction] = useState<Action | null>(null);
   const [dimQuestionAnswer, setDimQuestionAnswer] = useState("");
-  const [dimQAs, setDimQAs] = useState<Record<string, { question: string; answer: string; action: string }[]>>({});
   const [dimLoading, setDimLoading] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -235,7 +203,6 @@ function CanvasInner() {
   const sessionIdRef = useRef<string | null>(sp.get("session_id"));
   const sessionCreatedRef = useRef(!!sp.get("session_id"));
   const loadedExistingRef = useRef(false);
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [userId, setUserId] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
@@ -262,25 +229,15 @@ function CanvasInner() {
           if (data.mode) setMode(data.mode);
           if (data.qas) setQas(data.qas);
           if (data.dimensions) setDimensions(data.dimensions);
-          if (data.canvas_state?.notes?.length) {
-            setNotes(data.canvas_state.notes);
-          }
-          if (data.canvas_state?.connections?.length) {
-            setConnections(data.canvas_state.connections);
-          }
-          if (data.canvas_state?.discoveries?.length) {
-            setDiscoveries(data.canvas_state.discoveries);
-          }
-          if (data.canvas_state?.patterns?.length) {
-            setPatterns(data.canvas_state.patterns);
-          }
-          if (data.canvas_state?.dimStatus) {
-            setDimStatus(data.canvas_state.dimStatus);
-          }
-          if (data.canvas_state?.dimQAs) {
-            setDimQAs(data.canvas_state.dimQAs);
-          }
-          if (data.synthesis) setSynthesis(data.synthesis);
+          dispatch({ type: "RESTORE_SESSION", payload: {
+            ...(data.canvas_state?.notes?.length ? { notes: data.canvas_state.notes } : {}),
+            ...(data.canvas_state?.connections?.length ? { connections: data.canvas_state.connections } : {}),
+            ...(data.canvas_state?.discoveries?.length ? { discoveries: data.canvas_state.discoveries } : {}),
+            ...(data.canvas_state?.patterns?.length ? { patterns: data.canvas_state.patterns } : {}),
+            ...(data.canvas_state?.dimStatus ? { dimStatus: data.canvas_state.dimStatus } : {}),
+            ...(data.canvas_state?.dimQAs ? { dimQAs: data.canvas_state.dimQAs } : {}),
+            ...(data.synthesis ? { synthesis: data.synthesis } : {}),
+          }});
           loadedExistingRef.current = true;
         } catch (err) {
           console.error("[canvas] Load error:", err);
@@ -340,7 +297,7 @@ function CanvasInner() {
       return;
     }
     console.log("[canvas] Saving:", { sessionId: sid, notes: notes.length, connections: connections.length });
-    setSaveStatus("saving");
+    dispatch({ type: "SET_SAVE_STATUS", payload: "saving" });
     try {
       const res = await fetch("/api/sessions", {
         method: "PATCH",
@@ -354,21 +311,21 @@ function CanvasInner() {
       const data = await res.json();
       if (!res.ok) {
         console.error("[canvas] Save failed:", data);
-        setSaveStatus("unsaved");
+        dispatch({ type: "SET_SAVE_STATUS", payload: "unsaved" });
       } else {
         console.log("[canvas] Save success");
-        setSaveStatus("saved");
+        dispatch({ type: "SET_SAVE_STATUS", payload: "saved" });
         dirtyRef.current = false;
       }
     } catch (err) {
       console.error("[canvas] Save error:", err);
-      setSaveStatus("unsaved");
+      dispatch({ type: "SET_SAVE_STATUS", payload: "unsaved" });
     }
   }, [notes, connections, synthesis, discoveries, patterns, dimStatus, dimQAs]);
 
   const scheduleSave = useCallback(() => {
     dirtyRef.current = true;
-    setSaveStatus("unsaved");
+    dispatch({ type: "SET_SAVE_STATUS", payload: "unsaved" });
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => saveCanvas(), 2000);
   }, [saveCanvas]);
@@ -415,9 +372,9 @@ function CanvasInner() {
     }
 
     // New session — initialize everything
-    const initial: Record<string, "unexplored" | "in_progress" | "complete"> = {};
-    dimensions.forEach(d => { initial[d.label] = "unexplored"; });
-    setDimStatus(initial);
+    const initStatus: Record<string, "unexplored" | "in_progress" | "complete"> = {};
+    dimensions.forEach(d => { initStatus[d.label] = "unexplored"; });
+    dispatch({ type: "INIT_DIM_STATUS", payload: initStatus });
     setStatusState({ type: "landing", dimName: dimensions[0]?.label, message: "Tap start when you\u2019re ready." });
     // Flicker timer for 7 seconds to draw attention
     setTimerFlicker(true);
@@ -474,24 +431,23 @@ function CanvasInner() {
   useEffect(() => {
     if (timerActive && !timerPaused && timerSecs > 0) {
       timerRef.current = setInterval(() => {
-        setTimerSecs(s => {
-          if (s <= 1) {
-            setTimerActive(false);
-            if (timerRef.current) clearInterval(timerRef.current);
-            // Time's up nudge
-            setStatusState({ type: allDimsComplete ? "all_done" : "keep_going",
-              message: allDimsComplete ? "Perfect timing. See what you found?" : "15 minutes is up. Keep going or see what you found?",
-              dimName: statusState.dimName });
-            return 0;
-          }
-          return s - 1;
-        });
+        dispatch({ type: "TIMER_TICK" });
       }, 1000);
       return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerActive, timerPaused]);
+
+  // Timer expiry side effect (statusState update)
+  useEffect(() => {
+    if (timerSecs === 0 && timerStarted && !timerRemoved) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setStatusState({ type: allDimsComplete ? "all_done" : "keep_going",
+        message: allDimsComplete ? "Perfect timing. See what you found?" : "15 minutes is up. Keep going or see what you found?" });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerSecs]);
 
   // Load timer from session
   useEffect(() => {
@@ -514,9 +470,7 @@ function CanvasInner() {
   }, [timerSecs, timerStarted]);
 
   const startTimer = () => {
-    setTimerStarted(true);
-    setTimerActive(true);
-    setTimerPaused(false);
+    dispatch({ type: "TIMER_START" });
     setTimerFlicker(false);
     // Trigger first dimension question
     if (dimensions[0] && !activeDimQuestion) {
@@ -550,10 +504,10 @@ function CanvasInner() {
       const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
       const newX = Math.max(0, e.clientX - dragOffRef.current.x);
       const newY = Math.max(0, e.clientY - dragOffRef.current.y + scrollTop);
-      setNotes(ns => ns.map(n => n.id === dragId ? { ...n, x: newX, y: newY } : n));
+      dispatch({ type: "UPDATE_NOTE", payload: { id: dragId, updates: { x: newX, y: newY } } });
     };
     const handleMouseUp = () => {
-      setDragId(null);
+      dispatch({ type: "SET_DRAG_ID", payload: null });
       if (scrollContainer) scrollContainer.style.overflowY = "auto";
     };
 
@@ -584,7 +538,7 @@ function CanvasInner() {
     console.log("[canvas] Note mousedown", id);
     const scrollTop = vpRef.current ? vpRef.current.scrollTop : 0;
     dragOffRef.current = { x: e.clientX - n.x, y: e.clientY - (n.y - scrollTop) };
-    setDragId(id);
+    dispatch({ type: "SET_DRAG_ID", payload: id });
     if (!e.shiftKey) setSelected(new Set([id]));
     else setSelected(s => { const ns = new Set(s); ns.has(id) ? ns.delete(id) : ns.add(id); return ns; });
   };
@@ -595,8 +549,8 @@ function CanvasInner() {
     if (t.closest(".cn")) return;
     const pt = s2c(e.clientX, e.clientY);
     const id = uid();
-    setNotes(ns => [...ns, { id, x: pt.x, y: pt.y, text: "", source: "user" }]);
-    setEditId(id);
+    dispatch({ type: "ADD_NOTE", payload: { id, x: pt.x, y: pt.y, text: "", source: "user" } });
+    dispatch({ type: "SET_EDIT_ID", payload: id });
     setSelected(new Set([id]));
   };
 
@@ -604,24 +558,23 @@ function CanvasInner() {
     // Auto-start timer if not started
     if (!timerStarted && !timerRemoved) startTimer();
     const id = uid();
-    setNotes(ns => [...ns, { id, x: 300 + Math.random() * 200, y: 100 + Math.random() * 200, text: "", source: "user" }]);
-    setEditId(id);
+    dispatch({ type: "ADD_NOTE", payload: { id, x: 300 + Math.random() * 200, y: 100 + Math.random() * 200, text: "", source: "user" } });
+    dispatch({ type: "SET_EDIT_ID", payload: id });
     setSelected(new Set([id]));
   };
 
-  const updateText = (id: string, text: string) => setNotes(ns => ns.map(n => n.id === id ? { ...n, text } : n));
+  const updateText = (id: string, text: string) => dispatch({ type: "UPDATE_NOTE", payload: { id, updates: { text } } });
 
   const justFinishedEditRef = useRef(false);
   const finishEdit = (id: string) => {
-    setEditId(null);
+    dispatch({ type: "FINISH_EDIT", payload: id });
     justFinishedEditRef.current = true;
     setTimeout(() => { justFinishedEditRef.current = false; }, 300);
-    setNotes(ns => ns.filter(n => n.id !== id || n.text.trim()));
   };
 
   const finishConnection = () => {
     if (!connModal) return;
-    setConnections(cs => [...cs, { id: uid(), from: connModal.from, to: connModal.to, label: connLabel }]);
+    dispatch({ type: "ADD_CONNECTION", payload: { id: uid(), from: connModal.from, to: connModal.to, label: connLabel } });
     setConnLabel("");
     setConnModal(null);
   };
@@ -648,10 +601,12 @@ function CanvasInner() {
 
     const dim = findNoteDim(selNote);
     if (dim.label) {
-      setDimStatus(prev => ({ ...prev, [dim.label]: prev[dim.label] === "complete" ? "complete" : "in_progress" }));
+      if (dimStatus[dim.label] !== "complete") {
+        dispatch({ type: "SET_DIM_STATUS", payload: { label: dim.label, status: "in_progress" } });
+      }
     }
     setStatusState({ type: "loading" });
-    setAiLoading(true);
+    dispatch({ type: "SET_AI_LOADING", payload: true });
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8000);
@@ -686,8 +641,8 @@ function CanvasInner() {
         id: instId, x: selNote.x, y: startY,
         text, source: "ai", action, aiInstruction: true, aiTitle: title, discipline: disc,
       };
-      setNotes(ns => [...ns, instNote]);
-      setConnections(cs => [...cs, { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color }]);
+      dispatch({ type: "ADD_NOTE", payload: instNote });
+      dispatch({ type: "ADD_CONNECTION", payload: { id: uid(), from: selId, to: instId, label: "", color: ACT[action].color } });
 
       // Auto-scroll vertically to show new note
       // Auto-scroll to show new note
@@ -701,7 +656,7 @@ function CanvasInner() {
       setSelected(new Set());
       setStatusState({ type: "working", dimName: dim.label, message: pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."]) });
     } catch { /* handled by API fallback */ }
-    setAiLoading(false);
+    dispatch({ type: "SET_AI_LOADING", payload: false });
   };
 
   // Export helpers
@@ -732,8 +687,8 @@ function CanvasInner() {
 
   const saveToStudio = async () => {
     await saveCanvas();
-    setToast("✓ Saved to your Studio");
-    setTimeout(() => { setToast(""); router.push("/studio"); }, 2500);
+    dispatch({ type: "SET_TOAST", payload: "✓ Saved to your Studio" });
+    setTimeout(() => { dispatch({ type: "SET_TOAST", payload: "" }); router.push("/studio"); }, 2500);
   };
 
   const copyPrompt = () => {
@@ -749,8 +704,8 @@ function CanvasInner() {
     }
     md += `## Raw thinking notes\n${notes.filter(n => n.source !== "dimension" && n.source !== "goal").map(n => `- ${n.text}`).join("\n")}`;
     navigator.clipboard.writeText(md);
-    setToast("✓ Copied to clipboard");
-    setTimeout(() => setToast(""), 2500);
+    dispatch({ type: "SET_TOAST", payload: "✓ Copied to clipboard" });
+    setTimeout(() => dispatch({ type: "SET_TOAST", payload: "" }), 2500);
   };
 
   const downloadMd = () => {
@@ -776,13 +731,13 @@ function CanvasInner() {
       id: respId, x: instNote.x, y: instNote.y + charOffset(instNote.text),
       text: responseText.trim(), source: "user", discipline: instNote.discipline, promptQuestion: instNote.text,
     };
-    setNotes(ns => [...ns, respNote]);
+    dispatch({ type: "ADD_NOTE", payload: respNote });
 
     const dim = findNoteDim(instNote);
 
-    setConnections(cs => [...cs, {
+    dispatch({ type: "ADD_CONNECTION", payload: {
       id: uid(), from: instId, to: respId, label: "", color: "rgba(0,3,50,0.1)",
-    }]);
+    } });
     setResponseText("");
     setRespCardPos(null);
     setResponseFlow(null);
@@ -805,7 +760,7 @@ function CanvasInner() {
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {
-        setDiscoveries(prev => [...prev, { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() }]);
+        dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() } });
       }
     }).catch(err => console.error("[canvas] Discovery error:", err));
 
@@ -827,7 +782,7 @@ function CanvasInner() {
 
       // Helper to handle "ready to move"
       const handleReadyToMove = () => {
-        setDimStatus(prev => ({ ...prev, [dim.label]: "complete" }));
+        dispatch({ type: "SET_DIM_STATUS", payload: { label: dim.label, status: "complete" } });
         const completedCount = Object.values(dimStatus).filter(s => s === "complete").length + 1;
         const currentDimIdx = dimensions.findIndex(d => d.label === dim.label);
         const nextDimEntry = dimensions.find(d => d.label !== dim.label && dimStatus[d.label] !== "complete");
@@ -959,8 +914,8 @@ function CanvasInner() {
 
   // Delete a note and all its connections
   const deleteNote = (id: string) => {
-    setNotes(ns => ns.filter(n => n.id !== id));
-    setConnections(cs => cs.filter(c => c.from !== id && c.to !== id));
+    dispatch({ type: "DELETE_NOTE", payload: id });
+    dispatch({ type: "DELETE_NOTE_CONNECTIONS", payload: id });
     setSelected(s => { const ns = new Set(s); ns.delete(id); return ns; });
   };
 
@@ -1023,7 +978,7 @@ function CanvasInner() {
               </button>
             ) : (
               <button
-                onClick={() => { if (timerSecs > 0) setTimerPaused(!timerPaused); }}
+                onClick={() => { if (timerSecs > 0) dispatch({ type: "TIMER_TOGGLE_PAUSE" }); }}
                 style={{
                   background: "none", border: "none", padding: "4px 8px",
                   fontSize: 14, fontFamily: "'DM Mono', monospace", cursor: "pointer",
@@ -1036,7 +991,7 @@ function CanvasInner() {
             )}
             <button
               className="timer-x"
-              onClick={() => { setTimerRemoved(true); setTimerActive(false); if (timerRef.current) clearInterval(timerRef.current); }}
+              onClick={() => { dispatch({ type: "TIMER_REMOVE" }); if (timerRef.current) clearInterval(timerRef.current); }}
               style={{ background: "none", border: "none", fontSize: 12, color: "rgba(0,3,50,0.15)", cursor: "pointer", opacity: 0, transition: "opacity 0.15s", padding: 2 }}
             >&times;</button>
           </div>
@@ -1089,8 +1044,8 @@ function CanvasInner() {
           <button onClick={async () => {
             if (showExport) { setShowExport(false); return; }
             setShowExport(true);
-            setSynthesis(null);
-            setSynthLoading(true);
+            dispatch({ type: "SET_SYNTHESIS", payload: null });
+            dispatch({ type: "SET_SYNTH_LOADING", payload: true });
             setSessionAnalysis(null);
             try {
               // Run session analysis in parallel with synthesis
@@ -1107,7 +1062,7 @@ function CanvasInner() {
               await analysisPromise;
               const data = await res.json();
               if (data.deliverable_label || data.sections) {
-                setSynthesis(data);
+                dispatch({ type: "SET_SYNTHESIS", payload: data });
                 setSynthRevealed(false);
                 setTimeout(() => setSynthRevealed(true), 100);
                 // Detect resistance
@@ -1119,10 +1074,10 @@ function CanvasInner() {
               }
             } catch (err) {
               console.error("[canvas] Synthesis generation failed:", err);
-              setToast("Couldn\u2019t generate your brief. Try again.");
-              setTimeout(() => setToast(""), 3000);
+              dispatch({ type: "SET_TOAST", payload: "Couldn\u2019t generate your brief. Try again." });
+              setTimeout(() => dispatch({ type: "SET_TOAST", payload: "" }), 3000);
             }
-            setSynthLoading(false);
+            dispatch({ type: "SET_SYNTH_LOADING", payload: false });
           }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
         </div>
@@ -1167,8 +1122,8 @@ function CanvasInner() {
                   }}>
                     {synthEditing ? (
                       <>
-                        <input value={sec.heading} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, heading: e.target.value } : s) }; setSynthesis(ns); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, fontWeight: 700, color: "#000332", fontFamily: "inherit", marginBottom: 4 }} />
-                        <textarea value={sec.content} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, content: e.target.value } : s) }; setSynthesis(ns); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400, fontFamily: "inherit", resize: "none", minHeight: 40 }} />
+                        <input value={sec.heading} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, heading: e.target.value } : s) }; dispatch({ type: "SET_SYNTHESIS", payload: ns as SynthesisData }); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, fontWeight: 700, color: "#000332", fontFamily: "inherit", marginBottom: 4 }} />
+                        <textarea value={sec.content} onChange={e => { const ns = { ...synthesis, sections: synthesis.sections.map((s, j) => j === i ? { ...s, content: e.target.value } : s) }; dispatch({ type: "SET_SYNTHESIS", payload: ns as SynthesisData }); }} style={{ width: "100%", border: "none", outline: "none", fontSize: 14, color: "#000332", lineHeight: 1.6, fontWeight: 400, fontFamily: "inherit", resize: "none", minHeight: 40 }} />
                       </>
                     ) : (
                       <>
@@ -1745,9 +1700,9 @@ function CanvasInner() {
                             const noteId = uid();
                             const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
                             const lastNoteY = colNotes.length > 0 ? Math.max(...colNotes.map(cn => cn.y + charOffset(cn.text))) : n.y + 160;
-                            setNotes(ns => [...ns, { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user", promptQuestion: currentQ }]);
+                            dispatch({ type: "ADD_NOTE", payload: { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user", promptQuestion: currentQ } });
                             setDimQuestionAnswer("");
-                            setDimStatus(prev => ({ ...prev, [dimLabel]: "in_progress" }));
+                            dispatch({ type: "SET_DIM_STATUS", payload: { label: dimLabel, status: "in_progress" } });
 
                             // Auto-scroll to keep latest card visible
                             setTimeout(() => {
@@ -1757,7 +1712,7 @@ function CanvasInner() {
                             // Track Q&A for this dimension
                             const newQA = { question: currentQ, answer: answerText, action: currentAction };
                             const updatedQAs = [...(dimQAs[dimLabel] || []), newQA];
-                            setDimQAs(prev => ({ ...prev, [dimLabel]: updatedQAs }));
+                            dispatch({ type: "SET_DIM_QAS", payload: { label: dimLabel, qas: updatedQAs } });
 
                             // Update status bar
                             setStatusState({ type: "loading" });
@@ -1780,11 +1735,11 @@ function CanvasInner() {
 
                               // Add discovery if present
                               if (data.discovery) {
-                                setDiscoveries(prev => [...prev, { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() }]);
+                                dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() } });
                               }
 
                               if (data.status === "complete") {
-                                setDimStatus(prev => ({ ...prev, [dimLabel]: "complete" }));
+                                dispatch({ type: "SET_DIM_STATUS", payload: { label: dimLabel, status: "complete" } });
                                 setActiveDimQuestion(null);
                                 setActiveDimAction(null);
                                 // Analyze completed dimension
@@ -1794,7 +1749,7 @@ function CanvasInner() {
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
                                   if (ad.keyInsight) {
-                                    setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
+                                    dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() } });
                                   }
                                 }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)
@@ -1808,7 +1763,7 @@ function CanvasInner() {
                                   }).then(r => r.json()).then(pd => {
                                     if (pd.pattern) {
                                       console.log("[canvas] Pattern from API:", pd.pattern);
-                                      setPatterns(prev => prev.length < 3 ? [...prev, { ...pd.pattern, noteId }] : prev);
+                                      dispatch({ type: "ADD_PATTERN", payload: { ...pd.pattern, noteId } });
                                     }
                                   }).catch(err => console.error("[canvas] API error:", err));
                                 }
@@ -1863,7 +1818,7 @@ function CanvasInner() {
                 key={n.id}
                 className="cn"
                 onMouseDown={e => startDrag(n.id, e)}
-                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); setDragId(null); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; setEditId(n.id); }}
+                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
@@ -1904,7 +1859,7 @@ function CanvasInner() {
                   <div style={{ position: "absolute", top: 6, right: 6, zIndex: 5, display: "flex", alignItems: "center", gap: 6 }}>
                     <button
                       className="cn-edit"
-                      onClick={(e) => { e.stopPropagation(); setDragId(null); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; setEditId(n.id); }}
+                      onClick={(e) => { e.stopPropagation(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
                       onMouseDown={(e) => e.stopPropagation()}
                       style={{
                         background: "none", border: "none",
@@ -2001,7 +1956,7 @@ function CanvasInner() {
                             onClick={(e) => {
                               e.stopPropagation();
                               // Clear pattern glow for this note
-                              if (patternGlow) setPatterns(prev => prev.map(p => p.noteId === n.id ? { ...p, noteId: undefined } : p));
+                              if (patternGlow) dispatch({ type: "CLEAR_PATTERN_NOTE", payload: n.id });
                               setSelected(new Set([n.id]));
                               setTimeout(() => runAction(a), 100);
                             }}
