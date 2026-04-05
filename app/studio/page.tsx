@@ -99,6 +99,34 @@ export default function Studio() {
     load();
   }, [router]);
 
+  // Fallback: cluster sessions by first meaningful word in goal
+  const buildKeywordFallback = (items: CanvasItem[]) => {
+    const groups: Record<string, string[]> = {};
+    items.forEach(c => {
+      const words = c.goal.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(w => w.length > 3);
+      const key = words[0] || "other";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(c.id);
+    });
+    // Merge small groups into "everything else"
+    const themes: { label: string; sessionIds: string[] }[] = [];
+    const misc: string[] = [];
+    Object.entries(groups).forEach(([label, ids]) => {
+      if (ids.length >= 2) themes.push({ label, sessionIds: ids });
+      else misc.push(...ids);
+    });
+    if (misc.length > 0) themes.push({ label: "everything else", sessionIds: misc });
+    // If still only 1 theme, split in half
+    if (themes.length < 2 && items.length >= 4) {
+      const half = Math.ceil(items.length / 2);
+      return [
+        { label: "recent thinking", sessionIds: items.slice(0, half).map(c => c.id) },
+        { label: "earlier sessions", sessionIds: items.slice(half).map(c => c.id) },
+      ];
+    }
+    return themes.length > 0 ? themes : [{ label: "your sessions", sessionIds: items.map(c => c.id) }];
+  };
+
   const loadThemes = async () => {
     if (themesLoaded || canvases.length < 3) return;
 
@@ -108,8 +136,8 @@ export default function Studio() {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { themes: cachedThemes, sessionCount } = JSON.parse(cached);
-        if (sessionCount === canvases.length && cachedThemes?.length) {
-          // Verify all cached session IDs still exist
+        // Only use cache if count matches AND there are 2+ themes (not a failed fallback)
+        if (sessionCount === canvases.length && cachedThemes?.length >= 2) {
           const currentIds = new Set(canvases.map(c => c.id));
           const allValid = cachedThemes.every((t: { sessionIds: string[] }) =>
             t.sessionIds.every((id: string) => currentIds.has(id))
@@ -124,11 +152,14 @@ export default function Studio() {
     } catch { /* ignore cache errors */ }
 
     setThemesLoading(true);
-    const sessionsToSend = canvases.map(c => ({
-      id: c.id,
-      goal: c.goal,
-      synthesis_snippet: c.synthesis_snippet || "",
-    }));
+    const sessionsToSend = canvases
+      .filter(c => c.goal && c.goal.trim() && c.goal !== "Untitled canvas")
+      .map(c => ({
+        id: c.id,
+        goal: c.goal,
+        synthesis_snippet: c.synthesis_snippet || "",
+      }));
+    console.log("[studio] Sending", sessionsToSend.length, "sessions to themes API");
     try {
       const res = await fetch("/api/generate-themes", {
         method: "POST",
@@ -136,17 +167,21 @@ export default function Studio() {
         body: JSON.stringify({ sessions: sessionsToSend }),
       });
       const data = await res.json();
-      if (data.themes?.length) {
+      console.log("[studio] Themes response:", data.themes?.length, "themes");
+      if (data.themes?.length >= 2) {
         setThemes(data.themes);
         try { localStorage.setItem(cacheKey, JSON.stringify({ themes: data.themes, sessionCount: canvases.length })); } catch { /* ignore */ }
       } else {
-        // Fallback: single "all sessions" group
-        setThemes([{ label: "your sessions", sessionIds: canvases.map(c => c.id) }]);
+        // Fallback: group by goal keywords (not mode)
+        console.warn("[studio] API returned < 2 themes, using keyword fallback");
+        const fallback = buildKeywordFallback(canvases);
+        setThemes(fallback);
       }
       setThemesLoaded(true);
     } catch (err) {
       console.error("[studio] Themes error:", err);
-      setThemes([{ label: "your sessions", sessionIds: canvases.map(c => c.id) }]);
+      const fallback = buildKeywordFallback(canvases);
+      setThemes(fallback);
       setThemesLoaded(true);
     }
     setThemesLoading(false);
