@@ -24,6 +24,8 @@ Bad: "What would have to be true about their internal politics for this to get a
 
 Under 15 words. One idea per question. Use "you" and "they" not abstract language. No framework names, no jargon.
 
+CRITICAL: Every question MUST connect to the user's goal. Ask yourself: "How does this help them?" Ground in frameworks (First Principles, Inversion, Pre-Mortem) but never name them.
+
 Respond with ONLY a JSON array:
 [{"dimension":"dimension label","action":"clarify","question":"your question here"}]`;
 

@@ -16,6 +16,8 @@ Rules:
 - Use their language
 - One idea per question
 - The follow-up should feel like "oh, that's the obvious next question" based on what they just said
+- Every question MUST connect to their goal. Ask: "How does this help them with their goal?"
+- Ground questions in frameworks (First Principles, Inversion, Pre-Mortem, Steelman) but NEVER name them
 
 Return ONLY the question as a string, no JSON, no quotes.`;
 

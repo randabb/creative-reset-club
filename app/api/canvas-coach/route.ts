@@ -7,7 +7,17 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const GLOBAL = `You have access to the user's goal and all their previous notes and answers on the canvas. Use their specific language and situation. Never ask a generic question. This question should only make sense for THIS person and THIS note.
 
-CRITICAL: Write in second person (you/your). Never use they/their.`;
+CRITICAL: Write in second person (you/your). Never use they/their.
+
+CRITICAL: Every question must clearly connect to the user's GOAL. Before generating, ask yourself: "How does this question help them with their goal?" If you can't answer clearly, pick a different question.
+
+Ground your questions in expert frameworks but NEVER name them:
+- FIRST PRINCIPLES: What's actually true vs assumed?
+- INVERSION: What would failure look like?
+- SECOND-ORDER: If this works, what happens next?
+- STEELMAN: What's the strongest counter-argument?
+- PRE-MORTEM: 6 months from now this failed. Why?
+- OPPORTUNITY COST: What are you giving up?`;
 
 const ACTION_PROMPTS: Record<string, string> = {
   clarify: `The user wrote something on their canvas. Generate ONE clarify question.
