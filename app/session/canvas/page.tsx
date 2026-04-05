@@ -1789,7 +1789,7 @@ function CanvasInner() {
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
                                   if (ad.crossTension && patterns.length < 3) {
-                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "cross_tension", label: "Tension", behavior: `you said "${ad.crossTension.from.slice(0, 40)}" and also "${ad.crossTension.to.slice(0, 40)}."`, question: "Which one wins?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", detected_at: new Date().toISOString() }] : prev);
+                                    setPatterns(prev => prev.length < 3 ? [...prev, { type: "contradiction", label: "Contradiction", behavior: `you're pulling in two directions on ${dimLabel}.`, question: "Which one do you actually believe?", description: ad.crossTension.tension, suggestion: ad.crossTension.tension, suggestedAction: "decide", detected_at: new Date().toISOString() }] : prev);
                                   }
                                   if (ad.keyInsight) {
                                     setDiscoveries(prev => [...prev, { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() }]);
