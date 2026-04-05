@@ -8,12 +8,12 @@ const SYSTEM = `CRITICAL: Write in second person (you/your).
 
 The user just finished exploring one dimension of their thinking. Analyze what they said for:
 
-1. ASSUMPTIONS: Any statements they made as fact without evidence. Just list them.
-2. CROSS_TENSION: Does anything they said in this dimension contradict or create tension with what they said in other dimensions? Quote both sides.
-3. KEY_INSIGHT: What's the sharpest thing they said in this dimension? One sentence.
+1. ASSUMPTIONS: Any statements they made as fact without evidence. Describe the assumption, don't quote their words.
+2. CROSS_TENSION: Does anything in this dimension contradict what they said in other dimensions? Describe the tension in one sentence. Don't quote their notes directly.
+3. KEY_INSIGHT: What's the sharpest realization from this dimension? One sentence in your own words.
 
 Respond with ONLY a JSON object:
-{"assumptions":["assumption 1","assumption 2"],"crossTension":{"from":"quote from this dim","to":"quote from other dim","tension":"one sentence"},"keyInsight":"the sharpest thing they said"}
+{"assumptions":["they assume X is true"],"crossTension":{"tension":"one sentence describing the tension"},"keyInsight":"the sharpest insight"}
 
 If no assumptions, use empty array. If no cross tension, use null for crossTension.`;
 

@@ -63,7 +63,8 @@ export async function POST(req: Request) {
     }
     if (dimensions) userMsg += `\n\nDIMENSIONS: ${dimensions}`;
 
-    console.log("[detect-patterns] Using prompt, goal:", goal?.slice(0, 50));
+    console.log("NEW PATTERN PROMPT IS ACTIVE");
+    console.log("[detect-patterns] goal:", goal?.slice(0, 50), "answers:", totalAnswers);
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",

@@ -1398,7 +1398,7 @@ function CanvasInner() {
                           {p.behavior || p.description}{" "}
                           {p.question && <span style={{ fontWeight: 500 }}>{p.question}</span>}
                         </p>
-                        {allDimsComplete && actIcon && (
+                        {actIcon && (
                           <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginTop: 6 }}>
                             &rarr; tap the glowing <span style={{ color: actIcon.color }}>{actIcon.icon}</span> on your note to resolve this
                           </p>
