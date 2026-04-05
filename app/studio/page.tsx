@@ -222,11 +222,11 @@ export default function Studio() {
 
   const filters: { key: "all" | Mode | "thoughts"; label: string }[] = [
     { key: "all", label: "All" },
+    ...(canvases.length >= 3 ? [{ key: "thoughts" as const, label: "Thoughts" }] : []),
     { key: "clarity", label: "◎ Clarity" },
     { key: "expansion", label: "✦ Expansion" },
     { key: "decision", label: "⟁ Decision" },
     { key: "expression", label: "◈ Expression" },
-    ...(canvases.length >= 3 ? [{ key: "thoughts" as const, label: "Thoughts" }] : []),
   ];
 
   return (
