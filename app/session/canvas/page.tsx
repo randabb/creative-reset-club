@@ -1385,19 +1385,27 @@ function CanvasInner() {
               ) : (
                 <>
                   {/* Patterns first */}
-                  {patterns.length > 0 && console.log("[canvas] Rendering patterns:", patterns.length)}
-                  {patterns.map((p, i) => (
-                    <div key={`pat-${i}`} style={{
-                      borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8,
-                      background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 12px",
-                      animation: "noteIn 0.3s ease-out forwards",
-                    }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>PATTERN</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#000332", marginBottom: 2 }}>{p.label}</div>
-                      <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.45, marginBottom: 3 }}>{p.description}</p>
-                      <p style={{ fontSize: 11, color: "rgba(0,3,50,0.4)", fontStyle: "italic" }}>{p.suggestion}</p>
-                    </div>
-                  ))}
+                  {patterns.map((p, i) => {
+                    const actIcon = p.suggestedAction && ACT[p.suggestedAction as Action] ? ACT[p.suggestedAction as Action] : null;
+                    return (
+                      <div key={`pat-${i}`} style={{
+                        borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 12,
+                        background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "10px 12px 10px 14px",
+                        animation: "noteIn 0.3s ease-out forwards",
+                      }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{p.label}</div>
+                        <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5 }}>
+                          {(p as { behavior?: string }).behavior || p.description}{" "}
+                          {(p as { question?: string }).question && <span style={{ fontWeight: 500 }}>{(p as { question?: string }).question}</span>}
+                        </p>
+                        {allDimsComplete && actIcon && (
+                          <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginTop: 6 }}>
+                            &rarr; tap the glowing <span style={{ color: actIcon.color }}>{actIcon.icon}</span> on your note to resolve this
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                   {/* Divider between patterns and insights */}
                   {patterns.length > 0 && discoveries.length > 0 && (
                     <div style={{ height: 1, background: "rgba(0,3,50,0.06)", margin: "6px 0 10px" }} />

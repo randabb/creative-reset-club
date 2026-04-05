@@ -35,27 +35,30 @@ Do NOT flag:
 - Slight shifts in framing between dimensions (people naturally explore different angles)
 - Anything that feels like correcting someone's grammar rather than improving their thinking
 
-When you DO flag a pattern, frame it as a useful question, not an observation:
-- Bad: "You contradicted yourself — you said X in one place and Y in another."
-- Good: "You said X and also Y. These pull in different directions. Which one wins?"
-- Bad: "You're hedging by using qualifiers."
-- Good: "You said 'maybe' and 'might' a lot here. What would this sound like if you committed?"
+When you flag a pattern, write it in exactly this format:
+1. Label: the pattern type (e.g. "Assumption", "Avoidance", "Binary thinking")
+2. Behavior: one sentence naming what they're specifically doing. Starts with "you're..." or "you haven't..." or "you keep...". Under 15 words.
+3. Question: one question that cracks it open. Under 10 words.
+
+Examples:
+- Label: "Assumption" | Behavior: "you're assuming they care about price." | Question: "What if it's trust?"
+- Label: "Avoidance" | Behavior: "you haven't mentioned your co-founder once." | Question: "Why?"
+- Label: "Binary thinking" | Behavior: "you framed this as hire or promote." | Question: "What's the third option?"
+- Label: "Sunk cost" | Behavior: "you're defending the old positioning because you already shipped it." | Question: "Is it still right?"
+- Label: "Projection" | Behavior: "you keep saying 'people want this.'" | Question: "Do you actually know that?"
 
 Rules:
 - Maximum ONE pattern per API call.
-- Be specific — quote their actual words.
-- Write in second person (you/your).
-- Keep the description under 40 words.
 - If no pattern is genuinely important, return null. Returning null is the RIGHT answer most of the time.
 
-Also determine which single action would best help resolve this pattern:
-- CLARIFY for contradictions, vagueness, borrowed language
-- EXPAND for surface-level thinking, single perspective, anchoring
-- DECIDE for fence-sitting, unnamed tradeoffs, hedging between options
-- EXPRESS for messy articulation, buried insights, ready to crystallize
+Also determine which action would help resolve it:
+- CLARIFY for contradictions, vagueness, assumptions
+- EXPAND for single perspective, anchoring, comfort zone
+- DECIDE for fence-sitting, binary thinking, unnamed tradeoffs
+- EXPRESS for messy articulation, buried insights
 
 Respond with ONLY a JSON object or the word null:
-{"type":"contradiction|hedging|scope_creep|two_audiences|circular|assumption|solving_before_diagnosing|anchoring","label":"Short 2-3 word label","description":"The specific pattern with their quoted words","suggestion":"One sentence suggesting which action would help.","suggestedAction":"clarify|expand|decide|express"}`;
+{"type":"pattern_type","label":"Pattern Name","behavior":"what they're doing","question":"the question","suggestedAction":"clarify|expand|decide|express"}`;
 
 export async function POST(req: Request) {
   try {
@@ -105,16 +108,17 @@ export async function POST(req: Request) {
     if (!match) return NextResponse.json({ pattern: null });
 
     const parsed = JSON.parse(match[0]);
-    const validTypes = ["contradiction", "hedging", "scope_creep", "two_audiences", "circular", "assumption", "solving_before_diagnosing", "anchoring"];
-    if (!validTypes.includes(parsed.type)) return NextResponse.json({ pattern: null });
+    if (!parsed.label || !parsed.behavior) return NextResponse.json({ pattern: null });
 
     const validActions = ["clarify", "expand", "decide", "express"];
     return NextResponse.json({
       pattern: {
-        type: parsed.type,
-        label: parsed.label || "Pattern detected",
-        description: parsed.description || "",
-        suggestion: parsed.suggestion || "",
+        type: parsed.type || "pattern",
+        label: parsed.label,
+        description: `${parsed.behavior} ${parsed.question || ""}`.trim(),
+        behavior: parsed.behavior || "",
+        question: parsed.question || "",
+        suggestion: `${parsed.behavior} ${parsed.question || ""}`.trim(),
         suggestedAction: validActions.includes(parsed.suggestedAction) ? parsed.suggestedAction : "clarify",
         detected_at: new Date().toISOString(),
       },
