@@ -24,8 +24,11 @@ const fadeUp = (visible: boolean, delay = 0) => ({
   transition: `opacity 0.8s ease ${delay}s, transform 0.8s ease ${delay}s`,
 });
 
+const BODY_FONT = "var(--font-jakarta), 'Plus Jakarta Sans', -apple-system, sans-serif";
+const MONO_FONT = "var(--font-mono), 'DM Mono', monospace";
+
 const LABEL = (color = "#FF9090"): React.CSSProperties => ({
-  fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700,
+  fontFamily: MONO_FONT, fontSize: 11, fontWeight: 700,
   letterSpacing: "0.2em", textTransform: "uppercase", color, marginBottom: 16,
 });
 
@@ -33,7 +36,7 @@ const LABEL = (color = "#FF9090"): React.CSSProperties => ({
 function ProblemSection() {
   const { ref, visible } = useInView();
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px 80px" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px 80px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
         <div style={{ ...fadeUp(visible), ...LABEL() }}>THE PROBLEM</div>
         <h2 style={{ ...fadeUp(visible, 0.1), fontFamily: "Georgia, serif", fontSize: "clamp(28px,4vw,42px)", fontWeight: 700, color: "#000332", lineHeight: 1.2, marginBottom: 28 }}>
@@ -60,24 +63,24 @@ function HowItWorks() {
     { num: "04", title: "Get your brief", color: "#C4A6FF", desc: "Primer assembles your thinking into a brief. Your words, organized. Blind spots flagged. Assumptions named. Ready to act on.", before: "messy notes", after: "conviction" },
   ];
   return (
-    <div ref={ref} style={{ background: "#000332", padding: "100px 24px" }}>
+    <div ref={ref} style={{ background: "#000332", padding: "100px 24px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", textAlign: "center" }}>
         <div style={{ ...fadeUp(visible), ...LABEL() }}>HOW IT WORKS</div>
         <h2 style={{ ...fadeUp(visible, 0.1), fontFamily: "Georgia, serif", fontSize: "clamp(26px,4vw,40px)", fontWeight: 700, color: "#FAF7F0", lineHeight: 1.2, marginBottom: 48 }}>
           15 minutes. Four steps. You walk out certain.
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+        <div className="hiw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {cards.map((c, i) => (
             <div key={i} style={{
               ...fadeUp(visible, 0.2 + i * 0.15),
               background: "rgba(250,247,240,0.04)", borderRadius: 16,
-              borderTop: `3px solid ${c.color}`, padding: "28px 24px",
+              borderTop: `3px solid ${c.color}`, padding: "24px 20px",
               textAlign: "left",
             }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700, color: c.color, marginBottom: 8 }}>{c.num}</div>
+              <div style={{ fontFamily: MONO_FONT, fontSize: 12, fontWeight: 700, color: c.color, marginBottom: 8 }}>{c.num}</div>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#FAF7F0", marginBottom: 10 }}>{c.title}</div>
               <p style={{ fontSize: 14, color: "rgba(250,247,240,0.55)", lineHeight: 1.65, marginBottom: 20 }}>{c.desc}</p>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontFamily: MONO_FONT, fontSize: 11, display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ color: "rgba(250,247,240,0.35)" }}>{c.before}</span>
                 <span style={{ color: c.color, fontWeight: 700 }}>&rarr;</span>
                 <span style={{ color: "#FAF7F0", fontWeight: 600 }}>{c.after}</span>
@@ -100,7 +103,7 @@ function WhatYouGet() {
     { color: "#C4A6FF", heading: "The move", content: "Write the landing page for the person who just spent 45 minutes going in circles with AI." },
   ];
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", textAlign: "center" }}>
         <div style={{ ...fadeUp(visible), ...LABEL() }}>WHAT YOU GET</div>
         <h2 style={{ ...fadeUp(visible, 0.1), fontFamily: "Georgia, serif", fontSize: "clamp(26px,4vw,40px)", fontWeight: 700, color: "#000332", lineHeight: 1.2, marginBottom: 10 }}>
@@ -110,7 +113,7 @@ function WhatYouGet() {
           Every word came from you. Primer assembled the mosaic.
         </p>
         <div style={{ ...fadeUp(visible, 0.25), background: "#000332", borderRadius: 20, padding: "36px 32px", textAlign: "left", maxWidth: 640, margin: "0 auto" }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#FF9090", marginBottom: 20 }}>YOUR BRIEF</div>
+          <div style={{ fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "#FF9090", marginBottom: 20 }}>YOUR BRIEF</div>
           {sections.map((s, i) => (
             <div key={i} style={{
               ...fadeUp(visible, 0.35 + i * 0.15),
@@ -124,7 +127,7 @@ function WhatYouGet() {
             ...fadeUp(visible, 0.95),
             borderLeft: "3px dashed rgba(250,247,240,0.2)", paddingLeft: 14, marginTop: 24,
           }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "rgba(250,247,240,0.35)", marginBottom: 4 }}>PATTERN DETECTED</div>
+            <div style={{ fontFamily: MONO_FONT, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "rgba(250,247,240,0.35)", marginBottom: 4 }}>PATTERN DETECTED</div>
             <div style={{ fontSize: 13, color: "rgba(250,247,240,0.5)", lineHeight: 1.55 }}>
               <strong style={{ color: "rgba(250,247,240,0.7)" }}>Assumption:</strong> you&rsquo;re assuming founders compare tools before buying. What if they don&rsquo;t shop &mdash; they just grab whatever&rsquo;s in front of them?
             </div>
@@ -147,7 +150,7 @@ function BlindSpots() {
     { label: "Binary thinking", desc: "You framed it as A or B. There are at least four options." },
   ];
   return (
-    <div ref={ref} style={{ background: "rgba(0,3,50,0.03)", padding: "100px 24px" }}>
+    <div ref={ref} style={{ background: "rgba(0,3,50,0.03)", padding: "100px 24px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
         <div style={{ ...fadeUp(visible), ...LABEL() }}>YOUR BLIND SPOTS, SURFACED</div>
         <h2 style={{ ...fadeUp(visible, 0.1), fontFamily: "Georgia, serif", fontSize: "clamp(24px,4vw,38px)", fontWeight: 700, color: "#000332", lineHeight: 1.2, marginBottom: 10 }}>
@@ -178,7 +181,7 @@ function BlindSpots() {
 function TakeToAI() {
   const { ref, visible } = useInView();
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "100px 24px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
         <div style={{ ...fadeUp(visible), ...LABEL() }}>THEN WHAT</div>
         <h2 style={{ ...fadeUp(visible, 0.1), fontFamily: "Georgia, serif", fontSize: "clamp(24px,4vw,38px)", fontWeight: 700, color: "#000332", lineHeight: 1.2, marginBottom: 16 }}>
@@ -188,16 +191,16 @@ function TakeToAI() {
           Your brief becomes the perfect prompt. Primer figures out the right deliverable &mdash; a strategy doc, a decision framework, an action plan &mdash; and formats it so any AI gives you exactly what you need. No back-and-forth. No rewording. One paste, one enter, done.
         </p>
         <div style={{ ...fadeUp(visible, 0.25), background: "#000332", borderRadius: 16, padding: "28px 28px", textAlign: "left", maxWidth: 600, margin: "0 auto" }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#FF9090", marginBottom: 16 }}>YOUR AI PROMPT (AUTO-GENERATED)</div>
-          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "rgba(250,247,240,0.35)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontFamily: MONO_FONT, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#FF9090", marginBottom: 16 }}>YOUR AI PROMPT (AUTO-GENERATED)</div>
+          <p style={{ fontFamily: MONO_FONT, fontSize: 12, color: "rgba(250,247,240,0.35)", lineHeight: 1.7, marginBottom: 10 }}>
             Here&rsquo;s my thinking on &ldquo;how to position my product.&rdquo; I used Primer to work through this...
           </p>
-          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "rgba(250,247,240,0.35)", lineHeight: 1.7, marginBottom: 16 }}>
+          <p style={{ fontFamily: MONO_FONT, fontSize: 12, color: "rgba(250,247,240,0.35)", lineHeight: 1.7, marginBottom: 16 }}>
             My brief: [your synthesis]
           </p>
           <p style={{
             ...fadeUp(visible, 0.55),
-            fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#FAF7F0", fontWeight: 700, lineHeight: 1.7,
+            fontFamily: MONO_FONT, fontSize: 13, color: "#FAF7F0", fontWeight: 700, lineHeight: 1.7,
             textShadow: visible ? "0 0 20px rgba(255,144,144,0.15)" : "none",
           }}>
             Now help me act on this: Create a one-page positioning document with target audience, core problem, unique value prop, key messaging, and 3 tagline options.
@@ -217,7 +220,7 @@ function WhoItsFor() {
     { title: "Creators & consultants", color: "#7ED6A8", quotes: "I have ideas but I can\u2019t articulate them. I know what I think but I can\u2019t write it down. I need structure, not AI writing for me." },
   ];
   return (
-    <div ref={ref} style={{ background: "#000332", padding: "100px 24px" }}>
+    <div ref={ref} style={{ background: "#000332", padding: "100px 24px", fontFamily: BODY_FONT }}>
       <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia, serif", fontSize: "clamp(24px,4vw,38px)", fontWeight: 700, color: "#FAF7F0", lineHeight: 1.2, marginBottom: 48 }}>
           People who think for a living.
@@ -244,7 +247,7 @@ function WhoItsFor() {
 function TheLine() {
   const { ref, visible } = useInView();
   return (
-    <div ref={ref} style={{ background: "#FAF7F0", padding: "120px 24px", textAlign: "center" }}>
+    <div ref={ref} style={{ background: "#FAF7F0", padding: "120px 24px", textAlign: "center", fontFamily: BODY_FONT }}>
       <p style={{ ...fadeUp(visible), fontFamily: "Georgia, serif", fontSize: "clamp(22px,3.5vw,32px)", color: "#000332", lineHeight: 1.5, marginBottom: 8 }}>
         Most people use AI to think for them.
       </p>
@@ -266,7 +269,7 @@ function TheLine() {
 function FinalCTA() {
   const { ref, visible } = useInView();
   return (
-    <div ref={ref} style={{ background: "#000332", padding: "100px 24px 80px", textAlign: "center" }}>
+    <div ref={ref} style={{ background: "#000332", padding: "100px 24px 80px", textAlign: "center", fontFamily: BODY_FONT }}>
       <h2 style={{ ...fadeUp(visible), fontFamily: "Georgia, serif", fontSize: "clamp(28px,4.5vw,44px)", fontWeight: 700, color: "#FAF7F0", lineHeight: 1.2, marginBottom: 14 }}>
         15 minutes. One clear thought.
       </h2>
@@ -276,7 +279,7 @@ function FinalCTA() {
       <div style={fadeUp(visible, 0.3)}>
         <Link href="/auth" style={{
           display: "inline-block", background: "#FF9090", color: "#000332",
-          fontFamily: "'Codec Pro', sans-serif", fontSize: 16, fontWeight: 700,
+          fontFamily: BODY_FONT, fontSize: 16, fontWeight: 700,
           padding: "16px 40px", borderRadius: 32, textDecoration: "none",
           transform: visible ? "scale(1)" : "scale(0.95)",
           transition: "transform 0.6s ease 0.3s, opacity 0.8s ease 0.3s",
@@ -522,6 +525,12 @@ export default function Homepage() {
         @keyframes coralGlow {
           0%, 100% { text-shadow: 0 0 0 rgba(255,144,144,0); }
           50% { text-shadow: 0 0 20px rgba(255,144,144,0.3); }
+        }
+        @media (max-width: 900px) {
+          .hiw-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 600px) {
+          .hiw-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </>
