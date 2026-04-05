@@ -1951,22 +1951,25 @@ function CanvasInner() {
                     {(Object.keys(ACT) as Action[]).map(a => {
                       const patternGlow = patterns.some(p => p.noteId === n.id && p.suggestedAction === a);
                       return (
-                        <div key={a} className="act-tip-wrap" style={{ position: "relative" }}>
+                        <div key={a} className="act-tip-wrap"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (aiLoading) return;
+                            if (patternGlow) dispatch({ type: "CLEAR_PATTERN_NOTE", payload: n.id });
+                            setSelected(new Set([n.id]));
+                            runAction(a, n.id);
+                          }}
+                          onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                          style={{ position: "relative", cursor: "pointer", padding: 2 }}>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Clear pattern glow for this note
-                              if (patternGlow) dispatch({ type: "CLEAR_PATTERN_NOTE", payload: n.id });
-                              setSelected(new Set([n.id]));
-                              runAction(a, n.id);
-                            }}
-                            onMouseDown={e => e.stopPropagation()}
                             style={{
                               background: "none", border: "none", padding: 2,
                               fontSize: 15, color: ACT[a].color, cursor: "pointer",
                               opacity: patternGlow ? 1 : 0.4,
                               transition: "opacity 0.2s, transform 0.2s",
                               animation: patternGlow ? `actGlow${a} 1.5s ease-in-out infinite` : undefined,
+                              pointerEvents: "none",
                             }}
                           >{ACT[a].icon}</button>
                           <div className="act-tip" style={{
