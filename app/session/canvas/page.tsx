@@ -191,8 +191,8 @@ function CanvasInner() {
   const [exampleText, setExampleText] = useState("");
   const [exampleLoading, setExampleLoading] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
-  const [discOpen, setDiscOpen] = useState(true);
-  const [origThoughtsOpen, setOrigThoughtsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const feedRef = useRef<HTMLDivElement>(null);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
   const [activeDimQuestion, setActiveDimQuestion] = useState<string | null>(null);
   const [activeDimAction, setActiveDimAction] = useState<Action | null>(null);
@@ -489,6 +489,11 @@ function CanvasInner() {
   // Keep refs in sync
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
+  // Auto-scroll sidebar feed when new items arrive
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [discoveries.length, patterns.length]);
+
   const s2c = (cx: number, cy: number) => {
     if (!vpRef.current) return { x: 0, y: 0 };
     return { x: cx, y: cy + vpRef.current.scrollTop };
@@ -684,6 +689,46 @@ function CanvasInner() {
       });
     }
     return md;
+  };
+
+  const triggerSynthesis = async () => {
+    if (showExport) { setShowExport(false); return; }
+    setShowExport(true);
+    dispatch({ type: "SET_SYNTHESIS", payload: null });
+    dispatch({ type: "SET_SYNTH_LOADING", payload: true });
+    setSessionAnalysis(null);
+    try {
+      const allDimAnswers = Object.entries(dimQAs).map(([k, v]) => `${k}:\n${v.map(q => q.answer).join("\n")}`).join("\n\n");
+      const analysisPromise = fetch("/api/analyze-session", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: capture, mode, allDimensionAnswers: allDimAnswers || notes.filter(n => n.source === "user").map(n => n.text).join("\n\n"), allDiscoveries: discoveries.map(d => d.text).join("\n"), allPatterns: patterns.map(p => p.description).join("\n") }),
+      }).then(r => r.json()).then(a => setSessionAnalysis(a)).catch(err => console.error("[canvas] API error:", err));
+      const res = await fetch("/api/session-synthesis", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
+      });
+      await analysisPromise;
+      const data = await res.json();
+      if (data.deliverable_label || data.sections) {
+        dispatch({ type: "SET_SYNTHESIS", payload: data });
+        setSynthRevealed(false);
+        setTimeout(() => setSynthRevealed(true), 100);
+        const synthText = data.sections.map((s: { heading: string; content: string }) => `${s.heading}: ${s.content}`).join("\n");
+        fetch("/api/detect-resistance", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goal: capture, synthesis: synthText, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
+        }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(err => console.error("[canvas] API error:", err));
+        fetch("/api/suggest-deliverable", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goal: capture, mode, synthesis: synthText }),
+        }).then(r => r.json()).then(dd => { if (dd.deliverable) setSuggestedDeliverable({ deliverable: dd.deliverable, label: dd.label || "Action plan" }); }).catch(err => console.error("[canvas] API error:", err));
+      }
+    } catch (err) {
+      console.error("[canvas] Synthesis generation failed:", err);
+      dispatch({ type: "SET_TOAST", payload: "Couldn\u2019t generate your brief. Try again." });
+      setTimeout(() => dispatch({ type: "SET_TOAST", payload: "" }), 3000);
+    }
+    dispatch({ type: "SET_SYNTH_LOADING", payload: false });
   };
 
   const saveToStudio = async () => {
@@ -1051,49 +1096,7 @@ function CanvasInner() {
         {/* RIGHT: Goal, Ready to go, Legend */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "6px 14px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.08)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
-          <button onClick={async () => {
-            if (showExport) { setShowExport(false); return; }
-            setShowExport(true);
-            dispatch({ type: "SET_SYNTHESIS", payload: null });
-            dispatch({ type: "SET_SYNTH_LOADING", payload: true });
-            setSessionAnalysis(null);
-            try {
-              // Run session analysis in parallel with synthesis
-              const allDimAnswers = Object.entries(dimQAs).map(([k, v]) => `${k}:\n${v.map(q => q.answer).join("\n")}`).join("\n\n");
-              const analysisPromise = fetch("/api/analyze-session", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ goal: capture, mode, allDimensionAnswers: allDimAnswers || notes.filter(n => n.source === "user").map(n => n.text).join("\n\n"), allDiscoveries: discoveries.map(d => d.text).join("\n"), allPatterns: patterns.map(p => p.description).join("\n") }),
-              }).then(r => r.json()).then(a => setSessionAnalysis(a)).catch(err => console.error("[canvas] API error:", err));
-
-              const res = await fetch("/api/session-synthesis", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ goal: capture, mode, dimensions, allNotes: notes.map(n => n.text).join("\n\n") }),
-              });
-              await analysisPromise;
-              const data = await res.json();
-              if (data.deliverable_label || data.sections) {
-                dispatch({ type: "SET_SYNTHESIS", payload: data });
-                setSynthRevealed(false);
-                setTimeout(() => setSynthRevealed(true), 100);
-                // Detect resistance
-                const synthText = data.sections.map((s: { heading: string; content: string }) => `${s.heading}: ${s.content}`).join("\n");
-                fetch("/api/detect-resistance", {
-                  method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ goal: capture, synthesis: synthText, discoveries: discoveries.map(d => d.text).join("\n"), patterns: patterns.map(p => p.description).join("\n") }),
-                }).then(r => r.json()).then(rd => { if (rd.hasResistance) setResistancePrompt(rd.resistancePrompt); }).catch(err => console.error("[canvas] API error:", err));
-                // Suggest deliverable for AI prompt export
-                fetch("/api/suggest-deliverable", {
-                  method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ goal: capture, mode, synthesis: synthText }),
-                }).then(r => r.json()).then(dd => { if (dd.deliverable) setSuggestedDeliverable({ deliverable: dd.deliverable, label: dd.label || "Action plan" }); }).catch(err => console.error("[canvas] API error:", err));
-              }
-            } catch (err) {
-              console.error("[canvas] Synthesis generation failed:", err);
-              dispatch({ type: "SET_TOAST", payload: "Couldn\u2019t generate your brief. Try again." });
-              setTimeout(() => dispatch({ type: "SET_TOAST", payload: "" }), 3000);
-            }
-            dispatch({ type: "SET_SYNTH_LOADING", payload: false });
-          }} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
+          <button onClick={triggerSynthesis} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
         </div>
       </div>
@@ -1292,135 +1295,153 @@ function CanvasInner() {
         </div>
       )}
 
-      {/* DISCOVERIES CARD */}
+      {/* THINKING COMPANION SIDEBAR */}
       {dimensions.length > 0 && (
         <div style={{
-          position: "fixed", right: 20, top: 100, zIndex: 20,
-          width: 280, background: "#fff", borderRadius: 14,
-          border: "1px solid rgba(0,3,50,0.06)",
-          boxShadow: "0 4px 20px rgba(0,3,50,0.06)",
-          overflow: "hidden",
+          position: "fixed", right: 0, top: 44, bottom: 0, zIndex: 20,
+          width: sidebarOpen ? 300 : 48,
+          background: "rgba(0,3,50,0.72)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+          borderLeft: "1px solid rgba(250,247,240,0.08)",
+          transition: "width 0.3s cubic-bezier(0.4,0,0.2,1)",
+          display: "flex", flexDirection: "column", overflow: "hidden",
         }}>
-          <div
-            onClick={() => setDiscOpen(!discOpen)}
+          {/* Toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
-              padding: "12px 16px", cursor: "pointer",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              borderBottom: discOpen ? "1px solid rgba(0,3,50,0.04)" : "none",
+              position: "absolute", top: 12, left: sidebarOpen ? 12 : "50%",
+              transform: sidebarOpen ? "none" : "translateX(-50%)",
+              background: "none", border: "none", color: "rgba(250,247,240,0.4)",
+              fontSize: 14, cursor: "pointer", padding: 4, zIndex: 2,
+              transition: "left 0.3s, transform 0.3s",
             }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#000332" }}>Your discoveries</span>
-            <span style={{ fontSize: 12, color: "rgba(0,3,50,0.3)" }}>{discOpen ? "▾" : "▸"}</span>
-          </div>
-          {discOpen && (
-            <div style={{ maxHeight: 400, overflowY: "auto", padding: "8px 16px 12px" }}>
-              {/* Your original thoughts */}
-              {qas.length > 0 && (
-                <div style={{ marginBottom: 10 }}>
-                  <button
-                    onClick={() => setOrigThoughtsOpen(!origThoughtsOpen)}
-                    style={{ background: "none", border: "none", fontSize: 11, fontWeight: 600, color: "rgba(0,3,50,0.4)", cursor: "pointer", fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
-                  >
-                    Your original thoughts <span style={{ fontSize: 10 }}>{origThoughtsOpen ? "▾" : "▸"}</span>
-                  </button>
-                  {origThoughtsOpen && (
-                    <div style={{ marginTop: 6 }}>
-                      {qas.map((qa, i) => {
-                        const label = THINKING_LABELS[mode]?.[i] || `Answer ${i + 1}`;
-                        return (
-                          <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: i < qas.length - 1 ? "1px solid rgba(0,3,50,0.04)" : "none" }}>
-                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(0,3,50,0.35)", marginBottom: 2 }}>{label}</div>
-                            <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.5, fontWeight: 300 }}>{qa.answer}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Discoveries */}
-              {/* Progress dots */}
-              <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
-                {dimensions.map((d, i) => (
-                  <div key={i} style={{
-                    width: 7, height: 7, borderRadius: "50%",
-                    background: dimStatus[d.label] === "complete" ? "#FF9090" : "rgba(0,3,50,0.1)",
-                    transition: "background 0.3s",
-                    animation: dimStatus[d.label] === "complete" ? "dotPop 0.3s ease-out" : undefined,
-                  }} />
+          >{sidebarOpen ? "›" : "‹"}</button>
+
+          {/* Collapsed state */}
+          {!sidebarOpen && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 40, gap: 8 }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(250,247,240,0.4)", writingMode: "vertical-rl", textOrientation: "mixed", letterSpacing: "0.1em" }}>
+                {discoveries.length + patterns.length} FOUND
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+                {discoveries.slice(-5).map((d, i) => {
+                  const c = d.discipline && DISC_DOT[d.discipline] ? DISC_DOT[d.discipline] : "#FF9090";
+                  return <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: c, opacity: 0.6 }} />;
+                })}
+                {patterns.slice(-3).map((_, i) => (
+                  <div key={`p${i}`} style={{ width: 6, height: 6, borderRadius: 1, background: "rgba(250,247,240,0.3)" }} />
                 ))}
               </div>
-              {discoveries.length === 0 && patterns.length === 0 ? (
-                <p style={{ fontSize: 12, color: "rgba(0,3,50,0.35)", fontStyle: "italic", lineHeight: 1.55 }}>
-                  Your discoveries will appear here as you work through each dimension.
-                </p>
-              ) : (
-                <>
-                  {/* Patterns first */}
-                  {patterns.map((p, i) => {
-                    const actIcon = p.suggestedAction && ACT[p.suggestedAction as Action] ? ACT[p.suggestedAction as Action] : null;
-                    return (
-                      <div key={`pat-${i}`} style={{
-                        borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 12,
-                        background: "rgba(0,3,50,0.04)", borderRadius: "0 6px 6px 0", padding: "10px 12px 10px 14px",
-                        animation: "noteIn 0.3s ease-out forwards",
-                      }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{p.label}</div>
-                        <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5 }}>
-                          {p.behavior || p.description}{" "}
-                          {p.question && <span style={{ fontWeight: 500 }}>{p.question}</span>}
-                        </p>
-                        {actIcon && (
-                          <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginTop: 6 }}>
-                            &rarr; tap the glowing <span style={{ color: actIcon.color }}>{actIcon.icon}</span> on your note to resolve this
-                          </p>
-                        )}
-                      </div>
-                    );
+            </div>
+          )}
+
+          {/* Expanded content */}
+          {sidebarOpen && (
+            <>
+              {/* Header */}
+              <div style={{ padding: "16px 16px 12px 36px", borderBottom: "1px solid rgba(250,247,240,0.06)", flexShrink: 0 }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "rgba(250,247,240,0.45)", marginBottom: 8 }}>YOUR THINKING</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {discoveries.map((d, i) => {
+                    const c = d.discipline && DISC_DOT[d.discipline] ? DISC_DOT[d.discipline] : "#FF9090";
+                    return <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: c, opacity: 0.7 }} />;
                   })}
-                  {/* Divider between patterns and insights */}
-                  {patterns.length > 0 && discoveries.length > 0 && (
-                    <div style={{ height: 1, background: "rgba(0,3,50,0.06)", margin: "6px 0 10px" }} />
-                  )}
-                  {/* Insights */}
-                  {(() => {
-                    let lastDim = "";
-                    return discoveries.map((d, i) => {
-                      const showDimHeader = d.dimLabel !== lastDim;
-                      lastDim = d.dimLabel;
+                  {patterns.map((_, i) => (
+                    <div key={`ps${i}`} style={{ width: 6, height: 6, borderRadius: 1, background: "rgba(250,247,240,0.35)" }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Feed */}
+              <div ref={feedRef} style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {discoveries.length === 0 && patterns.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "rgba(250,247,240,0.25)", fontStyle: "italic", lineHeight: 1.55, textAlign: "center", marginTop: 20 }}>
+                    Your discoveries will appear here as you work through each dimension.
+                  </p>
+                ) : (
+                  // Interleave discoveries and patterns by timestamp
+                  [...discoveries.map(d => ({ kind: "discovery" as const, item: d, t: d.createdAt })),
+                   ...patterns.map(p => ({ kind: "pattern" as const, item: p, t: p.detected_at }))
+                  ].sort((a, b) => a.t.localeCompare(b.t)).map((entry, i) => {
+                    if (entry.kind === "discovery") {
+                      const d = entry.item;
                       const discColor = d.discipline && DISC_DOT[d.discipline] ? DISC_DOT[d.discipline] : "#FF9090";
-                      const colonIdx = d.text.indexOf(":");
-                      const label = colonIdx > 0 ? d.text.slice(0, colonIdx) : "";
-                      const rest = colonIdx > 0 ? d.text.slice(colonIdx + 1).trim() : d.text;
                       return (
-                        <div key={i}>
-                          {showDimHeader && (
-                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginTop: i > 0 ? 10 : 0, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                              {d.dimLabel.toUpperCase()}
-                              {dimStatus[d.dimLabel] === "complete" && <span style={{ color: "#7ED6A8" }}>✓</span>}
-                            </div>
-                          )}
-                          <div style={{
-                            borderLeft: `3px solid ${discColor}`,
-                            paddingLeft: 10, marginBottom: 8,
-                            animation: "noteIn 0.3s ease-out forwards",
-                          }}>
-                            <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.45 }}>
-                              {label ? <><strong style={{ color: "#000332" }}>{label}:</strong> {rest}</> : rest}
-                            </p>
+                        <div key={`d${i}`} style={{
+                          borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
+                          animation: "sidebarIn 0.3s ease-out forwards",
+                        }}>
+                          <p style={{ fontFamily: "Georgia,serif", fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, marginTop: 4, opacity: 0.7 }}>
+                            {d.dimLabel.toUpperCase()}
                           </div>
                         </div>
                       );
-                    });
-                  })()}
-                  {allDimsComplete && (
-                    <p style={{ fontSize: 12, color: "#FF9090", fontWeight: 600, marginTop: 8 }}>
-                      All dimensions explored. Hit See what you found → for your full brief.
-                    </p>
+                    } else {
+                      const p = entry.item;
+                      const actIcon = p.suggestedAction && ACT[p.suggestedAction as Action] ? ACT[p.suggestedAction as Action] : null;
+                      return (
+                        <div key={`p${i}`} style={{
+                          border: "1.5px dashed rgba(250,247,240,0.25)", borderRadius: 8,
+                          padding: "12px 14px",
+                          animation: "sidebarIn 0.3s ease-out forwards",
+                        }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: "0.12em", color: "rgba(250,247,240,0.35)", marginBottom: 4 }}>PATTERN</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(250,247,240,0.85)", marginBottom: 4 }}>{p.label}</div>
+                          <p style={{ fontSize: 13, color: "rgba(250,247,240,0.55)", lineHeight: 1.5 }}>
+                            {p.behavior || p.description}
+                          </p>
+                          {p.question && (
+                            <p style={{ fontFamily: "Georgia,serif", fontSize: 13, color: "rgba(250,247,240,0.6)", fontStyle: "italic", lineHeight: 1.5, marginTop: 4 }}>
+                              {p.question}
+                            </p>
+                          )}
+                          {actIcon && (
+                            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{
+                                display: "inline-flex", alignItems: "center", gap: 4,
+                                background: `${actIcon.color}20`, padding: "3px 10px", borderRadius: 100,
+                                fontSize: 11, fontWeight: 600, color: actIcon.color,
+                              }}>{actIcon.icon} {actIcon.label}</span>
+                            </div>
+                          )}
+                          {actIcon && (
+                            <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(250,247,240,0.25)", marginTop: 6 }}>
+                              tap the glowing {actIcon.icon} on your note
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+                  })
+                )}
+              </div>
+
+              {/* Synthesis button */}
+              <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(250,247,240,0.06)", flexShrink: 0 }}>
+                <button
+                  onClick={allDimsComplete ? triggerSynthesis : undefined}
+                  className={allDimsComplete ? "sidebar-synth-ready" : undefined}
+                  style={{
+                    width: "100%", padding: "14px 16px", borderRadius: 10, border: "none",
+                    background: allDimsComplete ? "rgba(255,144,144,0.12)" : "rgba(250,247,240,0.03)",
+                    ...(allDimsComplete ? { border: "1px solid rgba(255,144,144,0.3)" } : {}),
+                    color: allDimsComplete ? "#FF9090" : "rgba(250,247,240,0.2)",
+                    fontSize: 14, fontWeight: 700, cursor: allDimsComplete ? "pointer" : "default",
+                    fontFamily: "inherit", textAlign: "left",
+                    transition: "all 0.3s",
+                    animation: allDimsComplete ? "sidebarIn 0.3s ease-out forwards" : undefined,
+                  }}
+                >
+                  See what you found {allDimsComplete && "→"}
+                  {!allDimsComplete && (
+                    <span style={{ display: "block", fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(250,247,240,0.15)", marginTop: 2 }}>
+                      finish your dimensions to unlock
+                    </span>
                   )}
-                </>
-              )}
-            </div>
+                </button>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -1616,13 +1637,13 @@ function CanvasInner() {
                     position: "absolute", left: n.x, top: n.y,
                     width: 220, padding: "14px 16px",
                     borderRadius: 10,
-                    background: "#000332",
+                    background: "rgba(0,3,50,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     zIndex: 10,
                     cursor: "default",
                     animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : activeDimQuestion === n.dimLabel ? "dimGlow 1s ease-in-out 1" : undefined,
                     transition: "background 0.4s, box-shadow 0.4s",
-                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "#0a0a40" } : {}),
+                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "rgba(10,10,64,0.6)" } : {}),
                   }}
                 >
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
@@ -2123,6 +2144,8 @@ function CanvasInner() {
         @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes dimNudge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.25), 0 2px 8px rgba(0,0,0,0.1); } }
         @keyframes synthExportFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes sidebarIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .sidebar-synth-ready:hover { background: #FF9090 !important; color: #000332 !important; border-color: #FF9090 !important; }
       `}</style>
     </div>
   );
