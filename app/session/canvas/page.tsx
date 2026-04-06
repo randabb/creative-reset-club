@@ -1370,7 +1370,7 @@ function CanvasInner() {
                           borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
                           animation: "sidebarIn 0.3s ease-out forwards",
                         }}>
-                          <p style={{ fontFamily: "Georgia,serif", fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
+                          <p style={{ fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
                           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, marginTop: 4, opacity: 0.7 }}>
                             {d.dimLabel.toUpperCase()}
                           </div>
@@ -1391,7 +1391,7 @@ function CanvasInner() {
                             {p.behavior || p.description}
                           </p>
                           {p.question && (
-                            <p style={{ fontFamily: "Georgia,serif", fontSize: 13, color: "rgba(250,247,240,0.6)", fontStyle: "italic", lineHeight: 1.5, marginTop: 4 }}>
+                            <p style={{ fontSize: 13, color: "rgba(250,247,240,0.6)", fontStyle: "italic", lineHeight: 1.5, marginTop: 4 }}>
                               {p.question}
                             </p>
                           )}
