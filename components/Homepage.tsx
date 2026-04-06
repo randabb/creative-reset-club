@@ -409,92 +409,86 @@ export default function Homepage() {
               <div className={styles.owWord}>primer.</div>
             </div>
 
-            {/* Node 1: Capture */}
+            {/* Node 1: Capture — melty blob */}
             <div className={`${styles.node} ${styles.n1}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
-                  <div className={styles.ethHeadWrap}>
-                    <div className={styles.ethPuff}></div>
-                    <div className={styles.ethPuff}></div>
-                    <div className={styles.ethPuff}></div>
-                    <div className={styles.ethPuff}></div>
-                    <div className={styles.ethSkull}></div>
-                  </div>
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <path d="M24 6 C34 6, 42 14, 42 24 C42 30, 38 38, 28 40 C18 42, 8 36, 6 26 C4 16, 14 6, 24 6Z" fill="#FF9090" opacity="0.7" />
+                    <circle cx="38" cy="12" r="5" fill="#FF9090" opacity="0.4" />
+                    <circle cx="10" cy="38" r="3" fill="#FF9090" opacity="0.3" />
+                  </svg>
                 </div>
                 <div className={styles.nodeLabel}>Capture</div>
               </div>
             </div>
 
-            {/* Node 2: Clarify */}
+            {/* Node 2: Guided Thinking — tightening spiral */}
             <div className={`${styles.node} ${styles.n2}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
-                  <div className={styles.sparkWrap}>
-                    <div className={styles.sparkLine}></div>
-                    <div className={styles.sparkLine}></div>
-                    <div className={styles.sparkLine}></div>
-                    <div className={styles.sparkDot}></div>
-                  </div>
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <path d="M24 4 C36 4, 44 12, 44 24 C44 34, 36 42, 26 42 C16 42, 10 36, 10 28 C10 20, 16 16, 22 16 C28 16, 32 20, 32 24 C32 28, 28 30, 26 30 C23 30, 22 28, 22 26" fill="none" stroke="#6B8AFE" strokeWidth="2" opacity="0.5" strokeLinecap="round" />
+                    <circle cx="22" cy="26" r="3" fill="#6B8AFE" opacity="0.8" />
+                  </svg>
                 </div>
-                <div className={styles.nodeLabel}>Clarify</div>
+                <div className={styles.nodeLabel}>Guided Thinking</div>
               </div>
             </div>
 
-            {/* Node 3: Expand */}
+            {/* Node 3: Dimensions — exploding cluster */}
             <div className={`${styles.node} ${styles.n3}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
-                  <div className={styles.bloomWrap}>
-                    <div className={styles.bloomPetal}></div>
-                    <div className={styles.bloomPetal}></div>
-                    <div className={styles.bloomPetal}></div>
-                    <div className={styles.bloomPetal}></div>
-                    <div className={styles.bloomCore}></div>
-                  </div>
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="4" fill="#7ED6A8" opacity="0.7" />
+                    <line x1="26" y1="26" x2="10" y2="10" stroke="#7ED6A8" strokeWidth="1" opacity="0.2" />
+                    <line x1="26" y1="26" x2="44" y2="14" stroke="#7ED6A8" strokeWidth="1" opacity="0.2" />
+                    <line x1="26" y1="26" x2="40" y2="42" stroke="#7ED6A8" strokeWidth="1" opacity="0.2" />
+                    <line x1="26" y1="26" x2="8" y2="38" stroke="#7ED6A8" strokeWidth="1" opacity="0.2" />
+                    <circle cx="10" cy="10" r="7" fill="#7ED6A8" opacity="0.35" />
+                    <circle cx="44" cy="14" r="6" fill="#7ED6A8" opacity="0.4" />
+                    <circle cx="40" cy="42" r="8" fill="#7ED6A8" opacity="0.45" />
+                    <circle cx="8" cy="38" r="9" fill="#7ED6A8" opacity="0.5" />
+                  </svg>
                 </div>
-                <div className={styles.nodeLabel}>Expand</div>
+                <div className={styles.nodeLabel}>Dimensions</div>
               </div>
             </div>
 
-            {/* Node 4: Decide */}
+            {/* Node 4: Canvas — fanned cards */}
             <div className={`${styles.node} ${styles.n4}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
-                  <div className={styles.otatWrap}>
-                    <div className={styles.otatItem}><div className={styles.otatC}></div></div>
-                    <div className={styles.otatItem}><div className={styles.otatS}></div></div>
-                    <div className={styles.otatItem}><div className={styles.otatL}></div></div>
-                  </div>
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <rect x="12" y="10" width="24" height="28" rx="3" fill="#C4A6FF" opacity="0.2" transform="rotate(-18 24 24)" />
+                    <rect x="12" y="10" width="24" height="28" rx="3" fill="#C4A6FF" opacity="0.4" transform="rotate(-6 24 24)" />
+                    <rect x="12" y="10" width="24" height="28" rx="3" fill="#C4A6FF" opacity="0.65" transform="rotate(6 24 24)" />
+                    <rect x="12" y="10" width="24" height="28" rx="3" fill="#C4A6FF" opacity="0.9" transform="rotate(16 24 24)" />
+                  </svg>
                 </div>
-                <div className={styles.nodeLabel}>Decide</div>
+                <div className={styles.nodeLabel}>Canvas</div>
               </div>
             </div>
 
-            {/* Node 5: Express */}
+            {/* Node 5: Synthesis — starburst */}
             <div className={`${styles.node} ${styles.n5}`}>
               <div className={styles.nodeBody}>
                 <div className={styles.nodeAnim}>
-                  <div className={styles.refillWrap}>
-                    <div className={styles.refillDrip}></div>
-                    <div className={styles.refillGlass}>
-                      <div className={styles.refillLiq}>
-                        <div className={styles.refillRip}></div>
-                      </div>
-                    </div>
-                  </div>
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="12" fill="#E8C97A" opacity="0.15" />
+                    <circle cx="24" cy="24" r="7" fill="#E8C97A" opacity="0.9" />
+                    {[0,45,90,135,180,225,270,315].map((deg, i) => {
+                      const rad = deg * Math.PI / 180;
+                      const x1 = 24 + Math.cos(rad) * 12;
+                      const y1 = 24 + Math.sin(rad) * 12;
+                      const x2 = 24 + Math.cos(rad) * 18;
+                      const y2 = 24 + Math.sin(rad) * 18;
+                      return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#E8C97A" strokeWidth="1.5" strokeLinecap="round" opacity={i % 2 === 0 ? 0.4 : 0.3} />;
+                    })}
+                  </svg>
                 </div>
-                <div className={styles.nodeLabel}>Express</div>
-              </div>
-            </div>
-
-            {/* Node 6: Canvas */}
-            <div className={`${styles.node} ${styles.n6}`}>
-              <div className={styles.nodeBody}>
-                <div className={styles.nodeAnim} style={{ position: "relative" }}>
-                  <div className={styles.miyShape}></div>
-                  <div className={styles.miyDot}></div>
-                </div>
-                <div className={styles.nodeLabel}>Canvas</div>
+                <div className={styles.nodeLabel}>Synthesis</div>
               </div>
             </div>
           </div>
