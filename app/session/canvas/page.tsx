@@ -211,6 +211,8 @@ function CanvasInner() {
   const dragOffRef = useRef({ x: 0, y: 0 });
   const vpRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const noteRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+  const reflowScheduled = useRef(false);
 
   // Session init: create new or load existing
   useEffect(() => {
@@ -494,6 +496,60 @@ function CanvasInner() {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [discoveries.length, patterns.length]);
 
+  // Reflow note positions within dimension columns based on measured heights
+  const reflowColumns = useCallback(() => {
+    if (dimensions.length === 0 || dragId) return;
+    const dimHeaders = notes.filter(n => n.source === "dimension");
+    if (dimHeaders.length === 0) return;
+
+    const GAP = 14;
+    const updates: { id: string; y: number }[] = [];
+
+    dimHeaders.forEach(dim => {
+      // Find non-dimension notes in this column
+      const colNotes = notes.filter(n =>
+        n.id !== dim.id && n.source !== "dimension" && n.source !== "goal" &&
+        Math.abs(n.x - dim.x) < 130
+      );
+      if (colNotes.length === 0) return;
+
+      // Sort by current Y position to preserve order
+      const sorted = [...colNotes].sort((a, b) => a.y - b.y);
+
+      // Start below the dimension header (header is ~110px tall)
+      const dimEl = noteRefsMap.current.get(dim.id);
+      const dimH = dimEl ? dimEl.offsetHeight : 110;
+      let nextY = dim.y + dimH + GAP;
+
+      sorted.forEach(note => {
+        if (Math.abs(note.y - nextY) > 3) {
+          updates.push({ id: note.id, y: nextY });
+        }
+        const el = noteRefsMap.current.get(note.id);
+        const h = el ? el.offsetHeight : 100;
+        nextY += h + GAP;
+      });
+    });
+
+    if (updates.length > 0) {
+      updates.forEach(u => {
+        dispatch({ type: "UPDATE_NOTE", payload: { id: u.id, updates: { y: u.y } } });
+      });
+    }
+  }, [notes, dimensions, dragId, dispatch]);
+
+  // Schedule reflow after render when notes change
+  useEffect(() => {
+    if (dimensions.length === 0 || !canvasReady) return;
+    if (reflowScheduled.current) return;
+    reflowScheduled.current = true;
+    requestAnimationFrame(() => {
+      reflowScheduled.current = false;
+      reflowColumns();
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notes.length, notes.map(n => n.text).join("|").length, activeDimQuestion]);
+
   const s2c = (cx: number, cy: number) => {
     if (!vpRef.current) return { x: 0, y: 0 };
     return { x: cx, y: cy + vpRef.current.scrollTop };
@@ -639,8 +695,9 @@ function CanvasInner() {
       const text = (raw.text || "").replace(/[`*_]/g, "");
       const disc = (["design","systems","strategic","critical","creative"].includes(raw.discipline) ? raw.discipline : "strategic") as Note["discipline"];
 
-      // Place directly below the source note (vertical chain, generous offset)
-      const startY = selNote.y + charOffset(selNote.text);
+      // Place directly below the source note using measured height
+      const selEl = noteRefsMap.current.get(selId);
+      const startY = selNote.y + (selEl ? selEl.offsetHeight + 14 : charOffset(selNote.text));
 
       const instId = uid();
       const instNote: Note = {
@@ -783,7 +840,7 @@ function CanvasInner() {
     // Create response note below the instruction
     const respId = uid();
     const respNote: Note = {
-      id: respId, x: instNote.x, y: instNote.y + charOffset(instNote.text),
+      id: respId, x: instNote.x, y: instNote.y + ((el) => el ? el.offsetHeight + 14 : charOffset(instNote.text))(noteRefsMap.current.get(instId)),
       text: responseText.trim(), source: "user", discipline: instNote.discipline, promptQuestion: instNote.text,
     };
     dispatch({ type: "ADD_NOTE", payload: respNote });
@@ -1641,6 +1698,7 @@ function CanvasInner() {
               return (<div key={n.id} style={{ display: "contents" }}>
                 <div
                   className="cn"
+                  ref={el => { if (el) noteRefsMap.current.set(n.id, el); }}
                   style={{
                     position: "absolute", left: n.x, top: n.y,
                     width: 220, padding: "14px 16px",
@@ -1692,12 +1750,21 @@ function CanvasInner() {
                   </div>
                 )}
                 {activeDimQuestion === n.dimLabel && dimSuggestions[n.dimLabel || ""] && !dimLoading && (() => {
-                  // Find the lowest note in this dimension's column
+                  // Find the lowest note in this dimension's column using measured heights
                   const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
-                  let questionY = n.y + 140; // default: below dimension header
+                  const dimEl = noteRefsMap.current.get(n.id);
+                  const dimH = dimEl ? dimEl.offsetHeight : 110;
+                  let questionY = n.y + dimH + 14; // default: below dimension header
                   if (colNotes.length > 0) {
-                    const lowestNote = colNotes.reduce((a, b) => (a.y + charOffset(a.text)) > (b.y + charOffset(b.text)) ? a : b);
-                    questionY = lowestNote.y + charOffset(lowestNote.text);
+                    const lowestNote = colNotes.reduce((a, b) => {
+                      const aEl = noteRefsMap.current.get(a.id);
+                      const bEl = noteRefsMap.current.get(b.id);
+                      const aBottom = a.y + (aEl ? aEl.offsetHeight : 100);
+                      const bBottom = b.y + (bEl ? bEl.offsetHeight : 100);
+                      return aBottom > bBottom ? a : b;
+                    });
+                    const lowestEl = noteRefsMap.current.get(lowestNote.id);
+                    questionY = lowestNote.y + (lowestEl ? lowestEl.offsetHeight : 100) + 14;
                   }
                   return (
                   <div key={`q-${n.id}-${dimSuggestions[n.dimLabel || ""].question.slice(0,20)}`} style={{
@@ -1740,7 +1807,21 @@ function CanvasInner() {
                             // Create user note on canvas — below the last note in this column
                             const noteId = uid();
                             const colNotes = notes.filter(cn => cn.id !== n.id && cn.source !== "dimension" && cn.source !== "goal" && Math.abs(cn.x - n.x) < 130);
-                            const lastNoteY = colNotes.length > 0 ? Math.max(...colNotes.map(cn => cn.y + charOffset(cn.text))) : n.y + 160;
+                            let lastNoteY: number;
+                            if (colNotes.length > 0) {
+                              const lowest = colNotes.reduce((a, b) => {
+                                const aEl = noteRefsMap.current.get(a.id);
+                                const bEl = noteRefsMap.current.get(b.id);
+                                const aB = a.y + (aEl ? aEl.offsetHeight : 100);
+                                const bB = b.y + (bEl ? bEl.offsetHeight : 100);
+                                return aB > bB ? a : b;
+                              });
+                              const lEl = noteRefsMap.current.get(lowest.id);
+                              lastNoteY = lowest.y + (lEl ? lEl.offsetHeight : 100) + 14;
+                            } else {
+                              const dimEl = noteRefsMap.current.get(n.id);
+                              lastNoteY = n.y + (dimEl ? dimEl.offsetHeight : 110) + 14;
+                            }
                             dispatch({ type: "ADD_NOTE", payload: { id: noteId, x: n.x + 5, y: lastNoteY, text: answerText, source: "user", promptQuestion: currentQ } });
                             setDimQuestionAnswer("");
                             dispatch({ type: "SET_DIM_STATUS", payload: { label: dimLabel, status: "in_progress" } });
@@ -1858,6 +1939,7 @@ function CanvasInner() {
               <div
                 key={n.id}
                 className="cn"
+                ref={el => { if (el) noteRefsMap.current.set(n.id, el); }}
                 onMouseDown={e => startDrag(n.id, e)}
                 onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
                 style={{
@@ -2035,7 +2117,8 @@ function CanvasInner() {
             if (!instNote) return null;
             const mColor = ACT[responseFlow.action].color;
             const rcX = respCardPos ? respCardPos.x : instNote.x;
-            const rcY = respCardPos ? respCardPos.y : instNote.y + charOffset(instNote.text);
+            const instEl = noteRefsMap.current.get(instId);
+            const rcY = respCardPos ? respCardPos.y : instNote.y + (instEl ? instEl.offsetHeight + 14 : charOffset(instNote.text));
             return (
               <div
                 className="cn"
