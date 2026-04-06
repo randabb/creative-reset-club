@@ -337,8 +337,8 @@ function GuidedInner() {
           </div>
         ))}
 
-        {/* Reflection, loading, or question — never render if navigating away */}
-        {isNavigatingRef.current ? null : reflection ? (
+        {/* Reflection, loading, or question */}
+        {reflection ? (
           <div style={{
             textAlign: "center", padding: "48px 20px",
             opacity: showReflection ? 1 : 0,
@@ -351,6 +351,21 @@ function GuidedInner() {
             }}>
               {reflection}
             </p>
+          </div>
+        ) : isNavigatingRef.current ? (
+          <div style={{ textAlign: "center", padding: "48px 20px" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                  width: 6, height: 6, borderRadius: "50%", background: "#FF9090",
+                  animation: `dimDotPulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                }} />
+              ))}
+            </div>
+            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.3)", letterSpacing: "0.05em" }}>
+              building your dimensions...
+            </p>
+            <style>{`@keyframes dimDotPulse { 0%,100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }`}</style>
           </div>
         ) : loadingQ ? (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
