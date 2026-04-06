@@ -1093,10 +1093,9 @@ function CanvasInner() {
           })}
         </div>
 
-        {/* RIGHT: Goal, Ready to go, Legend */}
+        {/* RIGHT: Goal, Legend */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => setShowGoal(!showGoal)} style={{ padding: "6px 14px", borderRadius: 100, border: "1px solid rgba(0,3,50,0.08)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>Goal</button>
-          <button onClick={triggerSynthesis} style={{ padding: "6px 14px", borderRadius: 100, border: "none", background: "#FF9090", fontSize: 12, fontWeight: 700, color: "#000332", cursor: "pointer", fontFamily: "inherit", animation: allDimsComplete ? "synthGlow 2s ease-in-out infinite" : undefined, transition: "box-shadow 0.3s" }}>See what you found →</button>
           <button onClick={() => setShowLegend(!showLegend)} style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 14, color: "rgba(0,3,50,0.35)", cursor: "pointer", fontFamily: "inherit" }}>◇</button>
         </div>
       </div>
@@ -1300,7 +1299,7 @@ function CanvasInner() {
         <div style={{
           position: "fixed", right: 0, top: 44, bottom: 0, zIndex: 20,
           width: sidebarOpen ? 300 : 48,
-          background: "rgba(0,3,50,0.72)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+          background: "#000332",
           borderLeft: "1px solid rgba(250,247,240,0.08)",
           transition: "width 0.3s cubic-bezier(0.4,0,0.2,1)",
           display: "flex", flexDirection: "column", overflow: "hidden",
@@ -1418,7 +1417,7 @@ function CanvasInner() {
               </div>
 
               {/* Synthesis button */}
-              <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(250,247,240,0.06)", flexShrink: 0 }}>
+              <div style={{ padding: "16px 16px 20px", borderTop: "1px solid rgba(250,247,240,0.06)", flexShrink: 0 }}>
                 <button
                   onClick={allDimsComplete ? triggerSynthesis : undefined}
                   className={allDimsComplete ? "sidebar-synth-ready" : undefined}
@@ -1637,13 +1636,13 @@ function CanvasInner() {
                     position: "absolute", left: n.x, top: n.y,
                     width: 220, padding: "14px 16px",
                     borderRadius: 10,
-                    background: "rgba(0,3,50,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                    background: "#000332",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     zIndex: 10,
                     cursor: "default",
                     animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : activeDimQuestion === n.dimLabel ? "dimGlow 1s ease-in-out 1" : undefined,
                     transition: "background 0.4s, box-shadow 0.4s",
-                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "rgba(10,10,64,0.6)" } : {}),
+                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "#0a0a40" } : {}),
                   }}
                 >
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
