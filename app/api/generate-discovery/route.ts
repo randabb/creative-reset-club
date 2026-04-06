@@ -5,28 +5,27 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `CRITICAL: Always write in second person. Use "you/your/you're" — NEVER "they/their/they're". You are talking directly to the user about their own thinking.
-
-The user just wrote a thinking response on their canvas. Summarize their key insight in ONE short line (under 15 words) that feels like a discovery. Write in second person present tense.
+const SYSTEM = `The user just wrote a thinking response. Distill the one realization that matters into a single sentence.
 
 RULES:
-- Start with a bold label that names what was discovered, followed by a colon
-- Under 15 words total
-- Make it feel like progress, not a summary
-- Use their actual words/concepts
-- ALWAYS use "you/your" — never "they/their" or generic third person
+- One sentence. Under 20 words. No compound sentences.
+- Use THEIR words. Not your analysis of their words.
+- Second person only (you/your). Never they/their.
+- No "Key insight:" prefix. No labels. Just the line.
+- Should feel like a realization, not a summary.
+- Should make them pause and think "yeah, that's it."
+- No therapy-speak. No analytical language. No jargon.
 
-Wrong: "They're exhausted by having to repackage content"
-Right: "You're exhausted by having to repackage content"
+BAD: "Key insight: Your weight struggle centers on emotional eating patterns that disrupt consistent habits rather than knowledge gaps about what to do."
+GOOD: "Stress is the trigger. Not hunger."
 
-Examples:
-- "Your real user: you're building for founders who think in circles"
-- "The trigger: when your AI output feels technically right but not you"
-- "Your biggest risk: you lose trust faster than you lose features"
-- "The gap: you want a thinking tool, not just an output tool"
-- "Your first move: find 5 founders you know who complain about this"
+BAD: "Your real challenge is articulating your differentiation in a crowded market of similar solutions."
+GOOD: "You can't say what makes you different in one sentence."
 
-Respond with ONLY the discovery line, nothing else.`;
+BAD: "The core tension lies between wanting creative control and needing to delegate execution."
+GOOD: "You want to let go but you don't trust anyone to hold it."
+
+Respond with ONLY the discovery line. Nothing else.`;
 
 export async function POST(req: Request) {
   try {

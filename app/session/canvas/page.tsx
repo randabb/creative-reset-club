@@ -1357,22 +1357,30 @@ function CanvasInner() {
                   <p style={{ fontSize: 12, color: "rgba(250,247,240,0.25)", fontStyle: "italic", lineHeight: 1.55, textAlign: "center", marginTop: 20 }}>
                     Your discoveries will appear here as you work through each dimension.
                   </p>
-                ) : (
-                  // Interleave discoveries and patterns by timestamp
-                  [...discoveries.map(d => ({ kind: "discovery" as const, item: d, t: d.createdAt })),
-                   ...patterns.map(p => ({ kind: "pattern" as const, item: p, t: p.detected_at }))
-                  ].sort((a, b) => a.t.localeCompare(b.t)).map((entry, i) => {
+                ) : (() => {
+                  const sorted = [
+                    ...discoveries.map(d => ({ kind: "discovery" as const, item: d, t: d.createdAt })),
+                    ...patterns.map(p => ({ kind: "pattern" as const, item: p, t: p.detected_at })),
+                  ].sort((a, b) => a.t.localeCompare(b.t));
+                  let lastDimLabel = "";
+                  return sorted.map((entry, i) => {
                     if (entry.kind === "discovery") {
                       const d = entry.item;
                       const discColor = d.discipline && DISC_DOT[d.discipline] ? DISC_DOT[d.discipline] : "#FF9090";
+                      const showLabel = d.dimLabel !== lastDimLabel;
+                      lastDimLabel = d.dimLabel;
                       return (
-                        <div key={`d${i}`} style={{
-                          borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
-                          animation: "sidebarIn 0.3s ease-out forwards",
-                        }}>
-                          <p style={{ fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
-                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, marginTop: 4, opacity: 0.7 }}>
-                            {d.dimLabel.toUpperCase()}
+                        <div key={`d${i}`}>
+                          {showLabel && (
+                            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, opacity: 0.7, marginBottom: 6, marginTop: i > 0 ? 6 : 0 }}>
+                              {d.dimLabel.toUpperCase()}
+                            </div>
+                          )}
+                          <div style={{
+                            borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
+                            animation: "sidebarIn 0.3s ease-out forwards",
+                          }}>
+                            <p style={{ fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
                           </div>
                         </div>
                       );
@@ -1412,8 +1420,8 @@ function CanvasInner() {
                         </div>
                       );
                     }
-                  })
-                )}
+                  });
+                })()}
               </div>
 
               {/* Synthesis button */}
@@ -1518,7 +1526,8 @@ function CanvasInner() {
 
       {/* ZOOM CONTROLS */}
       <div style={{
-        position: "fixed", bottom: 20, right: 20, zIndex: 25,
+        position: "fixed", bottom: 20, right: dimensions.length > 0 ? (sidebarOpen ? 316 : 64) : 20, zIndex: 25,
+        transition: "right 0.3s cubic-bezier(0.4,0,0.2,1)",
         background: "#fff", borderRadius: 10, padding: 4,
         boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
         display: "flex", flexDirection: "column", gap: 2, alignItems: "center",

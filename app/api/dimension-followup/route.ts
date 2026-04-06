@@ -25,9 +25,11 @@ Rules:
 - Ground questions in frameworks (First Principles, Inversion, Pre-Mortem, Steelman) but NEVER name them.
 
 Respond with ONLY a JSON object:
-{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"one sentence insight from what they just said, using their words, or null"}
+{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"one sentence realization under 20 words, using their words, second person, or null"}
 
-If status is "complete", action and question can be null but include a discovery summary for this dimension.`;
+If status is "complete", action and question can be null but include a discovery.
+Discovery rules: one sentence, under 20 words, no "Key insight:" prefix, no compound sentences, use their actual words, should feel like a realization not a summary. Example: "You can't say what makes you different in one sentence."`;
+
 
 interface QA { question: string; answer: string; }
 
