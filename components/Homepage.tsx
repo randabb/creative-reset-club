@@ -43,7 +43,7 @@ function ProblemSection() {
           Speed without clarity is just expensive guessing.
         </h2>
         <p style={{ ...fadeUp(visible, 0.2), fontSize: 18, color: "#666", lineHeight: 1.8, maxWidth: 680, margin: "0 auto 36px" }}>
-          Before you&rsquo;ve untangled the mess. Before you&rsquo;ve seen the angles you&rsquo;re missing. Before you&rsquo;ve actually decided. Before you can say it in one sentence. You act anyway &mdash; and spend weeks fixing what 15 minutes of thinking would have prevented.
+          Before you&rsquo;ve untangled the mess. Before you&rsquo;ve seen the angles you&rsquo;re missing. Before you&rsquo;ve actually decided. Before you can say it in one sentence. You act anyway. Then you spend weeks fixing what 15 minutes of thinking would have prevented.
         </p>
         <p style={{ ...fadeUp(visible, 0.35), fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, color: "#000332", lineHeight: 1.5 }}>
           You haven&rsquo;t figured out what you believe yet. Everything downstream is guessing.
@@ -58,7 +58,7 @@ function HowItWorks() {
   const { ref, visible } = useInView();
   const cards = [
     { num: "01", title: "Dump it", color: "#FF9090", desc: "Type what\u2019s on your mind. No structure needed. Just get the messy thought out so you can see it.", before: "scattered thoughts", after: "a clear starting point" },
-    { num: "02", title: "Go deeper", color: "#6B8AFE", desc: "Primer asks you two sharp questions grounded in expert thinking frameworks. Each one goes one layer deeper than the last.", before: "surface-level ideas", after: "root-level clarity" },
+    { num: "02", title: "Go deeper", color: "#6B8AFE", desc: "Primer asks you two sharp questions. Each one pulls from real thinking frameworks and goes one layer deeper than the last.", before: "surface-level ideas", after: "root-level clarity" },
     { num: "03", title: "Explore dimensions", color: "#7ED6A8", desc: "Your thinking splits into 4 dimensions. You work through each one with questions that clarify, expand, decide, and express.", before: "everything tangled together", after: "each angle explored" },
     { num: "04", title: "Get your brief", color: "#C4A6FF", desc: "Primer assembles your thinking into a brief. Your words, organized. Blind spots flagged. Assumptions named. Ready to act on.", before: "messy notes", after: "conviction" },
   ];
@@ -97,7 +97,7 @@ function HowItWorks() {
 function WhatYouGet() {
   const { ref, visible } = useInView();
   const sections = [
-    { color: "#FF9090", heading: "The real problem", content: "You\u2019re not competing on features. You\u2019re competing on whether they trust you to understand their world." },
+    { color: "#FF9090", heading: "The real problem", content: "The question was never about features. They need to trust that you understand their world." },
     { color: "#6B8AFE", heading: "Where you actually are", content: "You haven\u2019t figured out what you believe yet. Everything downstream is guessing.", bold: true },
     { color: "#7ED6A8", heading: "What was clouding it", content: "You kept comparing yourself to tools that solve a different problem." },
     { color: "#C4A6FF", heading: "The move", content: "Write the landing page for the person who just spent 45 minutes going in circles with AI." },
@@ -129,7 +129,7 @@ function WhatYouGet() {
           }}>
             <div style={{ fontFamily: MONO_FONT, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "rgba(250,247,240,0.35)", marginBottom: 4 }}>PATTERN DETECTED</div>
             <div style={{ fontSize: 13, color: "rgba(250,247,240,0.5)", lineHeight: 1.55 }}>
-              <strong style={{ color: "rgba(250,247,240,0.7)" }}>Assumption:</strong> you&rsquo;re assuming founders compare tools before buying. What if they don&rsquo;t shop &mdash; they just grab whatever&rsquo;s in front of them?
+              <strong style={{ color: "rgba(250,247,240,0.7)" }}>Assumption:</strong> you&rsquo;re assuming founders compare tools before buying. What if they don&rsquo;t shop? They just grab whatever&rsquo;s in front of them.
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ function BlindSpots() {
   const { ref, visible } = useInView();
   const patterns = [
     { label: "Contradiction", desc: "You said two things that can\u2019t both be true." },
-    { label: "Sunk cost", desc: "You\u2019re defending a decision because of what you invested, not because it\u2019s right." },
+    { label: "Sunk cost", desc: "You\u2019re defending a decision because of what you already invested. The math stopped working a while ago." },
     { label: "Avoidance", desc: "There\u2019s something relevant you keep steering away from." },
     { label: "Premature closure", desc: "You landed on your answer in the first minute. Everything since supports it." },
     { label: "Projection", desc: "You keep saying \u2018people want\u2019 when you mean \u2018I want.\u2019" },
@@ -188,7 +188,7 @@ function TakeToAI() {
           Copy your brief into any AI chat.
         </h2>
         <p style={{ ...fadeUp(visible, 0.15), fontSize: 16, color: "#888", lineHeight: 1.7, maxWidth: 640, margin: "0 auto 40px" }}>
-          Your brief becomes the perfect prompt. Primer figures out the right deliverable &mdash; a strategy doc, a decision framework, an action plan &mdash; and formats it so any AI gives you exactly what you need. No back-and-forth. No rewording. One paste, one enter, done.
+          Your brief becomes the perfect prompt. Primer figures out the right deliverable for you: a strategy doc, a decision framework, an action plan. Then formats it so any AI gives you exactly what you need. One paste, one enter, done.
         </p>
         <div style={{ ...fadeUp(visible, 0.25), background: "#000332", borderRadius: 16, padding: "28px 28px", textAlign: "left", maxWidth: 600, margin: "0 auto" }}>
           <div style={{ fontFamily: MONO_FONT, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#FF9090", marginBottom: 16 }}>YOUR AI PROMPT (AUTO-GENERATED)</div>
@@ -217,7 +217,7 @@ function WhoItsFor() {
   const personas = [
     { title: "Founders", color: "#FF9090", quotes: "Should I pivot or double down? I need to figure out my positioning. I can\u2019t explain my product in one line." },
     { title: "Strategists & PMs", color: "#6B8AFE", quotes: "I need to present this to leadership. I\u2019m stuck between two approaches. My thinking is messy and I need to organize it." },
-    { title: "Creators & consultants", color: "#7ED6A8", quotes: "I have ideas but I can\u2019t articulate them. I know what I think but I can\u2019t write it down. I need structure, not AI writing for me." },
+    { title: "Creators & consultants", color: "#7ED6A8", quotes: "I have ideas but I can\u2019t articulate them. I know what I think but I can\u2019t write it down. I need structure. I\u2019ll do the writing." },
   ];
   return (
     <div ref={ref} style={{ background: "#000332", padding: "100px 24px", fontFamily: BODY_FONT }}>
@@ -294,7 +294,7 @@ function FinalCTA() {
         ))}
       </div>
       <p style={{ ...fadeUp(visible, 0.6), fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14, color: "rgba(250,247,240,0.2)", marginTop: 28 }}>
-        primer &mdash; the work before the work.
+        primer. the work before the work.
       </p>
     </div>
   );
