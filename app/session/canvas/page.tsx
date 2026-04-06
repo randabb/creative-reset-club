@@ -1352,9 +1352,9 @@ function CanvasInner() {
               </div>
 
               {/* Feed */}
-              <div ref={feedRef} style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div ref={feedRef} className="sidebar-feed" style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10, background: "#FAF7F0" }}>
                 {discoveries.length === 0 && patterns.length === 0 ? (
-                  <p style={{ fontSize: 12, color: "rgba(250,247,240,0.25)", fontStyle: "italic", lineHeight: 1.55, textAlign: "center", marginTop: 20 }}>
+                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.3)", fontStyle: "italic", lineHeight: 1.55, textAlign: "center", marginTop: 20 }}>
                     Your discoveries will appear here as you work through each dimension.
                   </p>
                 ) : (() => {
@@ -1372,7 +1372,7 @@ function CanvasInner() {
                       return (
                         <div key={`d${i}`}>
                           {showLabel && (
-                            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, opacity: 0.7, marginBottom: 6, marginTop: i > 0 ? 6 : 0 }}>
+                            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, letterSpacing: "0.1em", color: discColor, marginBottom: 6, marginTop: i > 0 ? 6 : 0 }}>
                               {d.dimLabel.toUpperCase()}
                             </div>
                           )}
@@ -1380,7 +1380,7 @@ function CanvasInner() {
                             borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
                             animation: "sidebarIn 0.3s ease-out forwards",
                           }}>
-                            <p style={{ fontSize: 14, color: "rgba(250,247,240,0.75)", lineHeight: 1.5 }}>{d.text}</p>
+                            <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5 }}>{d.text}</p>
                           </div>
                         </div>
                       );
@@ -1389,17 +1389,17 @@ function CanvasInner() {
                       const actIcon = p.suggestedAction && ACT[p.suggestedAction as Action] ? ACT[p.suggestedAction as Action] : null;
                       return (
                         <div key={`p${i}`} style={{
-                          border: "1.5px dashed rgba(250,247,240,0.25)", borderRadius: 8,
+                          border: "1.5px dashed rgba(0,3,50,0.2)", borderRadius: 8,
                           padding: "12px 14px",
                           animation: "sidebarIn 0.3s ease-out forwards",
                         }}>
-                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: "0.12em", color: "rgba(250,247,240,0.35)", marginBottom: 4 }}>PATTERN</div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(250,247,240,0.85)", marginBottom: 4 }}>{p.label}</div>
-                          <p style={{ fontSize: 13, color: "rgba(250,247,240,0.55)", lineHeight: 1.5 }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: "0.12em", color: "rgba(0,3,50,0.35)", marginBottom: 4 }}>PATTERN</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{p.label}</div>
+                          <p style={{ fontSize: 13, color: "rgba(0,3,50,0.6)", lineHeight: 1.5 }}>
                             {p.behavior || p.description}
                           </p>
                           {p.question && (
-                            <p style={{ fontSize: 13, color: "rgba(250,247,240,0.6)", fontStyle: "italic", lineHeight: 1.5, marginTop: 4 }}>
+                            <p style={{ fontSize: 13, color: "rgba(0,3,50,0.55)", fontStyle: "italic", lineHeight: 1.5, marginTop: 4 }}>
                               {p.question}
                             </p>
                           )}
@@ -1413,7 +1413,7 @@ function CanvasInner() {
                             </div>
                           )}
                           {actIcon && (
-                            <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(250,247,240,0.25)", marginTop: 6 }}>
+                            <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(0,3,50,0.4)", marginTop: 6 }}>
                               tap the glowing {actIcon.icon} on your note
                             </p>
                           )}
@@ -2154,6 +2154,10 @@ function CanvasInner() {
         @keyframes synthExportFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes sidebarIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .sidebar-synth-ready:hover { background: #FF9090 !important; color: #000332 !important; border-color: #FF9090 !important; }
+        .sidebar-feed::-webkit-scrollbar { width: 4px; }
+        .sidebar-feed::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-feed::-webkit-scrollbar-thumb { background: rgba(0,3,50,0.15); border-radius: 4px; }
+        .sidebar-feed::-webkit-scrollbar-thumb:hover { background: rgba(0,3,50,0.25); }
       `}</style>
     </div>
   );
