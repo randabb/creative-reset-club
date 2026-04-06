@@ -46,7 +46,7 @@ function ProblemSection() {
           Before you&rsquo;ve untangled the mess. Before you&rsquo;ve seen the angles you&rsquo;re missing. Before you&rsquo;ve actually decided. Before you can say it in one sentence. You act anyway. Then you spend weeks fixing what 15 minutes of thinking would have prevented.
         </p>
         <p style={{ ...fadeUp(visible, 0.35), fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, color: "#000332", lineHeight: 1.5 }}>
-          You haven&rsquo;t figured out what you believe yet. Everything downstream is guessing.
+          Everything downstream is guessing until you know what you believe.
         </p>
       </div>
     </div>
@@ -98,7 +98,7 @@ function WhatYouGet() {
   const { ref, visible } = useInView();
   const sections = [
     { color: "#FF9090", heading: "The real problem", content: "The question was never about features. They need to trust that you understand their world." },
-    { color: "#6B8AFE", heading: "Where you actually are", content: "You haven\u2019t figured out what you believe yet. Everything downstream is guessing.", bold: true },
+    { color: "#6B8AFE", heading: "Where you actually are", content: "Everything downstream is guessing until you know what you believe.", bold: true },
     { color: "#7ED6A8", heading: "What was clouding it", content: "You kept comparing yourself to tools that solve a different problem." },
     { color: "#C4A6FF", heading: "The move", content: "Write the landing page for the person who just spent 45 minutes going in circles with AI." },
   ];
