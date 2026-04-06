@@ -59,6 +59,7 @@ function GuidedInner() {
   const [reflection, setReflection] = useState("");
   const [showReflection, setShowReflection] = useState(false);
   const dimPromiseRef = useRef<Promise<{ label: string; description: string }[]> | null>(null);
+  const isNavigatingRef = useRef(false);
 
   const getFallback = useCallback((qNum: number) => {
     const fb = FALLBACKS[mode] || FALLBACKS.clarity;
@@ -138,6 +139,9 @@ function GuidedInner() {
       const reflData = await reflRes.json();
       reflectionText = reflData.reflection || "";
     } catch (err) { console.error("[guided] Reflection error:", err); }
+
+    // Mark as navigating before reflection clears so no Q3 textarea flashes
+    if (currentQNum >= 2) isNavigatingRef.current = true;
 
     // Show reflection if we got one
     if (reflectionText) {
@@ -333,8 +337,8 @@ function GuidedInner() {
           </div>
         ))}
 
-        {/* Reflection, loading, or question */}
-        {reflection ? (
+        {/* Reflection, loading, or question — never render if navigating away */}
+        {isNavigatingRef.current ? null : reflection ? (
           <div style={{
             textAlign: "center", padding: "48px 20px",
             opacity: showReflection ? 1 : 0,
