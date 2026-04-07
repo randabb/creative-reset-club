@@ -1922,6 +1922,7 @@ function CanvasInner() {
                                   dimensionQAs: updatedQAs,
                                   allDimensions: dimensions.map(d => d.label).join(", "),
                                   previousActions: updatedQAs.map(q => q.action).join(", "),
+                                  previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
                                 }),
                               });
                               const data = await res.json();
@@ -1942,7 +1943,7 @@ function CanvasInner() {
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
                                   if (ad.keyInsight) {
-                                    dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: `Key insight: ${ad.keyInsight}`, dimLabel, createdAt: new Date().toISOString() } });
+                                    dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: ad.keyInsight, dimLabel, createdAt: new Date().toISOString() } });
                                   }
                                 }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)

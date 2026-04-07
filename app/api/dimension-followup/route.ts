@@ -34,6 +34,7 @@ The discovery reflects the user's thinking back SHARPER than they said it. It na
 - Must be specific to THIS user. Reference their actual words. A good discovery could ONLY come from this session.
 - Connect two things they said in a way they didn't see.
 - If it sounds like therapist notes, a summary, or a motivational poster, throw it out.
+- ANTI-REPETITION: Never repeat the same idea, structure, or opening phrase as a previous discovery. If a previous discovery started with "You already" this one CANNOT. If the last was about clothing fit, this one must be about something else. Each discovery must be a NEW realization, not a rephrasing.
 
 NOT EVERY DISCOVERY NEEDS TO CHALLENGE. Some should simply affirm.
 When the user says something sharp, specific, and honest, reflect that back. The affirmation must still be specific to what they said, never generic praise. Aim for ~60% challenging, ~40% affirming.
@@ -54,7 +55,7 @@ interface QA { question: string; answer: string; }
 
 export async function POST(req: Request) {
   try {
-    const { goal, dimension, dimensionQAs, allDimensions, previousActions } = await req.json();
+    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries } = await req.json();
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nCURRENT DIMENSION: ${dimension || "General"}\n\n`;
     if (dimensionQAs?.length) {
@@ -65,6 +66,9 @@ export async function POST(req: Request) {
     }
     if (previousActions) {
       userMsg += `ACTIONS ALREADY USED: ${previousActions}\n`;
+    }
+    if (previousDiscoveries) {
+      userMsg += `\nPREVIOUS DISCOVERIES (never repeat these or rephrase them):\n${previousDiscoveries}\n`;
     }
     if (allDimensions) {
       userMsg += `\nALL DIMENSIONS: ${allDimensions}\n`;

@@ -52,7 +52,10 @@ BAD — TOO ANALYTICAL (therapist notes, summaries disguised as insights):
 - "You're scheduling around fixed time slots rather than building flexible time boundaries that could adapt to life's changes."
 - "Your weight struggle centers on emotional eating patterns that disrupt consistent habits rather than knowledge gaps about what to do."
 
-If it sounds like a therapist's notes, a meeting summary, OR a motivational poster — throw it out and try again. The user should feel SEEN, not analyzed and not inspired.
+If it sounds like a therapist's notes, a meeting summary, OR a motivational poster, throw it out and try again. The user should feel SEEN, not analyzed and not inspired.
+
+ANTI-REPETITION (critical):
+Never repeat the same idea, structure, or opening phrase as a previous discovery. If the previous discovery started with "You already" then this one CANNOT start with "You already." If the previous discovery was about clothing fit, this one must be about something ELSE the user said. Each discovery must feel like a NEW realization, not a rephrasing of the last one. Read the previous discoveries carefully and find a different angle entirely.
 
 Respond with ONLY the discovery line. Nothing else.`;
 
