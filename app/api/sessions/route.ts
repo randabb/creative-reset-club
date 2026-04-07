@@ -107,14 +107,15 @@ export async function DELETE(req: Request) {
 // PATCH: update canvas_state (autosave)
 export async function PATCH(req: Request) {
   try {
-    const { sessionId, canvas_state, synthesis } = await req.json();
+    const { sessionId, canvas_state, synthesis, confidence_score } = await req.json();
     if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
     const updateData: Record<string, unknown> = {
-      canvas_state,
       updated_at: new Date().toISOString(),
     };
+    if (canvas_state !== undefined) updateData.canvas_state = canvas_state;
     if (synthesis !== undefined) updateData.synthesis = synthesis;
+    if (confidence_score !== undefined) updateData.confidence_score = confidence_score;
 
     const { error } = await supabase
       .from("sessions")

@@ -22,6 +22,9 @@ GOOD (specific — only applies to THIS person's thinking):
 - {"type":"sunk_cost","label":"Sunk cost","behavior":"you keep returning to meal prep because you've tried it before, not because it worked.","question":"Has it?","suggestedAction":"clarify"}
 - {"type":"premature_closure","label":"Premature closure","behavior":"you decided on air fryer meals in your second answer and everything since supports that.","question":"What if it's wrong?","suggestedAction":"expand"}
 - {"type":"vague_thinking","label":"Vague thinking","behavior":"you said you want to allow other things to consume your mind.","question":"What things specifically?","suggestedAction":"clarify"}
+- {"type":"cognitive_surrender","label":"Cognitive surrender","behavior":"your last two answers read like summaries, not raw thinking.","question":"Say it ugly. No editing.","suggestedAction":"clarify"}
+
+Cognitive surrender signals: answers using bullet points or frameworks unprompted, language significantly more polished than their capture text, answers that sound like summaries rather than raw thinking, sudden shift from messy/honest tone to clean/corporate tone, answers covering multiple points neatly instead of pulling on one thread. suggestedAction is always "clarify".
 
 Rules:
 - "label": 1-2 words. NEVER "Tension".

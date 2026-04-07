@@ -169,6 +169,8 @@ function CanvasInner() {
   const [synthRevealed, setSynthRevealed] = useState(false);
   const [resistancePrompt, setResistancePrompt] = useState<string | null>(null);
   const [suggestedDeliverable, setSuggestedDeliverable] = useState<{ deliverable: string; label: string } | null>(null);
+  const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
+  const [confidenceFeedback, setConfidenceFeedback] = useState<string | null>(null);
   const [sessionAnalysis, setSessionAnalysis] = useState<{ assumptions: string[]; avoidance: string | null; crossTensions: { from: string; to: string; tension: string }[]; strongestFragment: string | null } | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -788,6 +790,39 @@ function CanvasInner() {
     dispatch({ type: "SET_SYNTH_LOADING", payload: false });
   };
 
+  const handleConfidence = async (score: number) => {
+    setConfidenceScore(score);
+    // Save to Supabase
+    if (sessionIdRef.current) {
+      fetch("/api/sessions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessionIdRef.current, confidence_score: score }),
+      }).catch(err => console.error("[canvas] Confidence save error:", err));
+    }
+    // Assess depth vs confidence
+    if (score >= 4) {
+      const completedDims = Object.values(dimStatus).filter(s => s === "complete").length;
+      const totalNotes = notes.filter(n => n.source === "user").length;
+      const avgNotesPerDim = dimensions.length > 0 ? totalNotes / dimensions.length : 0;
+      const incompleteDims = dimensions.filter(d => dimStatus[d.label] !== "complete");
+      const unresolvedPatterns = patterns.filter(p => p.noteId); // still has noteId = unresolved
+      const avoidanceTopic = sessionAnalysis?.avoidance || null;
+
+      if (avgNotesPerDim < 2 || incompleteDims.length >= 2) {
+        const issues: string[] = [];
+        if (incompleteDims.length > 0) issues.push(`you rushed through ${incompleteDims[0].label}`);
+        if (avoidanceTopic) issues.push(`never addressed what you were avoiding`);
+        else if (unresolvedPatterns.length > 0) issues.push(`left a pattern unresolved`);
+        if (issues.length > 0) {
+          setConfidenceFeedback(`You feel certain. But ${issues.join(" and ")}. Might be worth revisiting.`);
+        }
+      }
+    } else if (score <= 2) {
+      setConfidenceFeedback("That\u2019s honest. The brief is yours to revisit anytime.");
+    }
+  };
+
   const saveToStudio = async () => {
     await saveCanvas();
     dispatch({ type: "SET_TOAST", payload: "✓ Saved to your Studio" });
@@ -1267,8 +1302,44 @@ function CanvasInner() {
               )}
             </div>
           )}
+          {/* Confidence check */}
           {synthesis && !synthLoading && (
-            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.5s forwards" }}>
+            <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 20, paddingTop: 20, marginBottom: 20, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
+              <p style={{ fontSize: 15, fontWeight: 500, color: "#000332", textAlign: "center", marginBottom: 16 }}>
+                How certain do you feel about this?
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 6 }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => handleConfidence(n)}
+                    style={{
+                      width: 28, height: 28, borderRadius: "50%",
+                      border: confidenceScore === n ? "none" : "1.5px solid rgba(0,3,50,0.2)",
+                      background: confidenceScore === n ? "#FF9090" : "transparent",
+                      cursor: confidenceScore ? "default" : "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  />
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 180, margin: "0 auto", fontFamily: "'DM Mono', monospace", fontSize: 9, color: "rgba(0,3,50,0.25)", letterSpacing: "0.05em" }}>
+                <span>not sure</span>
+                <span>certain</span>
+              </div>
+              {confidenceFeedback && (
+                <p style={{
+                  fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.4)",
+                  textAlign: "center", marginTop: 14, lineHeight: 1.5, maxWidth: 280, margin: "14px auto 0",
+                  opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.1s forwards",
+                }}>
+                  {confidenceFeedback}
+                </p>
+              )}
+            </div>
+          )}
+          {synthesis && !synthLoading && (confidenceScore !== null) && (
+            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.2s forwards" }}>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
