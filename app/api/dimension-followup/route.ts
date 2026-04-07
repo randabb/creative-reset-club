@@ -34,6 +34,7 @@ The discovery reflects the user's thinking back SHARPER than they said it. It na
 - Must be specific to THIS user. Reference their actual words. A good discovery could ONLY come from this session.
 - Connect two things they said in a way they didn't see.
 - If it sounds like therapist notes, a summary, or a motivational poster, throw it out.
+- MIRROR, NOT JUDGE: Never state something about the user as a fact. Reflect what they THINK and FEEL. WRONG: "Your appearance hijacks your presence." RIGHT: "You think your appearance hijacks your presence." Always frame through the user's own lens, not as objective statements.
 - ANTI-REPETITION: Never repeat the same idea, structure, or opening phrase as a previous discovery. If a previous discovery started with "You already" this one CANNOT. If the last was about clothing fit, this one must be about something else. Each discovery must be a NEW realization, not a rephrasing.
 
 NOT EVERY DISCOVERY NEEDS TO CHALLENGE. Some should simply affirm.
