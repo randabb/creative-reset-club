@@ -42,6 +42,7 @@ Rules:
 - The behavior should make the user think "oh shit, I didn't notice I was doing that." A generic pattern that could apply to anyone is not worth flagging.
 - No AI language. No therapy-speak. No corporate tone.
 - The pattern must reference the user's specific words and situation.
+- SCOPE: You only see dimensions the user has COMPLETED. Never flag the absence of a topic from a dimension they haven't explored yet. If something seems missing, it may simply be in an upcoming dimension. Only flag avoidance if the user actively steered away from a topic WITHIN the dimensions they already answered.
 
 Actions: CLARIFY for assumptions/contradictions/surrender. EXPAND for blind spots/comfort zone. DECIDE for binary/sunk cost. EXPRESS for vague thinking.
 

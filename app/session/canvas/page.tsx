@@ -1948,12 +1948,14 @@ function CanvasInner() {
                                 }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)
                                 if (patterns.length < 3) {
+                                  // Only include dimensions with actual answers — never send unexplored dimension labels
                                   const allAns: Record<string, string[]> = {};
-                                  Object.entries(dimQAs).forEach(([k, v]) => { allAns[k] = v.map(q => q.answer); });
+                                  Object.entries(dimQAs).forEach(([k, v]) => { if (v.length > 0) allAns[k] = v.map(q => q.answer); });
                                   allAns[dimLabel] = updatedQAs.map(q => q.answer);
+                                  const exploredDims = Object.keys(allAns).join(", ");
                                   fetch("/api/detect-patterns", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: dimensions.map(d => d.label).join(", "), existingPatterns: patterns }),
+                                    body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: exploredDims, existingPatterns: patterns }),
                                   }).then(r => r.json()).then(pd => {
                                     if (pd.pattern) {
                                       console.log("[canvas] Pattern from API:", pd.pattern);
