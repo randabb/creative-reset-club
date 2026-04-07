@@ -24,12 +24,26 @@ Rules:
 - Every question MUST connect to their goal. Ask yourself: "How does this help them with their goal?"
 - Ground questions in frameworks (First Principles, Inversion, Pre-Mortem, Steelman) but NEVER name them.
 
+DISCOVERY INSTRUCTIONS (this is the most important part):
+The discovery reflects the user's thinking back SHARPER than they said it. It names the thing underneath what they said.
+- One or two sentences. Under 20 words total.
+- Use THEIR words. Second person. No "Key insight:" prefix.
+- No compound sentences. No semicolons. No analytical language.
+- Never summarize. Never describe their pattern from outside. Get inside it.
+- NEVER use "not X, it's Y" or "it's Y, not X" constructions. Banned.
+- Must be specific to THIS user. Reference their actual words. A good discovery could ONLY come from this session.
+- Connect two things they said in a way they didn't see.
+- If it sounds like therapist notes, a summary, or a motivational poster, throw it out.
+
+GOOD: "You said 3 days minimum but you already built in every reason to skip."
+GOOD: "Walking your dog is already movement. You just don't count it."
+BAD: "You've defined consistent as 3-4 workouts weekly with clear exceptions."
+BAD: "You already know the answer. You're waiting for permission."
+
 Respond with ONLY a JSON object:
-{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"one sentence realization under 20 words, using their words, second person, or null"}
+{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"the discovery line, or null"}
 
-If status is "complete", action and question can be null but include a discovery.
-Discovery rules: one sentence, under 20 words, no "Key insight:" prefix, no compound sentences, use their actual words, should feel like a realization not a summary. Example: "You can't say what makes you different in one sentence."`;
-
+If status is "complete", action and question can be null but include a discovery.`;
 
 interface QA { question: string; answer: string; }
 
