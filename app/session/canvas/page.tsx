@@ -1568,7 +1568,7 @@ function CanvasInner() {
                     animation: allDimsComplete ? "sidebarIn 0.3s ease-out forwards" : undefined,
                   }}
                 >
-                  See what you found {allDimsComplete && "→"}
+                  See the bigger picture {allDimsComplete && "→"}
                   {!allDimsComplete && (
                     <span style={{ display: "block", fontFamily: "'DM Mono',monospace", fontSize: 10, color: "rgba(250,247,240,0.15)", marginTop: 2 }}>
                       finish your dimensions to unlock
