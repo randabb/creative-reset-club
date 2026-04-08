@@ -2028,6 +2028,7 @@ function CanvasInner() {
                                   }
                                 }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)
+                                console.log("[canvas] Dimension complete, checking patterns. Current count:", patterns.length);
                                 if (patterns.length < 3) {
                                   // Only include dimensions with actual answers — never send unexplored dimension labels
                                   // Build answers with note IDs so the AI can identify which note triggered the pattern

@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Detect ONE significant thinking pattern. The bar is HIGH. A pattern should feel like getting caught by someone who's been paying close attention. Not like getting a label from a textbook.
+const SYSTEM = `Detect ONE significant thinking pattern. A pattern should feel like getting caught by someone who's been paying close attention.
 
 BEFORE flagging a pattern, ask yourself: is this a GENUINE thinking pattern, or am I just matching words?
 
@@ -53,7 +53,8 @@ Rules:
 - "behavior": under 15 words. Specific to their situation. Start with "you're" / "you keep" / "you haven't" / "you want" / "every". Don't put their words in quotes. NEVER use "not X, it's Y" or "it's Y, not X" constructions.
 - "question": under 10 words. The question that cracks it open.
 - Maximum 3 patterns per session. Skip if you already flagged something similar.
-- Returning null is correct MOST of the time. If you're not at least 80% confident this is a real pattern, return null. Silence is better than a weak pattern.
+- Flag a pattern if it's clearly supported by at least 2 notes in the completed dimension. Don't require certainty, require evidence.
+- Return null only if there is genuinely no significant pattern. If the user has written 3+ answers in a dimension, there is almost always something worth flagging. The bar is: would pointing this out change how the user sees their own thinking? If yes, flag it.
 - The behavior should make the user think "oh shit, I didn't notice I was doing that." A generic pattern that could apply to anyone is not worth flagging.
 - No AI language. No therapy-speak. No corporate tone.
 - The pattern must reference the user's specific words and situation.
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
       });
     }
 
-    if (totalAnswers < 3) return NextResponse.json({ pattern: null });
+    if (totalAnswers < 2) return NextResponse.json({ pattern: null });
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nALL ANSWERS:\n${answerText.join("\n\n")}`;
     if (existingPatterns?.length) {
