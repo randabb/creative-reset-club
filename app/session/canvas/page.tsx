@@ -196,6 +196,7 @@ function CanvasInner() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const feedRef = useRef<HTMLDivElement>(null);
   const [dimSuggestions, setDimSuggestions] = useState<Record<string, { action: Action; question: string }>>({});
+  const [dimFrameworks, setDimFrameworks] = useState<Record<string, string[]>>({});
   const [activeDimQuestion, setActiveDimQuestion] = useState<string | null>(null);
   const [activeDimAction, setActiveDimAction] = useState<Action | null>(null);
   const [dimQuestionAnswer, setDimQuestionAnswer] = useState("");
@@ -1997,9 +1998,15 @@ function CanvasInner() {
                                   allDimensions: dimensions.map(d => d.label).join(", "),
                                   previousActions: updatedQAs.map(q => q.action).join(", "),
                                   previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
+                                  frameworksUsed: (dimFrameworks[dimLabel] || []).join(", ") || undefined,
                                 }),
                               });
                               const data = await res.json();
+
+                              // Track framework used
+                              if (data.framework) {
+                                setDimFrameworks(prev => ({ ...prev, [dimLabel]: [...(prev[dimLabel] || []), data.framework] }));
+                              }
 
                               // Add discovery if present
                               if (data.discovery) {

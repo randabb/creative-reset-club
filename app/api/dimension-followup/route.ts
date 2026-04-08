@@ -21,8 +21,31 @@ Rules:
 - If the user has surfaced a clear insight and there's nothing more to dig into, mark it as complete.
 - Keep questions under 15 words. Use their language.
 - Write the question like a sharp friend, not a consultant.
-- Every question MUST connect to their goal. Ask yourself: "How does this help them with their goal?"
-- Ground questions in frameworks (First Principles, Inversion, Pre-Mortem, Steelman) but NEVER name them.
+- Never name a framework to the user. The sophistication is in what you ask, not how you label it.
+
+GOAL ALIGNMENT (CRITICAL):
+Every question must connect back to the user's original goal. The goal is provided in the session data. Before generating any question, check: does this question help the user get closer to what they came here to think through? If the conversation drifts from the goal, pull it back. A good pull-back references the goal directly: "You came here to think about [their goal]. How does what you just said connect to that?" The user's goal is the anchor. Every question, every framework choice, every follow-up should serve that anchor.
+
+8 THINKING FRAMEWORKS — rotate through these:
+1. FIRST PRINCIPLES — strip assumptions. "What do you actually know vs what are you guessing?"
+2. SOCRATIC METHOD — question the foundation. "Why do you believe that's true?"
+3. FIVE WHYS — go one layer deeper. "That's what happened. What caused it?"
+4. INVERSION — flip the problem. "What would make this definitely fail?"
+5. SECOND-ORDER THINKING — consequences of consequences. "If that works, then what happens next?"
+6. STEELMAN — force the opposing view. "What's the strongest argument against what you just said?"
+7. PRE-MORTEM — imagine failure. "It's 6 months later and this didn't work. What went wrong?"
+8. OPPORTUNITY COST — what you're giving up. "What are you saying no to by saying yes to this?"
+
+Framework selection rules:
+- Never use the same framework twice in a row within a dimension.
+- By 3 questions, at least 3 different frameworks should have been used.
+- Choose based on what goes DEEPEST given what the user just said:
+  - User was vague → First Principles or Socratic
+  - User was specific but surface-level → Five Whys or Second-Order
+  - User sounded certain → Steelman or Inversion
+  - User is planning something → Pre-Mortem or Opportunity Cost
+- The "frameworksUsed" field tells you which frameworks were already used in this dimension. Pick a different one.
+- Frameworks are tools. The goal is the direction. Never let the tool choice override the direction.
 - Read the user's answer carefully. If they gave specific numbers or details, your follow-up must accurately reflect what they said. Never misquote their numbers or reframe their answer incorrectly. If you're not sure what they meant, ask for clarification instead of assuming.
 - If the user's response signals confusion (single word like "what?", "huh?", "??", "I don't get it", or "I don't understand"), your previous question was unclear. Rephrase it in simpler language. Don't build on the confused answer. Retry the question.
 
@@ -50,15 +73,15 @@ BAD: "You've defined consistent as 3-4 workouts weekly with clear exceptions."
 BAD: "You're really thinking this through."
 
 Respond with ONLY a JSON object:
-{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"the discovery line, or null"}
+{"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"the discovery line, or null","framework":"first_principles|socratic|five_whys|inversion|second_order|steelman|pre_mortem|opportunity_cost"}
 
-If status is "complete", action and question can be null but include a discovery.`;
+If status is "complete", action and question can be null but include a discovery. Framework should still indicate which framework informed your thinking.`;
 
 interface QA { question: string; answer: string; }
 
 export async function POST(req: Request) {
   try {
-    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries } = await req.json();
+    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed } = await req.json();
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nCURRENT DIMENSION: ${dimension || "General"}\n\n`;
     if (dimensionQAs?.length) {
@@ -69,6 +92,9 @@ export async function POST(req: Request) {
     }
     if (previousActions) {
       userMsg += `ACTIONS ALREADY USED: ${previousActions}\n`;
+    }
+    if (frameworksUsed) {
+      userMsg += `FRAMEWORKS ALREADY USED IN THIS DIMENSION: ${frameworksUsed}\nPick a DIFFERENT framework for this question.\n`;
     }
     if (previousDiscoveries) {
       userMsg += `\nPREVIOUS DISCOVERIES (never repeat these or rephrase them):\n${previousDiscoveries}\n`;
@@ -100,6 +126,7 @@ export async function POST(req: Request) {
       action: validActions.includes(parsed.action) ? parsed.action : "expand",
       question: parsed.question || null,
       discovery: parsed.discovery || null,
+      framework: parsed.framework || null,
     });
   } catch (err) {
     console.error("[dimension-followup]", err);
