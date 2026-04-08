@@ -47,8 +47,10 @@ Rules:
 
 Actions: CLARIFY for assumptions/contradictions/surrender. EXPAND for blind spots/comfort zone. DECIDE for binary/sunk cost. EXPRESS for vague thinking.
 
+Each note has an ID. Identify which specific note most clearly demonstrates this pattern and return its ID as "noteId". The note should be the one whose content the user would need to re-examine to resolve this pattern. Do NOT just pick the most recent note.
+
 Return ONLY valid JSON or null:
-{"type":"...","label":"...","behavior":"...","question":"...","suggestedAction":"clarify|expand|decide|express"}`;
+{"type":"...","label":"...","behavior":"...","question":"...","suggestedAction":"clarify|expand|decide|express","noteId":"the-note-id"}`;
 
 export async function POST(req: Request) {
   try {
@@ -60,9 +62,14 @@ export async function POST(req: Request) {
     if (typeof allAnswers === "object") {
       Object.entries(allAnswers).forEach(([dim, answers]) => {
         if (Array.isArray(answers)) {
-          answers.forEach((a: { answer?: string } | string) => {
-            const text = typeof a === "string" ? a : a.answer || "";
-            if (text) { totalAnswers++; answerText.push(`[${dim}]: ${text}`); }
+          answers.forEach((a: { id?: string; text?: string; answer?: string } | string) => {
+            if (typeof a === "string") {
+              if (a) { totalAnswers++; answerText.push(`[${dim}]: ${a}`); }
+            } else {
+              const text = a.text || a.answer || "";
+              const id = a.id || "";
+              if (text) { totalAnswers++; answerText.push(`[${dim}] (noteId:${id}): ${text}`); }
+            }
           });
         }
       });
@@ -110,6 +117,7 @@ export async function POST(req: Request) {
         description: `${parsed.behavior} ${parsed.question || ""}`.trim(),
         suggestion: `${parsed.behavior} ${parsed.question || ""}`.trim(),
         suggestedAction: validActions.includes(parsed.suggestedAction) ? parsed.suggestedAction : "clarify",
+        noteId: parsed.noteId || undefined,
         detected_at: new Date().toISOString(),
       },
     });

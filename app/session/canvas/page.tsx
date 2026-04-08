@@ -1949,9 +1949,25 @@ function CanvasInner() {
                                 // Call detect-patterns API (only source of patterns)
                                 if (patterns.length < 3) {
                                   // Only include dimensions with actual answers — never send unexplored dimension labels
-                                  const allAns: Record<string, string[]> = {};
-                                  Object.entries(dimQAs).forEach(([k, v]) => { if (v.length > 0) allAns[k] = v.map(q => q.answer); });
-                                  allAns[dimLabel] = updatedQAs.map(q => q.answer);
+                                  // Build answers with note IDs so the AI can identify which note triggered the pattern
+                                  const dimHeaders = notes.filter(dn => dn.source === "dimension");
+                                  const allAns: Record<string, { id: string; text: string }[]> = {};
+                                  Object.entries(dimQAs).forEach(([k, v]) => {
+                                    if (v.length === 0) return;
+                                    const dimHeader = dimHeaders.find(dh => dh.dimLabel === k);
+                                    const colNotes = dimHeader ? notes.filter(cn => cn.source === "user" && Math.abs(cn.x - dimHeader.x) < 130) : [];
+                                    allAns[k] = v.map((q, qi) => ({
+                                      id: colNotes[qi]?.id || `${k}-${qi}`,
+                                      text: q.answer,
+                                    }));
+                                  });
+                                  // Add current dimension's latest answer with the actual noteId
+                                  const currentDimHeader = dimHeaders.find(dh => dh.dimLabel === dimLabel);
+                                  const currentColNotes = currentDimHeader ? notes.filter(cn => cn.source === "user" && Math.abs(cn.x - currentDimHeader.x) < 130) : [];
+                                  allAns[dimLabel] = updatedQAs.map((q, qi) => ({
+                                    id: currentColNotes[qi]?.id || (qi === updatedQAs.length - 1 ? noteId : `${dimLabel}-${qi}`),
+                                    text: q.answer,
+                                  }));
                                   const exploredDims = Object.keys(allAns).join(", ");
                                   fetch("/api/detect-patterns", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
@@ -1959,7 +1975,7 @@ function CanvasInner() {
                                   }).then(r => r.json()).then(pd => {
                                     if (pd.pattern) {
                                       console.log("[canvas] Pattern from API:", pd.pattern);
-                                      dispatch({ type: "ADD_PATTERN", payload: { ...pd.pattern, noteId } });
+                                      dispatch({ type: "ADD_PATTERN", payload: { ...pd.pattern } });
                                     }
                                   }).catch(err => console.error("[canvas] API error:", err));
                                 }
