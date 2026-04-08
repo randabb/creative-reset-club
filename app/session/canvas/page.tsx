@@ -630,10 +630,82 @@ function CanvasInner() {
   const updateText = (id: string, text: string) => dispatch({ type: "UPDATE_NOTE", payload: { id, updates: { text } } });
 
   const justFinishedEditRef = useRef(false);
+  const editOriginalTextRef = useRef<string>("");
+  const startEditCapture = (id: string) => {
+    const note = notes.find(n => n.id === id);
+    editOriginalTextRef.current = note?.text || "";
+  };
   const finishEdit = (id: string) => {
+    const editedNote = notes.find(n => n.id === id);
+    const originalText = editOriginalTextRef.current;
     dispatch({ type: "FINISH_EDIT", payload: id });
     justFinishedEditRef.current = true;
     setTimeout(() => { justFinishedEditRef.current = false; }, 300);
+
+    // If this is a user note in a dimension column and text changed meaningfully, regenerate
+    if (editedNote && editedNote.source === "user" && editedNote.text.trim() &&
+        editedNote.text.trim() !== originalText.trim() && dimensions.length > 0) {
+      const dim = findNoteDim(editedNote);
+      if (!dim.label) return;
+
+      // Update dimQAs with the new answer text
+      const currentQAs = dimQAs[dim.label] || [];
+      const qaIdx = currentQAs.findIndex(q => q.answer === originalText.trim());
+      if (qaIdx >= 0) {
+        const updatedQAs = [...currentQAs];
+        updatedQAs[qaIdx] = { ...updatedQAs[qaIdx], answer: editedNote.text.trim() };
+        dispatch({ type: "SET_DIM_QAS", payload: { label: dim.label, qas: updatedQAs } });
+
+        // Regenerate discovery for this note
+        fetch("/api/generate-discovery", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userResponse: editedNote.text.trim(),
+            dimensionLabel: dim.label,
+            previousDiscoveries: discoveries.filter(d => d.dimLabel !== dim.label || !d.createdAt).map(d => d.text).join("\n") || undefined,
+          }),
+        }).then(r => r.json()).then(data => {
+          if (data.discovery) {
+            // Replace the discovery that was generated for this note's original text
+            const oldDiscIdx = discoveries.findIndex(d => d.dimLabel === dim.label && d.createdAt);
+            if (oldDiscIdx >= 0 && qaIdx < discoveries.filter(d => d.dimLabel === dim.label).length) {
+              // Find the specific discovery for this QA index in this dimension
+              const dimDiscs = discoveries.map((d, i) => ({ d, i })).filter(({ d }) => d.dimLabel === dim.label);
+              if (dimDiscs[qaIdx]) {
+                const newDiscs = [...discoveries];
+                newDiscs[dimDiscs[qaIdx].i] = { ...newDiscs[dimDiscs[qaIdx].i], text: data.discovery, createdAt: new Date().toISOString() };
+                dispatch({ type: "RESTORE_SESSION", payload: { discoveries: newDiscs } });
+              } else {
+                dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel: dim.label, createdAt: new Date().toISOString() } });
+              }
+            }
+          }
+        }).catch(err => console.error("[canvas] Edit discovery regen error:", err));
+
+        // Regenerate follow-up question if unanswered (this was the last answer in the dimension)
+        if (qaIdx === currentQAs.length - 1 && activeDimQuestion === dim.label) {
+          setDimLoading(true);
+          const updatedQAs2 = [...currentQAs];
+          updatedQAs2[qaIdx] = { ...updatedQAs2[qaIdx], answer: editedNote.text.trim() };
+          fetch("/api/dimension-followup", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              goal: capture, dimension: `${dim.label} — ${dim.desc}`,
+              dimensionQAs: updatedQAs2, allDimensions: dimensions.map(d => d.label).join(", "),
+              previousActions: updatedQAs2.map(q => q.action).join(", "),
+              previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
+            }),
+          }).then(r => r.json()).then(data => {
+            if (data.question) {
+              setDimSuggestions(prev => ({ ...prev, [dim.label]: { action: data.action as Action, question: data.question } }));
+            }
+          }).catch(err => console.error("[canvas] Edit followup regen error:", err))
+            .finally(() => setDimLoading(false));
+        }
+      }
+
+      scheduleSave();
+    }
   };
 
   const finishConnection = () => {
@@ -2031,7 +2103,7 @@ function CanvasInner() {
                 className="cn"
                 ref={el => { if (el) noteRefsMap.current.set(n.id, el); }}
                 onMouseDown={e => startDrag(n.id, e)}
-                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
+                onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; startEditCapture(n.id); dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
                 style={{
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
@@ -2072,7 +2144,7 @@ function CanvasInner() {
                   <div style={{ position: "absolute", top: 6, right: 6, zIndex: 5, display: "flex", alignItems: "center", gap: 6 }}>
                     <button
                       className="cn-edit"
-                      onClick={(e) => { e.stopPropagation(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
+                      onClick={(e) => { e.stopPropagation(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; startEditCapture(n.id); dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
                       onMouseDown={(e) => e.stopPropagation()}
                       style={{
                         background: "none", border: "none",
