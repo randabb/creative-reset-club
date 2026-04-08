@@ -982,7 +982,9 @@ function CanvasInner() {
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {
-        dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() } });
+        const newDisc = { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() };
+        dispatch({ type: "ADD_DISCOVERY", payload: newDisc });
+        discoveriesRef.current = [...discoveriesRef.current, newDisc];
       }
     }).catch(err => console.error("[canvas] Discovery error:", err));
 
@@ -2008,9 +2010,11 @@ function CanvasInner() {
                                 setDimFrameworks(prev => ({ ...prev, [dimLabel]: [...(prev[dimLabel] || []), data.framework] }));
                               }
 
-                              // Add discovery if present
+                              // Add discovery if present — also update ref immediately so next call sees it
                               if (data.discovery) {
-                                dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() } });
+                                const newDisc = { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() };
+                                dispatch({ type: "ADD_DISCOVERY", payload: newDisc });
+                                discoveriesRef.current = [...discoveriesRef.current, newDisc];
                               }
 
                               // Force complete after 5 questions regardless of AI response
