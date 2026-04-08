@@ -1596,7 +1596,7 @@ function CanvasInner() {
                           padding: "12px 14px",
                           animation: "sidebarIn 0.3s ease-out forwards",
                         }}>
-                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: "0.12em", color: "rgba(0,3,50,0.35)", marginBottom: 4 }}>PATTERN</div>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: "0.12em", color: "rgba(0,3,50,0.35)", marginBottom: 4 }}>NOTICED IN THIS SESSION</div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: "#000332", marginBottom: 4 }}>{p.label}</div>
                           <p style={{ fontSize: 13, color: "rgba(0,3,50,0.6)", lineHeight: 1.5 }}>
                             {p.behavior || p.description}
