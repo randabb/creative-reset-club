@@ -2001,6 +2001,7 @@ function CanvasInner() {
                                   previousActions: updatedQAs.map(q => q.action).join(", "),
                                   previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
                                   frameworksUsed: (dimFrameworks[dimLabel] || []).join(", ") || undefined,
+                                  otherDimensionAnswers: Object.entries(dimQAs).filter(([k]) => k !== dimLabel && dimQAs[k]?.length > 0).map(([k, v]) => `${k}: ${v.map(q => q.answer).join("; ")}`).join("\n") || undefined,
                                 }),
                               });
                               const data = await res.json();

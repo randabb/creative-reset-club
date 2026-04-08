@@ -38,6 +38,9 @@ Signs you're imposing your own thesis:
 
 If the user says "I already answered this" or "that's not what I mean" or expresses frustration, that's a signal you stopped listening. Reset. Ask what THEY want to explore next.
 
+NO CROSS-DIMENSION CONTAMINATION:
+Each dimension must explore a DISTINCT area of thinking. The current dimension label and description tell you what THIS dimension is about. Stay within its scope. If a theme was already explored in a previous dimension's answers (provided below), do NOT revisit it in the current dimension unless the user explicitly brings it up. Before generating a question, check: has this theme already been covered? If yes, find a different angle. The user chose different dimensions for a reason. They want to think about different things, not the same thing four times.
+
 8 THINKING FRAMEWORKS — rotate through these:
 1. FIRST PRINCIPLES — strip assumptions. "What do you actually know vs what are you guessing?"
 2. SOCRATIC METHOD — question the foundation. "Why do you believe that's true?"
@@ -103,7 +106,7 @@ interface QA { question: string; answer: string; }
 
 export async function POST(req: Request) {
   try {
-    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed } = await req.json();
+    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed, otherDimensionAnswers } = await req.json();
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nCURRENT DIMENSION: ${dimension || "General"}\n\n`;
     if (dimensionQAs?.length) {
@@ -123,6 +126,9 @@ export async function POST(req: Request) {
     }
     if (allDimensions) {
       userMsg += `\nALL DIMENSIONS: ${allDimensions}\n`;
+    }
+    if (otherDimensionAnswers) {
+      userMsg += `\nTHEMES ALREADY EXPLORED IN OTHER DIMENSIONS (do NOT revisit these):\n${otherDimensionAnswers}\n`;
     }
 
     const controller = new AbortController();
