@@ -2013,7 +2013,9 @@ function CanvasInner() {
                                 dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() } });
                               }
 
-                              if (data.status === "complete") {
+                              // Force complete after 5 questions regardless of AI response
+                              const forceComplete = updatedQAs.length >= 5;
+                              if (data.status === "complete" || forceComplete) {
                                 dispatch({ type: "SET_DIM_STATUS", payload: { label: dimLabel, status: "complete" } });
                                 setActiveDimQuestion(null);
                                 setActiveDimAction(null);
