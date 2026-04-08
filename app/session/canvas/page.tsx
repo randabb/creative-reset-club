@@ -178,7 +178,12 @@ function CanvasInner() {
   const [nudgeDimIdx, setNudgeDimIdx] = useState<number | null>(null);
   const [timerFlicker, setTimerFlicker] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [allDimsComplete, setAllDimsComplete] = useState(false);
+  // Derive allDimsComplete: all started dimensions must be complete, unstartded ones don't block
+  const allDimsComplete = dimensions.length > 0 && dimensions.every(d => {
+    const status = dimStatus[d.label];
+    const hasAnswers = (dimQAs[d.label] || []).length > 0;
+    return status === "complete" || !hasAnswers; // complete OR never started
+  }) && dimensions.some(d => dimStatus[d.label] === "complete"); // at least one must be complete
   const [statusState, setStatusState] = useState<{
     type: "landing" | "working" | "keep_going" | "ready_to_move" | "all_done" | "loading" | "suggesting";
     dimName?: string;
@@ -352,7 +357,6 @@ function CanvasInner() {
     if (loadedExistingRef.current) {
       const completedCount = Object.values(dimStatus).filter(s => s === "complete").length;
       if (completedCount >= dimensions.length) {
-        setAllDimsComplete(true);
         setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
       } else {
         const nextDim = dimensions.find(d => dimStatus[d.label] !== "complete");
@@ -1031,7 +1035,6 @@ function CanvasInner() {
             vpRef.current.scrollTo({ top: 0, behavior: "smooth" });
           }
         } else {
-          setAllDimsComplete(true);
           setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
         }
       };
@@ -1875,7 +1878,32 @@ function CanvasInner() {
                       Explore this next &rarr;
                     </div>
                   )}
-                  {/* Suggested action badge */}
+                  {/* Suggested action badge — or "Start exploring" for dims without suggestions */}
+                  {!dimSuggestions[n.dimLabel || ""] && activeDimQuestion !== n.dimLabel && dimStatus[n.dimLabel || ""] !== "complete" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const dl = n.dimLabel || "";
+                        setActiveDimQuestion(dl);
+                        setDimLoading(true);
+                        // Initialize dimStatus if missing
+                        if (!dimStatus[dl]) dispatch({ type: "SET_DIM_STATUS", payload: { label: dl, status: "unexplored" } });
+                        // Fetch initial question on demand
+                        fetch("/api/mobile-stickies", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ goal: capture, mode, qas, dimension: dl }),
+                        }).then(r => r.json()).then(data => {
+                          if (data.question) setDimSuggestions(prev => ({ ...prev, [dl]: { action: "clarify" as Action, question: data.question } }));
+                        }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
+                      }}
+                      style={{
+                        marginTop: 8, padding: "4px 10px", borderRadius: 100,
+                        border: "none", background: "rgba(255,144,144,0.15)",
+                        color: "#FF9090",
+                        fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      }}
+                    >Start exploring</button>
+                  )}
                   {dimSuggestions[n.dimLabel || ""] && activeDimQuestion !== n.dimLabel && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setActiveDimQuestion(n.dimLabel || ""); }}
@@ -2081,7 +2109,6 @@ function CanvasInner() {
                                     if (vpRef.current) vpRef.current.scrollTo({ top: 0, behavior: "smooth" });
                                   }, 2000);
                                 } else {
-                                  setAllDimsComplete(true);
                                   setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
                                 }
                               } else if (data.question) {
