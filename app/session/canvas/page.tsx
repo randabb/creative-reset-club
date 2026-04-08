@@ -38,7 +38,7 @@ const DISC_COLORS: Record<string, { bg: string; border: string; label: string; d
 };
 const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE", strategic: "#7ED6A8", critical: "#C4A6FF", creative: "#E8C97A" };
 
-const RAW_PLACEHOLDERS = ["just dump it...", "don't edit yourself...", "say it ugly first...", "what's the gut reaction...", "think out loud...", "no one's grading this...", "messy is the point..."];
+const RAW_PLACEHOLDERS = ["type what comes to mind...", "just start writing...", "say it rough...", "write anything...", "start here...", "what are you thinking...", "go ahead, type..."];
 const rawPh = (seed?: string) => { if (!seed) return RAW_PLACEHOLDERS[0]; let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0; return RAW_PLACEHOLDERS[Math.abs(h) % RAW_PLACEHOLDERS.length]; };
 const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -2428,6 +2428,8 @@ function CanvasInner() {
 
       <style>{`
         @keyframes cSpin { to { transform:rotate(360deg); } }
+        textarea::placeholder { color: rgba(0,3,50,0.25) !important; font-style: italic !important; }
+        textarea:focus::placeholder { color: transparent !important; }
         .cn:hover .cn-del { opacity: 1 !important; }
         .cn:hover .cn-edit { opacity: 0.5 !important; }
         .note-actions button:hover { opacity: 1 !important; transform: scale(1.15); }
