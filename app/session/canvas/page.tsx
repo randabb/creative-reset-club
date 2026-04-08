@@ -213,6 +213,7 @@ function CanvasInner() {
   const sessionCreatedRef = useRef(!!sp.get("session_id"));
   const loadedExistingRef = useRef(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [saveLabel, setSaveLabel] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
   const zoomRef = useRef(zoom);
@@ -252,6 +253,9 @@ function CanvasInner() {
             ...(data.synthesis ? { synthesis: data.synthesis } : {}),
           }});
           loadedExistingRef.current = true;
+          // Show "Session restored" briefly
+          setSaveLabel("Session restored");
+          setTimeout(() => setSaveLabel(null), 3000);
         } catch (err) {
           console.error("[canvas] Load error:", err);
         }
@@ -1723,13 +1727,23 @@ function CanvasInner() {
 
       {/* SAVE STATUS */}
       <div style={{
-        position: "fixed", bottom: 20, left: 20, zIndex: 25,
-        fontSize: 11, fontFamily: "'Codec Pro',sans-serif",
-        color: "rgba(0,3,50,0.4)",
-        opacity: saveStatus === "saved" ? 0.3 : saveStatus === "saving" ? 0.5 : 0.6,
-        transition: "opacity 0.15s",
+        position: "fixed", bottom: 22, left: 20, zIndex: 25,
+        fontSize: 11, fontFamily: "'DM Mono', monospace",
+        color: saveLabel ? "rgba(0,3,50,0.6)" : saveStatus === "saving" ? "rgba(0,3,50,0.5)" : "rgba(0,3,50,0.35)",
+        opacity: saveLabel ? 1 : saveStatus === "saved" ? 0.5 : 0.7,
+        transition: "opacity 0.3s, color 0.3s",
+        letterSpacing: "0.03em",
+        display: "flex", alignItems: "center", gap: 5,
       }}>
-        {saveStatus === "saved" ? "Saved" : saveStatus === "saving" ? "Saving..." : "Unsaved changes"}
+        {saveLabel ? (
+          <><span style={{ color: "#7ED6A8", fontSize: 12 }}>✓</span> {saveLabel}</>
+        ) : saveStatus === "saving" ? (
+          "saving..."
+        ) : saveStatus === "saved" ? (
+          <><span style={{ color: "#7ED6A8", fontSize: 10 }}>✓</span> saved</>
+        ) : (
+          "unsaved"
+        )}
       </div>
 
       {/* ZOOM CONTROLS */}
