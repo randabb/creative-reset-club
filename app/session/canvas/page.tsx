@@ -215,6 +215,8 @@ function CanvasInner() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const noteRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
   const reflowScheduled = useRef(false);
+  const discoveriesRef = useRef(discoveries);
+  discoveriesRef.current = discoveries;
 
   // Session init: create new or load existing
   useEffect(() => {
@@ -693,7 +695,7 @@ function CanvasInner() {
               goal: capture, dimension: `${dim.label} — ${dim.desc}`,
               dimensionQAs: updatedQAs2, allDimensions: dimensions.map(d => d.label).join(", "),
               previousActions: updatedQAs2.map(q => q.action).join(", "),
-              previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
+              previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
             }),
           }).then(r => r.json()).then(data => {
             if (data.question) {
@@ -975,7 +977,7 @@ function CanvasInner() {
       body: JSON.stringify({
         userResponse: respNote.text,
         dimensionLabel: dim.label,
-        previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
+        previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {
@@ -1994,7 +1996,7 @@ function CanvasInner() {
                                   dimensionQAs: updatedQAs,
                                   allDimensions: dimensions.map(d => d.label).join(", "),
                                   previousActions: updatedQAs.map(q => q.action).join(", "),
-                                  previousDiscoveries: discoveries.map(d => d.text).join("\n") || undefined,
+                                  previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
                                 }),
                               });
                               const data = await res.json();
