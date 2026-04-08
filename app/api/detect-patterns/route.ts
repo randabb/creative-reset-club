@@ -43,6 +43,7 @@ Rules:
 - No AI language. No therapy-speak. No corporate tone.
 - The pattern must reference the user's specific words and situation.
 - SCOPE: You only see dimensions the user has COMPLETED. Never flag the absence of a topic from a dimension they haven't explored yet. If something seems missing, it may simply be in an upcoming dimension. Only flag avoidance if the user actively steered away from a topic WITHIN the dimensions they already answered.
+- CANVAS ONLY: The pattern behavior must reference something the user wrote in their canvas dimension answers, not their guided thinking answers. Guided thinking can inform your understanding, but the pattern you flag must connect to a canvas note. If the most significant pattern only appears in guided thinking and hasn't surfaced on the canvas yet, return null.
 
 Actions: CLARIFY for assumptions/contradictions/surrender. EXPAND for blind spots/comfort zone. DECIDE for binary/sunk cost. EXPRESS for vague thinking.
 
