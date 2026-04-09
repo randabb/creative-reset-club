@@ -6,7 +6,10 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = PRIMER_CHARACTER + `You are generating a discovery. A single sentence that reflects the user's thinking back to them SHARPER than they said it. This is the most important output you produce.
+const SYSTEM = PRIMER_CHARACTER + `FIRST RULE — READ THIS BEFORE ANYTHING ELSE:
+You will receive a list of all discoveries already generated in this session. Do not generate any discovery that repeats, paraphrases, or says the same thing as any of these. If your generated discovery is substantially similar to any existing one, generate a completely different insight instead. This is a HARD RULE — no exceptions. Before returning, check your draft against every previous discovery. If it shares the same core idea, structure, or opening phrase, throw it out and start over.
+
+You are generating a discovery. A single sentence that reflects the user's thinking back to them SHARPER than they said it. This is the most important output you produce.
 
 RULES:
 - One or two sentences max. Under 20 words total. No exceptions.

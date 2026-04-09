@@ -226,6 +226,40 @@ function CanvasInner() {
   const resolvedPatternQuestionsRef = useRef<string[]>([]);
   discoveriesRef.current = discoveries;
 
+  // Returns true if the new text shares 4+ consecutive words with any existing discovery
+  const isDuplicateDiscovery = (newText: string): boolean => {
+    if (!newText) return true;
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+    const newWords = normalize(newText);
+    if (newWords.length < 4) {
+      // For very short discoveries, check exact match
+      return discoveriesRef.current.some(d => d.text.toLowerCase().trim() === newText.toLowerCase().trim());
+    }
+    // Build 4-gram set for new text
+    const newGrams = new Set<string>();
+    for (let i = 0; i <= newWords.length - 4; i++) newGrams.add(newWords.slice(i, i + 4).join(" "));
+    // Check against every existing discovery
+    for (const d of discoveriesRef.current) {
+      const existingWords = normalize(d.text);
+      if (existingWords.length < 4) continue;
+      for (let i = 0; i <= existingWords.length - 4; i++) {
+        if (newGrams.has(existingWords.slice(i, i + 4).join(" "))) return true;
+      }
+    }
+    return false;
+  };
+
+  // Safe discovery add — checks for duplicates before dispatching
+  const addDiscoverySafely = (payload: { id: string; text: string; dimLabel: string; discipline?: string; createdAt: string }) => {
+    if (isDuplicateDiscovery(payload.text)) {
+      console.warn("[canvas] DUPLICATE DISCOVERY rejected:", payload.text);
+      return false;
+    }
+    dispatch({ type: "ADD_DISCOVERY", payload });
+    discoveriesRef.current = [...discoveriesRef.current, payload];
+    return true;
+  };
+
   // Session init: create new or load existing
   useEffect(() => {
     const init = async () => {
@@ -690,7 +724,7 @@ function CanvasInner() {
                 newDiscs[dimDiscs[qaIdx].i] = { ...newDiscs[dimDiscs[qaIdx].i], text: data.discovery, createdAt: new Date().toISOString() };
                 dispatch({ type: "RESTORE_SESSION", payload: { discoveries: newDiscs } });
               } else {
-                dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: data.discovery, dimLabel: dim.label, createdAt: new Date().toISOString() } });
+                addDiscoverySafely({ id: uid(), text: data.discovery, dimLabel: dim.label, createdAt: new Date().toISOString() });
               }
             }
           }
@@ -1008,6 +1042,7 @@ function CanvasInner() {
 
     // Generate discovery line
     console.log("[canvas] generate-discovery called with", discoveriesRef.current.length, "previous discoveries");
+    console.log("[canvas] generate-discovery sending", discoveriesRef.current.length, "previous discoveries:", discoveriesRef.current.map(d => d.text));
     fetch("/api/generate-discovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1018,9 +1053,7 @@ function CanvasInner() {
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {
-        const newDisc = { id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() };
-        dispatch({ type: "ADD_DISCOVERY", payload: newDisc });
-        discoveriesRef.current = [...discoveriesRef.current, newDisc];
+        addDiscoverySafely({ id: uid(), text: data.discovery, dimLabel: dim.label, discipline: instNote.discipline, createdAt: new Date().toISOString() });
       }
     }).catch(err => console.error("[canvas] Discovery error:", err));
 
@@ -2061,7 +2094,7 @@ function CanvasInner() {
 
                             // Get followup
                             try {
-                              console.log("[canvas] dimension-followup called with", discoveriesRef.current.length, "previous discoveries");
+                              console.log("[canvas] dimension-followup sending", discoveriesRef.current.length, "previous discoveries:", discoveriesRef.current.map(d => d.text));
                               const res = await fetch("/api/dimension-followup", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -2084,11 +2117,9 @@ function CanvasInner() {
                                 setDimFrameworks(prev => ({ ...prev, [dimLabel]: [...(prev[dimLabel] || []), data.framework] }));
                               }
 
-                              // Add discovery if present — also update ref immediately so next call sees it
+                              // Add discovery if present — addDiscoverySafely dedupes + updates ref
                               if (data.discovery) {
-                                const newDisc = { id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() };
-                                dispatch({ type: "ADD_DISCOVERY", payload: newDisc });
-                                discoveriesRef.current = [...discoveriesRef.current, newDisc];
+                                addDiscoverySafely({ id: uid(), text: data.discovery, dimLabel, discipline: undefined, createdAt: new Date().toISOString() });
                               }
 
                               // Force complete after 5 questions regardless of AI response
