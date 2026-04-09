@@ -123,12 +123,34 @@ const FALLBACKS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription, existingInstructions } = await req.json();
+    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription, existingInstructions, triggeringPattern } = await req.json();
     if (!selectedNoteText || !action) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const system = ACTION_PROMPTS[action] || ACTION_PROMPTS.clarify;
+    let system = ACTION_PROMPTS[action] || ACTION_PROMPTS.clarify;
+
+    // PATTERN RESOLUTION MODE — when user tapped a glowing action icon
+    if (triggeringPattern) {
+      const patternBlock = `\n\nPATTERN RESOLUTION MODE — The user tapped an action icon that was highlighted because of a detected pattern. Your question must resolve this specific pattern, not just explore the dimension topic generally.
+
+The pattern detected:
+- Label: ${triggeringPattern.label || ""}
+- Behavior: ${triggeringPattern.behavior || ""}
+- Cracking question: ${triggeringPattern.question || ""}
+
+Generate a question that:
+1. Directly addresses the behavior described in the pattern
+2. Is informed by the pattern's cracking question but is NOT a verbatim copy of it
+3. Fits naturally within the current dimension
+4. Uses the user's own words from the note
+5. Follows all standard question rules (under 15 words, one subject, one verb, grounded in a framework)
+
+Do NOT generate a generic question of this action type. The question must resolve the pattern.`;
+      system = system + patternBlock;
+      console.log("[canvas-coach] PATTERN RESOLUTION MODE — pattern:", triggeringPattern.label);
+    }
+
     let userMsg = `USER'S GOAL: ${goal || "Not specified"}\n\n`;
     if (dimensionLabel) {
       userMsg += `DIMENSION: ${dimensionLabel} — ${dimensionDescription || ""}\n\n`;
@@ -136,6 +158,9 @@ export async function POST(req: Request) {
     userMsg += `THE NOTE THEY SELECTED:\n${selectedNoteText}\n\nOTHER NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
     if (existingInstructions) {
       userMsg += `\n\nPREVIOUS QUESTIONS ASKED (don't repeat):\n${existingInstructions}`;
+    }
+    if (triggeringPattern) {
+      userMsg += `\n\nPATTERN TO RESOLVE:\nLabel: ${triggeringPattern.label}\nBehavior: ${triggeringPattern.behavior}\nCracking question (for inspiration, don't copy verbatim): ${triggeringPattern.question}`;
     }
 
     const controller = new AbortController();

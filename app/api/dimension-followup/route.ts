@@ -140,7 +140,7 @@ function detectConfusion(answer: string): boolean {
 
 export async function POST(req: Request) {
   try {
-    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed, otherDimensionAnswers } = await req.json();
+    const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed, otherDimensionAnswers, resolvedPatternQuestions } = await req.json();
 
     // Check if the user's last answer signals confusion
     const lastQA = dimensionQAs?.length ? (dimensionQAs as QA[])[dimensionQAs.length - 1] : null;
@@ -176,6 +176,9 @@ export async function POST(req: Request) {
     }
     if (otherDimensionAnswers) {
       userMsg += `\nTHEMES ALREADY EXPLORED IN OTHER DIMENSIONS (do NOT revisit these):\n${otherDimensionAnswers}\n`;
+    }
+    if (resolvedPatternQuestions) {
+      userMsg += `\n=== PATTERN-RESOLUTION QUESTIONS ALREADY ADDRESSED ===\n${resolvedPatternQuestions}\n=== END ===\nDo NOT paraphrase any of these. The user already worked through the pattern they resolve.\n`;
     }
 
     const controller = new AbortController();

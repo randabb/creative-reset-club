@@ -223,6 +223,7 @@ function CanvasInner() {
   const noteRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
   const reflowScheduled = useRef(false);
   const discoveriesRef = useRef(discoveries);
+  const resolvedPatternQuestionsRef = useRef<string[]>([]);
   discoveriesRef.current = discoveries;
 
   // Session init: create new or load existing
@@ -742,11 +743,16 @@ function CanvasInner() {
   };
 
   // AI action — generates ONE instruction
-  const runAction = async (action: Action, targetNoteId?: string) => {
+  const runAction = async (action: Action, targetNoteId?: string, triggeringPattern?: Pattern) => {
     const selId = targetNoteId || [...selected][0];
     if (!selId) return;
     const selNote = notes.find(n => n.id === selId);
     if (!selNote) return;
+
+    // Track the pattern's cracking question so future dimension-followup calls can avoid paraphrasing it
+    if (triggeringPattern?.question) {
+      resolvedPatternQuestionsRef.current = [...resolvedPatternQuestionsRef.current, triggeringPattern.question];
+    }
 
     const dim = findNoteDim(selNote);
     if (dim.label) {
@@ -770,6 +776,11 @@ function CanvasInner() {
           dimensionLabel: dim.label,
           dimensionDescription: dim.desc,
           existingInstructions: notes.filter(n => n.aiInstruction).map(n => `- ${n.text}`).join("\n") || undefined,
+          triggeringPattern: triggeringPattern ? {
+            label: triggeringPattern.label,
+            behavior: triggeringPattern.behavior,
+            question: triggeringPattern.question,
+          } : undefined,
         }),
         signal: controller.signal,
       });
@@ -2049,6 +2060,7 @@ function CanvasInner() {
                                   previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
                                   frameworksUsed: (dimFrameworks[dimLabel] || []).join(", ") || undefined,
                                   otherDimensionAnswers: Object.entries(dimQAs).filter(([k]) => k !== dimLabel && dimQAs[k]?.length > 0).map(([k, v]) => `${k}: ${v.map(q => q.answer).join("; ")}`).join("\n") || undefined,
+                                  resolvedPatternQuestions: resolvedPatternQuestionsRef.current.length > 0 ? resolvedPatternQuestionsRef.current.join("\n") : undefined,
                                 }),
                               });
                               const data = await res.json();
@@ -2322,7 +2334,8 @@ function CanvasInner() {
                 {n.source === "user" && editId !== n.id && (
                   <div className="note-actions" style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 6 }}>
                     {(Object.keys(ACT) as Action[]).map(a => {
-                      const patternGlow = patterns.some(p => p.noteId === n.id && p.suggestedAction === a);
+                      const triggeringPattern = patterns.find(p => p.noteId === n.id && p.suggestedAction === a);
+                      const patternGlow = !!triggeringPattern;
                       return (
                         <div key={a} className="act-tip-wrap"
                           onClick={(e) => {
@@ -2331,7 +2344,7 @@ function CanvasInner() {
                             if (aiLoading) return;
                             if (patternGlow) dispatch({ type: "CLEAR_PATTERN_NOTE", payload: n.id });
                             setSelected(new Set([n.id]));
-                            runAction(a, n.id);
+                            runAction(a, n.id, triggeringPattern || undefined);
                           }}
                           onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
                           style={{ position: "relative", cursor: "pointer", padding: 2 }}>
