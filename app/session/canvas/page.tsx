@@ -2118,9 +2118,22 @@ function CanvasInner() {
                                   setStatusState({ type: "ready_to_move", dimName: dimLabel, nextDimName: nextDim.label, message: pick(["Good. Let\u2019s look at", "Done with that one. On to", "Next up:"]) });
                                   // Auto-open next dimension after brief pause
                                   setTimeout(() => {
-                                    setActiveDimQuestion(nextDim.label);
+                                    const ndl = nextDim.label;
+                                    setActiveDimQuestion(ndl);
                                     setActiveDimAction(null);
                                     if (vpRef.current) vpRef.current.scrollTo({ top: 0, behavior: "smooth" });
+                                    // Fetch question if no suggestion exists for this dimension
+                                    if (!dimSuggestions[ndl]) {
+                                      console.log("[canvas] No suggestion for next dim, fetching:", ndl);
+                                      setDimLoading(true);
+                                      const prevQAs = dimQAs[ndl] || [];
+                                      fetch("/api/mobile-stickies", {
+                                        method: "POST", headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ goal: capture, mode, qas, dimension: ndl, previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined }),
+                                      }).then(r => r.json()).then(dd => {
+                                        if (dd.question) setDimSuggestions(prev => ({ ...prev, [ndl]: { action: "clarify" as Action, question: dd.question } }));
+                                      }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
+                                    }
                                   }, 2000);
                                 } else {
                                   setStatusState({ type: "all_done", message: "You worked through all of it. See what you found?" });
