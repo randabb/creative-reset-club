@@ -2110,10 +2110,12 @@ function CanvasInner() {
                                   }));
                                   const exploredDims = Object.keys(allAns).join(", ");
                                   const totalAnswers = Object.values(allAns).reduce((sum, arr) => sum + arr.length, 0);
-                                  console.log("[canvas] Calling detect-patterns. Dims:", exploredDims, "total answers:", totalAnswers, "allAns:", allAns);
+                                  // Uncompleted dimensions (with label + description) so the AI can suppress patterns that will be addressed later
+                                  const uncompletedDims = dimensions.filter(d => d.label !== dimLabel && dimStatus[d.label] !== "complete").map(d => ({ label: d.label, description: d.description }));
+                                  console.log("[canvas] Calling detect-patterns. Dims:", exploredDims, "total answers:", totalAnswers, "uncompleted:", uncompletedDims.length);
                                   fetch("/api/detect-patterns", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: exploredDims, existingPatterns: patterns }),
+                                    body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: exploredDims, existingPatterns: patterns, uncompletedDimensions: uncompletedDims }),
                                   }).then(r => r.json()).then(pd => {
                                     console.log("[canvas] detect-patterns response:", pd);
                                     if (pd.pattern) {

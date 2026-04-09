@@ -84,12 +84,25 @@ Actions: CLARIFY for assumptions/contradictions/surrender. EXPAND for blind spot
 
 Each note has an ID. Identify which specific note most clearly demonstrates this pattern and return its ID as "noteId". The note should be the one whose content the user would need to re-examine to resolve this pattern. Do NOT just pick the most recent note.
 
+DIMENSION AWARENESS CHECK:
+Before returning any detected pattern, check it against the uncompleted dimensions listed below. If the pattern's behavior would naturally be addressed by exploring an uncompleted dimension based on that dimension's label and description, suppress the pattern. Do not return it.
+
+For each candidate pattern ask: "Would working through this uncompleted dimension likely resolve this pattern?" If yes, do NOT include the pattern.
+
+Only surface a pattern if:
+- The behavior is NOT addressed by any remaining dimension's topic, OR
+- The behavior spans multiple dimensions and represents a systemic thinking habit (like vague language everywhere, not just about one specific topic)
+
+Suppressed patterns are not gone. They will be re-evaluated after the relevant dimension is completed.
+
+Example: If uncompleted dimensions include "Who you're building for: understanding your audience" and the candidate pattern is "you keep saying 'founders' without defining who", SUPPRESS it. That's exactly what the next dimension will explore.
+
 Return ONLY valid JSON or null:
 {"type":"...","label":"...","behavior":"...","question":"...","suggestedAction":"clarify|expand|decide|express","noteId":"the-note-id"}`;
 
 export async function POST(req: Request) {
   try {
-    const { goal, allAnswers, dimensions, existingPatterns } = await req.json();
+    const { goal, allAnswers, dimensions, existingPatterns, uncompletedDimensions } = await req.json();
     if (!allAnswers) return NextResponse.json({ pattern: null });
 
     let totalAnswers = 0;
@@ -119,7 +132,14 @@ export async function POST(req: Request) {
     if (existingPatterns?.length) {
       userMsg += `\n\nALREADY DETECTED (don't repeat):\n${existingPatterns.map((p: { type: string; label: string }) => `${p.type}: ${p.label}`).join("\n")}`;
     }
-    if (dimensions) userMsg += `\n\nDIMENSIONS: ${dimensions}`;
+    if (dimensions) userMsg += `\n\nCOMPLETED DIMENSIONS: ${dimensions}`;
+    if (Array.isArray(uncompletedDimensions) && uncompletedDimensions.length > 0) {
+      userMsg += `\n\n=== UNCOMPLETED DIMENSIONS (user hasn't reached these yet) ===\n`;
+      uncompletedDimensions.forEach((d: { label: string; description: string }) => {
+        userMsg += `- ${d.label}: ${d.description}\n`;
+      });
+      userMsg += `=== END ===\nIMPORTANT: Do NOT flag patterns that would naturally be addressed by exploring these uncompleted dimensions. The user hasn't reached them yet.\n`;
+    }
 
     console.log("[detect-patterns] CALLING AI — goal:", goal?.slice(0, 60), "| dims:", dimensions, "| totalAnswers:", totalAnswers, "| existingPatterns:", existingPatterns?.length || 0);
 
