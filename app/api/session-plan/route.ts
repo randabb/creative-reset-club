@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { INTELLECTUAL_LAYER } from "@/lib/prompts/intellectual-layer";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are the session architect for Primer. Based on the user's goal and their guided thinking answers, generate a focused session plan.
+const SYSTEM = PRIMER_CHARACTER + `DIMENSION GENERATION SPECIFIC: All 4 dimensions must cover genuinely DIFFERENT areas of thinking. No two dimensions should explore the same theme from different angles. Dimension titles should be conversational and specific to the user's goal. Not academic. Not generic.
+
+You are the session architect for Primer. Based on the user's goal and their guided thinking answers, generate a focused session plan.
 
 RULES:
 - Generate exactly 4 dimensions. Each dimension should be a distinct area of thinking the user needs to explore. No overlap between dimensions. 4 is the max — be selective about what matters most.

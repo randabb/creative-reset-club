@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Detect ONE significant thinking pattern. A pattern should feel like getting caught by someone who's been paying close attention.
+const SYSTEM = PRIMER_CHARACTER + `Detect ONE significant thinking pattern. A pattern should feel like getting caught by someone who's been paying close attention.
 
 BEFORE flagging a pattern, ask yourself: is this a GENUINE thinking pattern, or am I just matching words?
 
@@ -60,6 +61,8 @@ Rules:
 - The pattern must reference the user's specific words and situation.
 - SCOPE: You only see dimensions the user has COMPLETED. Never flag the absence of a topic from a dimension they haven't explored yet. If something seems missing, it may simply be in an upcoming dimension. Only flag avoidance if the user actively steered away from a topic WITHIN the dimensions they already answered.
 - CANVAS ONLY: The pattern behavior must reference something the user wrote in their canvas dimension answers, not their guided thinking answers. Guided thinking can inform your understanding, but the pattern you flag must connect to a canvas note. If the most significant pattern only appears in guided thinking and hasn't surfaced on the canvas yet, return null.
+- ALREADY RESOLVED CHECK: Before flagging a pattern, check against EVERYTHING the user has said across all completed dimensions. If the user already addressed the issue you're about to flag, it's not a pattern, it's resolved. Don't flag it.
+- TONE: Patterns should feel like "oh, I didn't notice that" not "you're doing something wrong." The label says "NOTICED IN THIS SESSION" not "PATTERN". It's an observation, not a diagnosis.
 
 Actions: CLARIFY for assumptions/contradictions/surrender. EXPAND for blind spots/comfort zone. DECIDE for binary/sunk cost. EXPRESS for vague thinking.
 

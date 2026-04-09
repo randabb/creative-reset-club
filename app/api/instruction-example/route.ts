@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `The user wants an example of what to write. Give them ONE short example using a DIFFERENT topic than theirs.
+const SYSTEM = PRIMER_CHARACTER + `The user wants an example of what to write. Give them ONE short example using a DIFFERENT topic than theirs.
 
 RULES:
 - 1-2 sentences MAX. Under 25 words.

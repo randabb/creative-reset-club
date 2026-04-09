@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Generate exactly ONE question for this thinking dimension.
+const SYSTEM = PRIMER_CHARACTER + `Generate exactly ONE question for this thinking dimension.
 
 If this is the first question: ask something concrete and specific to their goal that's easy to answer. Get them talking.
 

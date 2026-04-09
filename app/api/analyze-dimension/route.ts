@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `CRITICAL: Write in second person (you/your).
+const SYSTEM = PRIMER_CHARACTER + `CRITICAL: Write in second person (you/your).
 
 The user just finished exploring one dimension of their thinking. Analyze what they said for:
 

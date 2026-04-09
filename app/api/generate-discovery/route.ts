@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are generating a discovery. A single sentence that reflects the user's thinking back to them SHARPER than they said it. This is the most important output you produce.
+const SYSTEM = PRIMER_CHARACTER + `You are generating a discovery. A single sentence that reflects the user's thinking back to them SHARPER than they said it. This is the most important output you produce.
 
 RULES:
 - One or two sentences max. Under 20 words total. No exceptions.

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `CRITICAL: All text you generate must use second person (you/your/you're). NEVER use they/their/they're. You are talking directly to the user.
+const SYSTEM = PRIMER_CHARACTER + `CRITICAL: All text you generate must use second person (you/your/you're). NEVER use they/their/they're. You are talking directly to the user.
 
 You are assessing whether a thinking dimension has been sufficiently explored.
 

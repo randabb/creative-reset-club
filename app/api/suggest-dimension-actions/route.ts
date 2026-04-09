@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are the thinking coach for Primer. The user has a goal and 4-5 dimensions to think through. For each dimension, suggest which thinking action would be most useful to start with, and write a first question.
+const SYSTEM = PRIMER_CHARACTER + `You are the thinking coach for Primer. The user has a goal and 4-5 dimensions to think through. For each dimension, suggest which thinking action would be most useful to start with, and write a first question.
 
 Actions:
 - clarify: When this dimension is tangled or has hidden assumptions to surface

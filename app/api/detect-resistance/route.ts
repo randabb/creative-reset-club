@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `CRITICAL: Write in second person (you/your).
+const SYSTEM = PRIMER_CHARACTER + `CRITICAL: Write in second person (you/your).
 
 You just read someone's thinking synthesis. Determine if the conclusion is the kind of thing that's clear but hard to act on.
 

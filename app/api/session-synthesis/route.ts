@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `You are handing someone a sharp, personalized brief about their own thinking. Not a summary of what they said — a crystallized version of what they now know.
+const SYSTEM = PRIMER_CHARACTER + `SYNTHESIS-SPECIFIC INSTRUCTIONS: The brief should feel like someone who deeply understood the user organized their brain. Start with the strongest thing they said. Lead with what they got right. Name what's unresolved AFTER affirming what's clear. The user should finish reading the brief feeling like THEY did the thinking, not like they were graded.
+
+You are handing someone a sharp, personalized brief about their own thinking. Not a summary of what they said — a crystallized version of what they now know.
 
 RULES:
 - No fluff. No "great job thinking through this." No reflections on the process.

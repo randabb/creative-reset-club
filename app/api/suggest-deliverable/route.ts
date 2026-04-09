@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 15;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Based on this user's goal and their thinking synthesis, determine the single most useful DELIVERABLE an AI assistant should create for them. This should be something tangible they can walk away with.
+const SYSTEM = PRIMER_CHARACTER + `Based on this user's goal and their thinking synthesis, determine the single most useful DELIVERABLE an AI assistant should create for them. This should be something tangible they can walk away with.
 
 Examples of deliverables based on different goals:
 - "figure out how to position my product" → "Create a one-page positioning document with: target audience, core problem, unique value prop, key messaging, and 3 tagline options"

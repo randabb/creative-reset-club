@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `After the user answers, write a 1-2 sentence reflection. This should feel like genuine recognition — like they just said something important and you caught it. Be specific to what they said. Use their words back to them.
+const SYSTEM = PRIMER_CHARACTER + `REFLECTION-SPECIFIC: Reflections must affirm what surfaced. They should feel like genuine recognition. Never critique in a reflection. The user just started, they need momentum, not correction.
+
+After the user answers, write a 1-2 sentence reflection. This should feel like genuine recognition — like they just said something important and you caught it. Be specific to what they said. Use their words back to them.
 
 RULES:
 - Under 30 words. No questions. No preamble. Just land the recognition.
