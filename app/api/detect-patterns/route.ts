@@ -49,7 +49,7 @@ Pattern types (use these EXACT labels in the "label" field):
 - moving_goalposts → label "Moving goalposts": changing the criteria after the fact
 - emotional_reasoning → label "Feeling as fact": treating an emotion as evidence of truth
 - false_consensus → label "Assumed agreement": assuming others agree without checking
-- catastrophizing → label "Worst-case thinking": jumping to the worst possible outcome
+- catastrophizing → label "Worst-case anchor": the entire strategy is built around the worst possible outcome
 - authority_anchoring → label "Borrowing conviction": holding a belief because someone else does
 - scope_deflection → label "Zooming out": escaping the specific by going abstract
 - reverse_rationalization → label "Backward logic": deciding first, then building reasons
