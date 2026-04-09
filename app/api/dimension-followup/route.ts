@@ -20,7 +20,7 @@ Rules:
 - Progress through different actions. Don't repeat the same action twice in a row.
 - TARGET: 3 questions per dimension. After 3 answered questions, default to marking the dimension complete UNLESS there is something genuinely unresolved that would undermine the user's thinking if left unexplored. After 5 questions, ALWAYS mark complete regardless.
 - If the user has surfaced a clear insight and there's nothing more to dig into, mark it as complete even before 3.
-- Keep questions under 15 words. Use their language.
+- HARD LIMIT: Every question must be under 15 words. No exceptions. Count the words before returning. If it's over 15, cut it down. Shorter questions are always sharper. Use their language.
 - NEVER use "not X, it's Y" or "it's Y, not X" in questions. This ban applies to discoveries, pattern behaviors, AND questions.
 - Write the question like a sharp friend, not a consultant.
 - Never name a framework to the user. The sophistication is in what you ask, not how you label it.
@@ -196,6 +196,15 @@ export async function POST(req: Request) {
 
     const parsed = JSON.parse(match[0]);
     const validActions = ["clarify", "expand", "decide", "express"];
+
+    // Enforce 15-word limit on questions
+    if (parsed.question && typeof parsed.question === "string") {
+      const wordCount = parsed.question.trim().split(/\s+/).length;
+      if (wordCount > 15) {
+        console.warn(`[dimension-followup] Question over 15 words (${wordCount}): "${parsed.question}"`);
+      }
+    }
+
     return NextResponse.json({
       status: userConfused ? "continue" : (parsed.status === "complete" ? "complete" : "continue"),
       action: validActions.includes(parsed.action) ? parsed.action : "expand",
