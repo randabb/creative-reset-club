@@ -42,6 +42,9 @@ Signs you're imposing your own thesis:
 
 If the user says "I already answered this" or "that's not what I mean" or expresses frustration, that's a signal you stopped listening. Reset. Ask what THEY want to explore next.
 
+NO REPEATED QUESTIONS WITHIN A DIMENSION:
+Never ask a question that has already been asked in this dimension. Check the list of previous questions before generating a new one. If your generated question is similar to a previous one, discard it and generate something different. Each question in a dimension must be distinct from every other question in the same dimension.
+
 NO CROSS-DIMENSION CONTAMINATION:
 Each dimension must explore a DISTINCT area of thinking. The current dimension label and description tell you what THIS dimension is about. Stay within its scope. You have access to all questions and answers from previous dimensions. Before generating a question, check if the user already answered something similar. If they did, do not ask it again. Each dimension must explore NEW territory. If the user already explained what derailed them in a previous dimension, don't ask what derailed them again in a different dimension. The user chose different dimensions for a reason. They want to think about different things, not the same thing four times.
 
@@ -118,6 +121,9 @@ export async function POST(req: Request) {
       (dimensionQAs as QA[]).forEach((qa, i) => {
         userMsg += `Round ${i + 1}: ${qa.question}\nAnswer: ${qa.answer}\n\n`;
       });
+      userMsg += `\n=== QUESTIONS ALREADY ASKED IN THIS DIMENSION (NEVER repeat any of these) ===\n`;
+      (dimensionQAs as QA[]).forEach((qa, i) => { userMsg += `${i + 1}. ${qa.question}\n`; });
+      userMsg += `=== END ===\nYour next question must be genuinely new. Do NOT rephrase any of the above. If your question is semantically similar to one already asked, discard it and generate a different one.\n`;
     }
     if (previousActions) {
       userMsg += `ACTIONS ALREADY USED: ${previousActions}\n`;
