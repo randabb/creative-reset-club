@@ -111,9 +111,40 @@ If status is "complete", action and question can be null but include a discovery
 
 interface QA { question: string; answer: string; }
 
+const CONFUSION_PHRASES = [
+  "i dont understand", "i don't understand", "don't understand", "dont understand",
+  "what?", "huh?", "??", "???",
+  "bad question", "weird question", "dumb question",
+  "dont get it", "don't get it", "not getting it",
+  "what do you mean", "what does that mean",
+  "confused", "lost", "im lost", "i'm lost",
+  "doesn't make sense", "doesnt make sense",
+  "rephrase", "say again",
+];
+
+function detectConfusion(answer: string): boolean {
+  if (!answer) return false;
+  const lower = answer.toLowerCase().trim();
+  // Very short answers that are just confusion markers
+  if (lower.length < 50) {
+    for (const p of CONFUSION_PHRASES) {
+      if (lower === p || lower.startsWith(p) || lower.endsWith(p) || lower === p + ".") return true;
+    }
+  }
+  // Longer answers that contain clear confusion phrases
+  for (const p of CONFUSION_PHRASES) {
+    if (lower.includes(p)) return true;
+  }
+  return false;
+}
+
 export async function POST(req: Request) {
   try {
     const { goal, dimension, dimensionQAs, allDimensions, previousActions, previousDiscoveries, frameworksUsed, otherDimensionAnswers } = await req.json();
+
+    // Check if the user's last answer signals confusion
+    const lastQA = dimensionQAs?.length ? (dimensionQAs as QA[])[dimensionQAs.length - 1] : null;
+    const userConfused = lastQA ? detectConfusion(lastQA.answer) : false;
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nCURRENT DIMENSION: ${dimension || "General"}\n\n`;
     if (dimensionQAs?.length) {
@@ -124,6 +155,11 @@ export async function POST(req: Request) {
       userMsg += `\n=== QUESTIONS ALREADY ASKED IN THIS DIMENSION (NEVER repeat any of these) ===\n`;
       (dimensionQAs as QA[]).forEach((qa, i) => { userMsg += `${i + 1}. ${qa.question}\n`; });
       userMsg += `=== END ===\nYour next question must be genuinely new. Do NOT rephrase any of the above. If your question is semantically similar to one already asked, discard it and generate a different one.\n`;
+    }
+
+    if (userConfused && lastQA) {
+      console.log("[dimension-followup] USER CONFUSED — forcing rephrase of:", lastQA.question);
+      userMsg += `\n=== USER IS CONFUSED ===\nThe user's last answer signals confusion ("${lastQA.answer}"). Your previous question was unclear. You MUST NOT advance or ask a new question. Instead, REPHRASE the previous question ("${lastQA.question}") in simpler, shorter, more concrete language. The rephrase must be easier to answer than the original. Do not treat the confused answer as a real answer. Return status "continue" with the rephrased question. Do NOT generate a discovery.\n=== END ===\n`;
     }
     if (previousActions) {
       userMsg += `ACTIONS ALREADY USED: ${previousActions}\n`;
@@ -161,11 +197,13 @@ export async function POST(req: Request) {
     const parsed = JSON.parse(match[0]);
     const validActions = ["clarify", "expand", "decide", "express"];
     return NextResponse.json({
-      status: parsed.status === "complete" ? "complete" : "continue",
+      status: userConfused ? "continue" : (parsed.status === "complete" ? "complete" : "continue"),
       action: validActions.includes(parsed.action) ? parsed.action : "expand",
       question: parsed.question || null,
-      discovery: parsed.discovery || null,
+      // Suppress discovery entirely when the user was confused — their "answer" wasn't a real answer
+      discovery: userConfused ? null : (parsed.discovery || null),
       framework: parsed.framework || null,
+      rephrase: userConfused,
     });
   } catch (err) {
     console.error("[dimension-followup]", err);
