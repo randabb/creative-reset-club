@@ -10,7 +10,7 @@ const SYSTEM = PRIMER_CHARACTER + `CRITICAL: Write in second person (you/your).
 The user completed a full thinking session. Analyze their entire body of thinking for the synthesis.
 
 1. ASSUMPTIONS: List every statement they made as fact without evidence across all dimensions. Be thorough.
-2. AVOIDANCE: Based on their goal, what topics or angles did they conspicuously never address? What's missing?
+2. AVOIDANCE: The 3 MOST significant unexplored areas that would have the biggest impact on the user's goal. MAXIMUM 3 items. Don't list everything they didn't cover — pick what matters most. Format as a short paragraph naming only those 3, not a laundry list. If fewer than 3 genuinely matter, list fewer. Better to name 1 important gap than 6 trivial ones.
 3. CROSS_TENSIONS: List all contradictions or unresolved tensions between dimensions. Quote both sides for each.
 4. STRONGEST_FRAGMENT: What's the single sharpest, most insightful thing they said across the entire session? Quote it exactly.
 
