@@ -8,6 +8,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const GLOBAL = PRIMER_CHARACTER + `You have access to the user's goal and all their previous notes and answers on the canvas. Use their specific language and situation. Never ask a generic question. This question should only make sense for THIS person and THIS note.
 
+NO REPEAT QUESTIONS: You will be given a list of all questions already asked in this session across guided thinking, every dimension, and every previous action question. Do not repeat any of these questions. Do not ask a paraphrased version of any of these. Your question must be genuinely new. If your draft matches or resembles a question already asked, discard it and generate something different.
+
 CRITICAL: Write in second person (you/your). Never use they/their.
 
 CRITICAL: Every question must clearly connect to the user's GOAL. Before generating, ask yourself: "How does this question help them with their goal?" If you can't answer clearly, pick a different question.
@@ -123,7 +125,7 @@ const FALLBACKS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription, existingInstructions, triggeringPattern } = await req.json();
+    const { action, goal, selectedNoteText, allNotesText, dimensionLabel, dimensionDescription, existingInstructions, triggeringPattern, allSessionQuestions } = await req.json();
     if (!selectedNoteText || !action) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -158,6 +160,12 @@ Do NOT generate a generic question of this action type. The question must resolv
     userMsg += `THE NOTE THEY SELECTED:\n${selectedNoteText}\n\nOTHER NOTES ON CANVAS:\n${allNotesText || selectedNoteText}`;
     if (existingInstructions) {
       userMsg += `\n\nPREVIOUS QUESTIONS ASKED (don't repeat):\n${existingInstructions}`;
+    }
+    if (Array.isArray(allSessionQuestions) && allSessionQuestions.length > 0) {
+      userMsg += `\n\n=== ALL QUESTIONS ALREADY ASKED IN THIS ENTIRE SESSION ===\n`;
+      allSessionQuestions.forEach((q: string, i: number) => { userMsg += `${i + 1}. ${q}\n`; });
+      userMsg += `=== END ===\nDo NOT repeat any of these questions. Do NOT ask a paraphrased version of any of these. Your question must be genuinely new.\n`;
+      console.log("[canvas-coach] received", allSessionQuestions.length, "previous session questions");
     }
     if (triggeringPattern) {
       userMsg += `\n\nPATTERN TO RESOLVE:\nLabel: ${triggeringPattern.label}\nBehavior: ${triggeringPattern.behavior}\nCracking question (for inspiration, don't copy verbatim): ${triggeringPattern.question}`;

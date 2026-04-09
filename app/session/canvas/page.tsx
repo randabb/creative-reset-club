@@ -765,6 +765,19 @@ function CanvasInner() {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8000);
+      // Build complete list of every question asked in this session
+      const allSessionQuestions: string[] = [];
+      // Guided thinking questions
+      (qas || []).forEach(qa => { if (qa.question) allSessionQuestions.push(qa.question); });
+      // Dimension questions (all dimensions)
+      Object.values(dimQAs).forEach(arr => {
+        (arr || []).forEach(qa => { if (qa.question) allSessionQuestions.push(qa.question); });
+      });
+      // Previous AI action instructions (aiInstruction notes on canvas)
+      notes.filter(n => n.aiInstruction).forEach(n => { if (n.text) allSessionQuestions.push(n.text); });
+      // Pattern cracking questions already resolved
+      resolvedPatternQuestionsRef.current.forEach(q => { if (q) allSessionQuestions.push(q); });
+
       const res = await fetch("/api/canvas-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -776,6 +789,7 @@ function CanvasInner() {
           dimensionLabel: dim.label,
           dimensionDescription: dim.desc,
           existingInstructions: notes.filter(n => n.aiInstruction).map(n => `- ${n.text}`).join("\n") || undefined,
+          allSessionQuestions: allSessionQuestions.length > 0 ? allSessionQuestions : undefined,
           triggeringPattern: triggeringPattern ? {
             label: triggeringPattern.label,
             behavior: triggeringPattern.behavior,
