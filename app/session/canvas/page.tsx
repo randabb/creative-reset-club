@@ -369,6 +369,7 @@ function CanvasInner() {
           // Auto-generate next question for the dimension they left off on
           setActiveDimQuestion(nextDim.label);
           const prevQAs = dimQAs[nextDim.label] || [];
+          const otherDimQAsStr = Object.entries(dimQAs).filter(([k]) => k !== nextDim.label && dimQAs[k]?.length > 0).map(([k, v]) => `${k}:\n${v.map(q => `Q: ${q.question}\nA: ${q.answer}`).join("\n")}`).join("\n\n") || undefined;
           fetch("/api/mobile-stickies", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -376,6 +377,7 @@ function CanvasInner() {
               goal: capture, mode, qas,
               dimension: nextDim.label,
               previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined,
+              otherDimensionQAs: otherDimQAsStr,
             }),
           }).then(r => r.json()).then(data => {
             if (data.question) {
@@ -1903,9 +1905,10 @@ function CanvasInner() {
                         // Initialize dimStatus if missing
                         if (!dimStatus[dl]) dispatch({ type: "SET_DIM_STATUS", payload: { label: dl, status: "unexplored" } });
                         // Fetch initial question on demand
+                        const otherDimQAsStr = Object.entries(dimQAs).filter(([k]) => k !== dl && dimQAs[k]?.length > 0).map(([k, v]) => `${k}:\n${v.map(q => `Q: ${q.question}\nA: ${q.answer}`).join("\n")}`).join("\n\n") || undefined;
                         fetch("/api/mobile-stickies", {
                           method: "POST", headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ goal: capture, mode, qas, dimension: dl }),
+                          body: JSON.stringify({ goal: capture, mode, qas, dimension: dl, otherDimensionQAs: otherDimQAsStr }),
                         }).then(r => r.json()).then(data => {
                           if (data.question) setDimSuggestions(prev => ({ ...prev, [dl]: { action: "clarify" as Action, question: data.question } }));
                         }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
@@ -2127,9 +2130,10 @@ function CanvasInner() {
                                       console.log("[canvas] No suggestion for next dim, fetching:", ndl);
                                       setDimLoading(true);
                                       const prevQAs = dimQAs[ndl] || [];
+                                      const otherDimQAsStr = Object.entries(dimQAs).filter(([k]) => k !== ndl && dimQAs[k]?.length > 0).map(([k, v]) => `${k}:\n${v.map(q => `Q: ${q.question}\nA: ${q.answer}`).join("\n")}`).join("\n\n") || undefined;
                                       fetch("/api/mobile-stickies", {
                                         method: "POST", headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ goal: capture, mode, qas, dimension: ndl, previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined }),
+                                        body: JSON.stringify({ goal: capture, mode, qas, dimension: ndl, previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined, otherDimensionQAs: otherDimQAsStr }),
                                       }).then(r => r.json()).then(dd => {
                                         if (dd.question) setDimSuggestions(prev => ({ ...prev, [ndl]: { action: "clarify" as Action, question: dd.question } }));
                                       }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
