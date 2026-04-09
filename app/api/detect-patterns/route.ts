@@ -70,7 +70,8 @@ Rules:
 - "question": under 10 words. The question that cracks it open.
 - Maximum 3 patterns per session. Skip if you already flagged something similar.
 - Flag a pattern if it's clearly supported by at least 2 notes in the completed dimension. Don't require certainty, require evidence.
-- Return null only if there is genuinely no significant pattern. If the user has written 3+ answers in a dimension, there is almost always something worth flagging. The bar is: would pointing this out change how the user sees their own thinking? If yes, flag it.
+- After a dimension with 3+ answers is completed, there is almost always a pattern worth noticing. Return null ONLY if you genuinely cannot find any of the 22 patterns supported by at least 2 notes. If the user gave vague answers, that's "Still fuzzy." If they repeated themselves, that's a signal of "Staying safe" or "Decided too early." If they avoided specifics, that's "Unexplored." Look HARDER before returning null.
+- LOOK HARD: Scan the full list of 22 pattern types above before returning null. Ask yourself: does ANY of them apply? If even one fits with 2+ note evidence, flag it.
 - The behavior should make the user think "oh shit, I didn't notice I was doing that." A generic pattern that could apply to anyone is not worth flagging.
 - No AI language. No therapy-speak. No corporate tone.
 - The pattern must reference the user's specific words and situation.
@@ -109,7 +110,10 @@ export async function POST(req: Request) {
       });
     }
 
-    if (totalAnswers < 2) return NextResponse.json({ pattern: null });
+    if (totalAnswers < 2) {
+      console.log("[detect-patterns] SKIP: only", totalAnswers, "answers (need 2+)");
+      return NextResponse.json({ pattern: null });
+    }
 
     let userMsg = `GOAL: ${goal || "Not specified"}\n\nALL ANSWERS:\n${answerText.join("\n\n")}`;
     if (existingPatterns?.length) {
@@ -117,23 +121,28 @@ export async function POST(req: Request) {
     }
     if (dimensions) userMsg += `\n\nDIMENSIONS: ${dimensions}`;
 
-    console.log("NEW PATTERN PROMPT IS ACTIVE");
-    console.log("[detect-patterns] goal:", goal?.slice(0, 50), "answers:", totalAnswers);
+    console.log("[detect-patterns] CALLING AI — goal:", goal?.slice(0, 60), "| dims:", dimensions, "| totalAnswers:", totalAnswers, "| existingPatterns:", existingPatterns?.length || 0);
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 150,
+      max_tokens: 400,
       system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
-    console.log("[detect-patterns] Raw response:", text);
+    console.log("[detect-patterns] AI RAW RESPONSE:", text);
 
-    if (text === "null" || !text) return NextResponse.json({ pattern: null });
+    if (text === "null" || !text) {
+      console.warn("[detect-patterns] AI returned null/empty — no pattern flagged");
+      return NextResponse.json({ pattern: null });
+    }
 
     const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return NextResponse.json({ pattern: null });
+    if (!match) {
+      console.warn("[detect-patterns] No JSON found in response");
+      return NextResponse.json({ pattern: null });
+    }
 
     const parsed = JSON.parse(match[0]);
     if (!parsed.label || !parsed.behavior) return NextResponse.json({ pattern: null });

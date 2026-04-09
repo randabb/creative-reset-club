@@ -2103,15 +2103,20 @@ function CanvasInner() {
                                     text: q.answer,
                                   }));
                                   const exploredDims = Object.keys(allAns).join(", ");
+                                  const totalAnswers = Object.values(allAns).reduce((sum, arr) => sum + arr.length, 0);
+                                  console.log("[canvas] Calling detect-patterns. Dims:", exploredDims, "total answers:", totalAnswers, "allAns:", allAns);
                                   fetch("/api/detect-patterns", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ goal: capture, allAnswers: allAns, dimensions: exploredDims, existingPatterns: patterns }),
                                   }).then(r => r.json()).then(pd => {
+                                    console.log("[canvas] detect-patterns response:", pd);
                                     if (pd.pattern) {
                                       console.log("[canvas] Pattern from API:", pd.pattern);
                                       dispatch({ type: "ADD_PATTERN", payload: { ...pd.pattern } });
+                                    } else {
+                                      console.warn("[canvas] detect-patterns returned null — no pattern flagged");
                                     }
-                                  }).catch(err => console.error("[canvas] API error:", err));
+                                  }).catch(err => console.error("[canvas] detect-patterns error:", err));
                                 }
                                 // Find next unexplored dimension
                                 const nextDim = dimensions.find(d => d.label !== dimLabel && dimStatus[d.label] !== "complete");
