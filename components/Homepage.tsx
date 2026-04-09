@@ -143,11 +143,11 @@ function BlindSpots() {
   const { ref, visible } = useInView();
   const patterns = [
     { label: "Contradiction", desc: "You said two things that can\u2019t both be true." },
-    { label: "Sunk cost", desc: "You\u2019re defending a decision because of what you already invested. The math stopped working a while ago." },
-    { label: "Avoidance", desc: "There\u2019s something relevant you keep steering away from." },
-    { label: "Premature closure", desc: "You landed on your answer in the first minute. Everything since supports it." },
-    { label: "Projection", desc: "You keep saying \u2018people want\u2019 when you mean \u2018I want.\u2019" },
-    { label: "Binary thinking", desc: "You framed it as A or B. There are at least four options." },
+    { label: "Past investment", desc: "You\u2019re defending a decision because of what you already invested. The math stopped working a while ago." },
+    { label: "Unexplored", desc: "There\u2019s something relevant you keep steering away from." },
+    { label: "Decided too early", desc: "You landed on your answer in the first minute. Everything since supports it." },
+    { label: "Speaking for others", desc: "You keep saying \u2018people want\u2019 when you mean \u2018I want.\u2019" },
+    { label: "Either/or", desc: "You framed it as A or B. There are at least four options." },
   ];
   return (
     <div ref={ref} style={{ background: "rgba(0,3,50,0.03)", padding: "100px 24px", fontFamily: BODY_FONT }}>
