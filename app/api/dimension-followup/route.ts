@@ -126,7 +126,8 @@ export async function POST(req: Request) {
       userMsg += `FRAMEWORKS ALREADY USED IN THIS DIMENSION: ${frameworksUsed}\nPick a DIFFERENT framework for this question.\n`;
     }
     if (previousDiscoveries) {
-      userMsg += `\nPREVIOUS DISCOVERIES (never repeat these or rephrase them):\n${previousDiscoveries}\n`;
+      userMsg += `\n=== ALL DISCOVERIES ALREADY GENERATED IN THIS SESSION ===\n${previousDiscoveries}\n=== END OF PREVIOUS DISCOVERIES ===\nNEVER repeat any of these. Never use the same opening phrase, same structure, or same core idea. Each new discovery must be genuinely new.\n`;
+      console.log("[dimension-followup] received", previousDiscoveries.split("\n").length, "previous discoveries");
     }
     if (allDimensions) {
       userMsg += `\nALL DIMENSIONS: ${allDimensions}\n`;

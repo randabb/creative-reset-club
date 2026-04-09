@@ -94,7 +94,8 @@ export async function POST(req: Request) {
     let userMsg = `USER'S RESPONSE:\n${userResponse}`;
     if (dimensionLabel) userMsg += `\nDIMENSION: ${dimensionLabel}`;
     if (previousDiscoveries) {
-      userMsg += `\nPREVIOUS DISCOVERIES (don't repeat these — and check the balance. If most are challenges, the next should affirm):\n${previousDiscoveries}`;
+      userMsg += `\n=== ALL DISCOVERIES ALREADY GENERATED IN THIS SESSION ===\n${previousDiscoveries}\n=== END OF PREVIOUS DISCOVERIES ===\nNEVER repeat any of these. Never use the same opening phrase, same structure, or same core idea. Each new discovery must be genuinely new. ALSO check the balance: if most are challenges, the next should affirm.`;
+      console.log("[generate-discovery] received", previousDiscoveries.split("\n").length, "previous discoveries");
     }
 
     const controller = new AbortController();

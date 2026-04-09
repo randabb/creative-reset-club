@@ -675,7 +675,7 @@ function CanvasInner() {
           body: JSON.stringify({
             userResponse: editedNote.text.trim(),
             dimensionLabel: dim.label,
-            previousDiscoveries: discoveries.filter(d => d.dimLabel !== dim.label || !d.createdAt).map(d => d.text).join("\n") || undefined,
+            previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
           }),
         }).then(r => r.json()).then(data => {
           if (data.discovery) {
@@ -982,6 +982,7 @@ function CanvasInner() {
     // Re-analyze notes (force bypass debounce)
 
     // Generate discovery line
+    console.log("[canvas] generate-discovery called with", discoveriesRef.current.length, "previous discoveries");
     fetch("/api/generate-discovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2035,6 +2036,7 @@ function CanvasInner() {
 
                             // Get followup
                             try {
+                              console.log("[canvas] dimension-followup called with", discoveriesRef.current.length, "previous discoveries");
                               const res = await fetch("/api/dimension-followup", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -2075,8 +2077,12 @@ function CanvasInner() {
                                   method: "POST", headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ goal: capture, dimension: dimLabel, dimensionAnswers: updatedQAs.map(q => q.answer).join("\n"), allOtherDimensionAnswers: otherAnswers || undefined, existingPatterns: patterns.map(p => p.description).join("\n") || undefined }),
                                 }).then(r => r.json()).then(ad => {
+                                  // NOTE: keyInsight intentionally NOT added as a discovery —
+                                  // dimension-followup already generated one for the final answer.
+                                  // Adding both creates duplicates. The analyze-dimension response
+                                  // is only used for assumptions/crossTension in the synthesis.
                                   if (ad.keyInsight) {
-                                    dispatch({ type: "ADD_DISCOVERY", payload: { id: uid(), text: ad.keyInsight, dimLabel, createdAt: new Date().toISOString() } });
+                                    console.log("[canvas] analyze-dimension keyInsight (not adding, avoids duplicate):", ad.keyInsight);
                                   }
                                 }).catch(err => console.error("[canvas] API error:", err));
                                 // Call detect-patterns API (only source of patterns)
