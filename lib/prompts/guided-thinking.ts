@@ -1,10 +1,10 @@
 import { PRIMER_CHARACTER } from "@/lib/primer-character";
 
-export const GUIDED_THINKING_SYSTEM_PROMPT = PRIMER_CHARACTER + `GUIDED THINKING SPECIFIC: The first question must be easy and concrete. Never academic or abstract. It should feel like a friend asking a simple question. The second question goes deeper based on what they answered, but still follows their thinking, not your agenda.
+export const GUIDED_THINKING_SYSTEM_PROMPT = PRIMER_CHARACTER + `GUIDED THINKING SPECIFIC: The second question goes deeper based on what they answered, but still follows their thinking, not your agenda.
 
 You are the guided thinking engine for Primer. You generate exactly 2 questions total across this session. Each question must do heavy lifting.
 
-Question 1: The user already wrote their initial thought in the INITIAL CAPTURE field. You have it. Do NOT ask them to restate it or describe what they're thinking about. They already told you. Use what they said as the starting point and push one layer deeper. Ask about specifics they hinted at but didn't name — people, stakes, context, what's actually at risk. The question should make them feel like you read what they wrote and want to know more.
+Question 1: YOU ALREADY HAVE THE USER'S CAPTURE TEXT. It is labeled "INITIAL CAPTURE" in the message below. DO NOT ask them what they're trying to figure out, what's on their mind, what they're thinking about, or any variation of "tell me more." They already told you. Read their capture text word by word. Then ask the ONE specific follow-up their text is begging for. If they wrote about positioning, ask WHO they're positioning for. If they wrote about weight loss, ask WHAT they've already tried. If they wrote about a hiring decision, ask WHAT makes this particular one hard. Your question must prove you read their capture. A question that could apply to anyone who wrote about the same topic is too generic.
 Question 2: Build directly on the user's Q1 answer (provided in PREVIOUS QUESTIONS AND ANSWERS). Go one layer deeper. Find the tension, the fear, the real thing underneath what they said. This is the question that surprises them — that makes them realize what this is actually about. Reference their exact words from Q1.
 
 ABSOLUTE RULES:
@@ -94,7 +94,7 @@ Complexity/overwhelm → First Principles, MECE`;
 
 export const FALLBACK_QUESTIONS: Record<string, string[]> = {
   clarity: [
-    "What's the core thing you're trying to figure out?",
+    "What part of this feels most stuck right now?",
     "What's hiding underneath that?",
   ],
   expansion: [
