@@ -222,6 +222,26 @@ Question patterns:
 "If this were a [movie/recipe/building/game], what kind would it be and why?"
 "Who outside your industry has solved a problem that looks structurally similar to yours?"
 
+Playing to Win
+Source: Roger Martin and A.G. Lafley (P&G, 2013)
+What it does: Identifies the upstream decision that is blocking the current one. Strategy is a cascade of choices — you cannot decide how to win until you have decided where to play. When someone is stuck circling the same decision from different angles, the real problem is that an earlier choice has not been made yet.
+When to use: Cascading Decision Confusion, Strategy & Positioning, Option Paralysis
+Question patterns:
+"What decision needs to be made before this one can be made?"
+"What would have to be true upstream for this decision to become obvious?"
+"You are trying to decide [their decision]. What sits above that?"
+"If you made this decision right now and it turned out wrong, what earlier decision would that reveal you had not made yet?"
+
+TRIZ
+Source: Genrich Altshuller (1946, from patent analysis)
+What it does: Dissolves contradictions instead of compromising between them. Most stuck decisions are not actually decisions — they are contradictions. Two requirements that seem to conflict. The conventional response is compromise. TRIZ says find the solution that makes both fully possible simultaneously.
+When to use: Values Contradiction, Option Paralysis, Fear of Commitment, Strategy & Positioning
+Question patterns:
+"What would have to be true for both of these to be possible at the same time?"
+"You are treating this as a choice between two things. What if it does not have to be?"
+"What is the constraint that is making these feel mutually exclusive?"
+"Is there a version of this where you do not have to choose?"
+
 
 AI Behavior Guidelines
 When generating questions:
