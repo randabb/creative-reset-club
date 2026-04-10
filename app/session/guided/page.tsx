@@ -60,6 +60,7 @@ function GuidedInner() {
   const [showReflection, setShowReflection] = useState(false);
   const dimPromiseRef = useRef<Promise<{ label: string; description: string }[]> | null>(null);
   const isNavigatingRef = useRef(false);
+  const initFiredRef = useRef(false);
 
   const getFallback = useCallback((qNum: number) => {
     const fb = FALLBACKS[mode] || FALLBACKS.clarity;
@@ -107,8 +108,11 @@ function GuidedInner() {
 
   useEffect(() => {
     if (!capture) { router.push("/session/new"); return; }
+    if (initFiredRef.current) return;
+    initFiredRef.current = true;
     fetchQuestion(1, []);
-  }, [capture, router, fetchQuestion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capture, router]);
 
   const handleNext = async () => {
     if (answer.trim().length < 15) return;
