@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { PRIMER_CHARACTER } from "@/lib/primer-character";
+import { STATE_DETECTION_LAYER } from "@/lib/prompts";
+import { logStateDetection, type StateDetectionLog } from "@/lib/log-state-detection";
 
 export const maxDuration = 30;
 
@@ -27,8 +29,9 @@ Under 15 words. One idea per question. Use "you" and "they" not abstract languag
 
 CRITICAL: Every question MUST connect to the user's goal. Ask yourself: "How does this help them?" Ground in frameworks (First Principles, Inversion, Pre-Mortem) but never name them.
 
-Respond with ONLY a JSON array:
-[{"dimension":"dimension label","action":"clarify","question":"your question here"}]`;
+` + STATE_DETECTION_LAYER + `
+Respond with ONLY a JSON object:
+{"suggestions":[{"dimension":"dimension label","action":"clarify","question":"your question here"}],"stateDetection":{"detected_state":"...","detection_signals":["..."],"framework_applied":"...","confidence":"high|medium|low"}}`;
 
 interface QA { question: string; answer: string; }
 
@@ -61,20 +64,33 @@ export async function POST(req: Request) {
     clearTimeout(timer);
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) return NextResponse.json({ suggestions: [] });
 
-    const parsed = JSON.parse(match[0]);
+    // Try object format first (with stateDetection), then array fallback
+    let suggestions: { dimension: string; action: string; question: string }[] = [];
+    let stateDetection: StateDetectionLog | null = null;
+    try {
+      const objMatch = text.match(/\{[\s\S]*\}/);
+      if (objMatch) {
+        const obj = JSON.parse(objMatch[0]);
+        if (obj.suggestions && Array.isArray(obj.suggestions)) {
+          suggestions = obj.suggestions;
+          if (obj.stateDetection) stateDetection = obj.stateDetection;
+        }
+      }
+    } catch { /* fallback to array parse */ }
+    if (suggestions.length === 0) {
+      const arrMatch = text.match(/\[[\s\S]*\]/);
+      if (arrMatch) suggestions = JSON.parse(arrMatch[0]);
+    }
+
     const validActions = ["clarify", "expand", "decide", "express"];
-    const suggestions = parsed
-      .filter((s: { dimension: string; action: string; question: string }) => s.dimension && validActions.includes(s.action) && s.question)
-      .map((s: { dimension: string; action: string; question: string }) => ({
-        dimension: s.dimension,
-        action: s.action,
-        question: s.question,
-      }));
+    const filtered = suggestions
+      .filter((s) => s.dimension && validActions.includes(s.action) && s.question)
+      .map((s) => ({ dimension: s.dimension, action: s.action, question: s.question }));
 
-    return NextResponse.json({ suggestions });
+    logStateDetection(undefined, "suggest-dimension-actions", stateDetection);
+
+    return NextResponse.json({ suggestions: filtered });
   } catch (err) {
     console.error("[suggest-dimension-actions]", err);
     return NextResponse.json({ suggestions: [] });

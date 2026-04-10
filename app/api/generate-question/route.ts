@@ -5,6 +5,8 @@ import {
   FALLBACK_QUESTIONS,
 } from "@/lib/prompts/guided-thinking";
 import { INTELLECTUAL_LAYER } from "@/lib/prompts/intellectual-layer";
+import { STATE_DETECTION_LAYER } from "@/lib/prompts";
+import { logStateDetection, type StateDetectionLog } from "@/lib/log-state-detection";
 
 export const maxDuration = 30;
 
@@ -56,21 +58,32 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 100,
-      system: GUIDED_THINKING_SYSTEM_PROMPT + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\nADDITIONAL INSTRUCTION: Before generating each question, silently classify:\n- SITUATION TYPE (strategy, product, people, career, communication, operations, creative, financial, complexity)\n- THINKING CHALLENGE (assumption blindness, option paralysis, idea thinness, articulation gap, complexity overwhelm, fear of commitment, pattern blindness, stakeholder misalignment)\nThen select the 2-3 most relevant frameworks from the intellectual layer and generate the question drawing from those specific framework question patterns. Adapt the patterns to use the user's exact language.\n\nFINAL CHECK: After generating a question, check: can the user answer this with 'sure' or 'yeah good idea'? If yes, the question is a suggestion disguised as a question. Rewrite it to demand original thought from the user. Never use 'What if...' framing.\n\nDo NOT output the classification. Only output the single question.",
+      max_tokens: 200,
+      system: GUIDED_THINKING_SYSTEM_PROMPT + "\n\n--- INTELLECTUAL LAYER ---\n\n" + INTELLECTUAL_LAYER + "\n\n--- STATE DETECTION ---\n\n" + STATE_DETECTION_LAYER + "\n\nADDITIONAL INSTRUCTION: Before generating each question, silently classify:\n- SITUATION TYPE (strategy, product, people, career, communication, operations, creative, financial, complexity)\n- THINKING CHALLENGE (assumption blindness, option paralysis, idea thinness, articulation gap, complexity overwhelm, fear of commitment, pattern blindness, stakeholder misalignment)\nThen run state detection. Then select the framework indicated by the detected state (or the 2-3 most relevant from the intellectual layer if no state matched) and generate the question.\n\nFINAL CHECK: After generating a question, check: can the user answer this with 'sure' or 'yeah good idea'? If yes, the question is a suggestion disguised as a question. Rewrite it to demand original thought from the user. Never use 'What if...' framing.\n\nRespond with ONLY a JSON object:\n{\"question\":\"your question here\",\"stateDetection\":{\"detected_state\":\"...\",\"detection_signals\":[\"...\"],\"framework_applied\":\"...\",\"confidence\":\"high|medium|low\"}}",
       messages: [{ role: "user", content: userMessage }],
     });
 
-    const question =
-      message.content[0]?.type === "text"
-        ? message.content[0].text.trim()
-        : "";
+    const rawText = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
 
-    if (!question) {
-      throw new Error("Empty response");
-    }
+    // Try to parse as JSON for state detection logging
+    let question = rawText;
+    let stateDetection: StateDetectionLog | null = null;
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.question) question = parsed.question;
+        if (parsed.stateDetection) stateDetection = parsed.stateDetection;
+      }
+    } catch { /* response was plain text, use as-is */ }
 
-    return NextResponse.json({ question });
+    if (!question) throw new Error("Empty response");
+
+    // Log state detection to Supabase (silent, non-blocking)
+    const sessionId = (await req.clone().json().catch(() => ({}))).sessionId;
+    logStateDetection(sessionId, "generate-question", stateDetection);
+
+    return NextResponse.json({ question: question.replace(/^["']|["']$/g, "") });
   } catch (err) {
     console.error("[generate-question] Error:", err);
 

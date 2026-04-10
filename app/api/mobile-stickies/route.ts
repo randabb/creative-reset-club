@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { PRIMER_CHARACTER } from "@/lib/primer-character";
+import { STATE_DETECTION_LAYER } from "@/lib/prompts";
+import { logStateDetection, type StateDetectionLog } from "@/lib/log-state-detection";
 
 export const maxDuration = 30;
 
@@ -24,7 +26,9 @@ Rules:
 - Ground questions in frameworks (First Principles, Inversion, Pre-Mortem, Steelman) but NEVER name them
 - NEVER ask a question that's similar to one already asked or answered in a previous dimension
 
-Return ONLY the question as a string, no JSON, no quotes.`;
+` + STATE_DETECTION_LAYER + `
+Respond with ONLY a JSON object:
+{"question":"your question here","stateDetection":{"detected_state":"...","detection_signals":["..."],"framework_applied":"...","confidence":"high|medium|low"}}`;
 
 interface QA { question: string; answer: string; }
 
@@ -56,15 +60,29 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 40,
+      max_tokens: 200,
       system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
 
     clearTimeout(timer);
 
-    const text = message.content[0]?.type === "text" ? message.content[0].text.trim().replace(/^["']|["']$/g, "") : "";
-    return NextResponse.json({ question: text || "What's the real situation here?" });
+    const rawText = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
+    let question = rawText.replace(/^["']|["']$/g, "");
+    let stateDetection: StateDetectionLog | null = null;
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.question) question = parsed.question;
+        if (parsed.stateDetection) stateDetection = parsed.stateDetection;
+      }
+    } catch { /* plain text response */ }
+
+    const bodyData = await req.clone().json().catch(() => ({}));
+    logStateDetection(bodyData.sessionId, "mobile-stickies", stateDetection);
+
+    return NextResponse.json({ question: question || "What's the real situation here?" });
   } catch (err) {
     console.error("[mobile-stickies]", err);
     return NextResponse.json({ question: "What's the real situation here?" });

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { PRIMER_CHARACTER } from "@/lib/primer-character";
+import { STATE_DETECTION_LAYER } from "@/lib/prompts";
+import { logStateDetection, type StateDetectionLog } from "@/lib/log-state-detection";
 
 export const maxDuration = 30;
 
@@ -9,6 +11,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const GLOBAL = PRIMER_CHARACTER + `You have access to the user's goal and all their previous notes and answers on the canvas. Use their specific language and situation. Never ask a generic question. This question should only make sense for THIS person and THIS note.
 
 NO REPEAT QUESTIONS: You will be given a list of all questions already asked in this session across guided thinking, every dimension, and every previous action question. Do not repeat any of these questions. Do not ask a paraphrased version of any of these. Your question must be genuinely new. If your draft matches or resembles a question already asked, discard it and generate something different.
+
+` + STATE_DETECTION_LAYER + `
 
 CRITICAL: Write in second person (you/your). Never use they/their.
 
@@ -176,23 +180,37 @@ Do NOT generate a generic question of this action type. The question must resolv
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 40,
+      max_tokens: 200,
       system,
       messages: [{ role: "user", content: userMsg }],
     });
 
     clearTimeout(timer);
 
-    const text = message.content[0]?.type === "text" ? message.content[0].text.trim().replace(/^["']|["']$/g, "") : "";
-    if (!text) throw new Error("Empty");
+    const rawText = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
+    if (!rawText) throw new Error("Empty");
+
+    // Try to parse stateDetection if AI returned JSON
+    let questionText = rawText.replace(/^["']|["']$/g, "");
+    let stateDetection: StateDetectionLog | null = null;
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.question) questionText = parsed.question;
+        if (parsed.stateDetection) stateDetection = parsed.stateDetection;
+      }
+    } catch { /* plain text */ }
+
+    logStateDetection(undefined, "canvas-coach", stateDetection);
 
     const discMap: Record<string, string> = { clarify: "critical", expand: "creative", decide: "strategic", express: "design" };
 
     return NextResponse.json({
       instruction: {
         discipline: discMap[action] || "strategic",
-        title: text.split(/\s+/).slice(0, 4).join(" "),
-        text,
+        title: questionText.split(/\s+/).slice(0, 4).join(" "),
+        text: questionText,
       },
     });
   } catch (err) {

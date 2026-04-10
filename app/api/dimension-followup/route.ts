@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { PRIMER_CHARACTER } from "@/lib/primer-character";
+import { STATE_DETECTION_LAYER } from "@/lib/prompts";
+import { logStateDetection, type StateDetectionLog } from "@/lib/log-state-detection";
 
 export const maxDuration = 30;
 
@@ -110,7 +112,9 @@ BAD: "You're really thinking this through."
 Respond with ONLY a JSON object:
 {"status":"continue|complete","action":"clarify|expand|decide|express","question":"your question here or null","discovery":"the discovery line, or null","framework":"first_principles|socratic|five_whys|inversion|second_order|steelman|pre_mortem|opportunity_cost"}
 
-If status is "complete", action and question can be null but include a discovery. Framework should still indicate which framework informed your thinking.`;
+If status is "complete", action and question can be null but include a discovery. Framework should still indicate which framework informed your thinking.
+
+` + STATE_DETECTION_LAYER;
 
 interface QA { question: string; answer: string; }
 
@@ -211,11 +215,15 @@ export async function POST(req: Request) {
       }
     }
 
+    // Log state detection to Supabase (silent, non-blocking)
+    const stateDetection: StateDetectionLog | null = parsed.stateDetection || null;
+    const bodyData = await req.clone().json().catch(() => ({}));
+    logStateDetection(bodyData.sessionId, "dimension-followup", stateDetection);
+
     return NextResponse.json({
       status: userConfused ? "continue" : (parsed.status === "complete" ? "complete" : "continue"),
       action: validActions.includes(parsed.action) ? parsed.action : "expand",
       question: parsed.question || null,
-      // Suppress discovery entirely when the user was confused — their "answer" wasn't a real answer
       discovery: userConfused ? null : (parsed.discovery || null),
       framework: parsed.framework || null,
       rephrase: userConfused,
