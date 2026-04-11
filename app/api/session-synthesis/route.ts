@@ -72,14 +72,23 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", max_tokens: 800, system: SYSTEM,
+      model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
     clearTimeout(timer);
 
-    const text = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
-    const jsonStr = text.replace(/^```json?\s*/g, "").replace(/\s*```$/g, "");
-    const synthesis = JSON.parse(jsonStr);
+    const rawText = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
+    const stripped = rawText.replace(/^```json?\s*/gi, "").replace(/\s*```$/gi, "").trim();
+    console.log("[session-synthesis] Raw response:", rawText.slice(0, 500));
+    // Try direct parse first, then extract JSON object as fallback
+    let synthesis;
+    try {
+      synthesis = JSON.parse(stripped);
+    } catch {
+      const match = stripped.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found in response");
+      synthesis = JSON.parse(match[0]);
+    }
     return NextResponse.json(synthesis);
   } catch (err) {
     console.error("[session-synthesis]", err);

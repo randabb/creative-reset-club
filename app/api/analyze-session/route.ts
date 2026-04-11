@@ -28,10 +28,12 @@ export async function POST(req: Request) {
     if (allPatterns) userMsg += `\n\nPATTERNS:\n${allPatterns}`;
 
     const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", max_tokens: 400, system: SYSTEM,
+      model: "claude-sonnet-4-20250514", max_tokens: 800, system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
-    const text = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
+    const rawText = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
+    const text = rawText.replace(/^```json?\s*/gi, "").replace(/\s*```$/gi, "").trim();
+    console.log("[analyze-session] Raw response:", rawText.slice(0, 500));
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) return NextResponse.json({ assumptions: [], avoidance: null, crossTensions: [], strongestFragment: null });
     const parsed = JSON.parse(match[0]);
