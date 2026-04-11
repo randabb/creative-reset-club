@@ -1347,7 +1347,10 @@ function CanvasInner() {
 
       {/* EXPORT PANEL */}
       {showExport && (
-        <div style={{ position: "fixed", top: 50, right: 20, zIndex: 40, background: "#fff", borderRadius: 16, padding: "24px 24px", width: 340, maxHeight: "calc(100vh - 100px)", overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+        <>
+        <div onClick={() => setShowExport(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 39 }} />
+        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 40, width: "min(680px, 90vw)", maxHeight: "85vh", overflowY: "auto", background: "#FAF7F0", borderRadius: 20, padding: 48, boxShadow: "0 24px 64px rgba(0,0,0,0.12)", border: "1px solid rgba(0,3,50,0.08)", animation: "synthModalIn 0.3s ease forwards" }}>
+          <button onClick={() => setShowExport(false)} style={{ position: "absolute", top: 20, right: 24, fontSize: 20, color: "rgba(0,3,50,0.4)", background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}>&times;</button>
           {synthLoading && (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ width: 18, height: 18, border: "2px solid rgba(255,144,144,0.2)", borderTopColor: "#FF9090", borderRadius: "50%", animation: "cSpin 0.7s linear infinite", margin: "0 auto 10px" }} />
@@ -1358,7 +1361,7 @@ function CanvasInner() {
             <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid rgba(0,3,50,0.06)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                 <p style={{
-                  fontSize: 18, fontWeight: 700, fontStyle: "italic", color: "#000332",
+                  fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, fontStyle: "italic", color: "#000332", marginBottom: 32,
                   opacity: synthRevealed ? 1 : 0,
                   transition: "opacity 0.4s ease 0.1s",
                 }}>{synthesis.deliverable_label}</p>
@@ -1366,7 +1369,7 @@ function CanvasInner() {
                   {synthEditing ? "Done" : "Edit"}
                 </button>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                 {synthesis.sections.map((sec, i) => (
                   <div key={i} style={{
                     borderLeft: `3px solid ${(ACT as Record<string, {color:string}>)[mode]?.color || "#FF9090"}`, paddingLeft: 12,
@@ -1483,7 +1486,7 @@ function CanvasInner() {
               )}
             </div>
           )}
-          {synthesis && !synthLoading && (confidenceScore !== null) && (
+          {synthesis && !synthLoading && (
             <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.2s forwards" }}>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1539,6 +1542,7 @@ function CanvasInner() {
             </div>
           )}
         </div>
+      </>
       )}
 
       {/* TOAST */}
@@ -2545,6 +2549,7 @@ function CanvasInner() {
         @keyframes tourFadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes dimNudge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.25), 0 2px 8px rgba(0,0,0,0.1); } }
         @keyframes synthExportFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes synthModalIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.97); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
         @keyframes sidebarIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .sidebar-synth-ready:hover { background: #FF9090 !important; color: #000332 !important; border-color: #FF9090 !important; }
         .sidebar-feed::-webkit-scrollbar { width: 4px; }
