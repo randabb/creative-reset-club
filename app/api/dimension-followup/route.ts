@@ -193,7 +193,7 @@ export async function POST(req: Request) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 150,
+      max_tokens: 300,
       system: SYSTEM,
       messages: [{ role: "user", content: userMsg }],
     });
