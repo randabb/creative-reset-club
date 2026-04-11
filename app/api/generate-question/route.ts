@@ -99,11 +99,15 @@ export async function POST(req: Request) {
 
     if (!question) throw new Error("Empty response");
 
-    // Log state detection to Supabase (silent, non-blocking)
-    const sessionId = (await req.clone().json().catch(() => ({}))).sessionId;
-    logStateDetection(sessionId, "generate-question", stateDetection);
+    // Return the question immediately
+    const response = NextResponse.json({ question: question.replace(/^["']|["']$/g, "") });
 
-    return NextResponse.json({ question: question.replace(/^["']|["']$/g, "") });
+    // Log state detection to Supabase (fire-and-forget, never blocks response)
+    try {
+      logStateDetection(undefined, "generate-question", stateDetection);
+    } catch { /* never block response */ }
+
+    return response;
   } catch (err) {
     console.error("[generate-question] Error:", err);
 
