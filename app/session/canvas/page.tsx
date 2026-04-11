@@ -44,6 +44,18 @@ const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 function uid() { return crypto.randomUUID(); }
 
+// Extract clean question text from a string that might be raw JSON
+function cleanQuestion(q: string): string {
+  if (!q) return q;
+  if (q.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(q);
+      if (parsed.question) return parsed.question;
+    } catch { /* not JSON, use as-is */ }
+  }
+  return q.replace(/^["']|["']$/g, "");
+}
+
 function CanvasInner() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -418,7 +430,7 @@ function CanvasInner() {
             }),
           }).then(r => r.json()).then(data => {
             if (data.question) {
-              setDimSuggestions(prev => ({ ...prev, [nextDim.label]: { action: "clarify" as Action, question: data.question } }));
+              setDimSuggestions(prev => ({ ...prev, [nextDim.label]: { action: "clarify" as Action, question: cleanQuestion(data.question) } }));
             }
           }).catch(err => console.error("[canvas] API error:", err));
         }
@@ -444,7 +456,7 @@ function CanvasInner() {
       if (data.suggestions?.length) {
         const map: Record<string, { action: Action; question: string }> = {};
         data.suggestions.forEach((s: { dimension: string; action: string; question: string }) => {
-          map[s.dimension] = { action: s.action as Action, question: s.question };
+          map[s.dimension] = { action: s.action as Action, question: cleanQuestion(s.question) };
         });
         setDimSuggestions(map);
         // Don't auto-open — timer start will open first dimension
@@ -747,7 +759,7 @@ function CanvasInner() {
             }),
           }).then(r => r.json()).then(data => {
             if (data.question) {
-              setDimSuggestions(prev => ({ ...prev, [dim.label]: { action: data.action as Action, question: data.question } }));
+              setDimSuggestions(prev => ({ ...prev, [dim.label]: { action: data.action as Action, question: cleanQuestion(data.question) } }));
             }
           }).catch(err => console.error("[canvas] Edit followup regen error:", err))
             .finally(() => setDimLoading(false));
@@ -1971,7 +1983,7 @@ function CanvasInner() {
                           method: "POST", headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ goal: capture, mode, qas, dimension: dl, otherDimensionQAs: otherDimQAsStr }),
                         }).then(r => r.json()).then(data => {
-                          if (data.question) setDimSuggestions(prev => ({ ...prev, [dl]: { action: "clarify" as Action, question: data.question } }));
+                          if (data.question) setDimSuggestions(prev => ({ ...prev, [dl]: { action: "clarify" as Action, question: cleanQuestion(data.question) } }));
                         }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
                       }}
                       style={{
@@ -2207,7 +2219,7 @@ function CanvasInner() {
                                         method: "POST", headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ goal: capture, mode, qas, dimension: ndl, previousQuestionsAndAnswers: prevQAs.length > 0 ? prevQAs : undefined, otherDimensionQAs: otherDimQAsStr }),
                                       }).then(r => r.json()).then(dd => {
-                                        if (dd.question) setDimSuggestions(prev => ({ ...prev, [ndl]: { action: "clarify" as Action, question: dd.question } }));
+                                        if (dd.question) setDimSuggestions(prev => ({ ...prev, [ndl]: { action: "clarify" as Action, question: cleanQuestion(dd.question) } }));
                                       }).catch(err => console.error("[canvas] API error:", err)).finally(() => setDimLoading(false));
                                     }
                                   }, 2000);
@@ -2216,7 +2228,7 @@ function CanvasInner() {
                                 }
                               } else if (data.question) {
                                 // Continue with next question in this dimension
-                                setDimSuggestions(prev => ({ ...prev, [dimLabel]: { action: data.action as Action, question: data.question } }));
+                                setDimSuggestions(prev => ({ ...prev, [dimLabel]: { action: data.action as Action, question: cleanQuestion(data.question) } }));
                                 setActiveDimAction(data.action as Action);
                                 setStatusState({ type: "keep_going", dimName: dimLabel, message: pick(["There\u2019s something here. Keep pulling on it.", "Go deeper on that.", "Stay with this one.", "You\u2019re onto something."]) });
                               }
