@@ -54,7 +54,12 @@ export async function POST(req: Request) {
       userMessage += `\nIMPORTANT: This is a FOLLOW-UP session. The user already completed a full thinking session on this topic. Here is what they already said and concluded:\n\nOriginal goal: ${followupContext.originalGoal || ""}\nTheir synthesis/brief: ${followupContext.originalSynthesis || ""}\n\nDO NOT ask about anything they already covered. They've already done that thinking. Your questions should go to the NEW territory — the emotional resistance, the fear, the practical blockers, the thing that's stopping them from acting on what they already know.\n\nBad question: "What debts are you carrying?" (they already told you)\nGood question: "You know exactly what the debts are. What's the first one you keep avoiding?"\n\nThe user should feel like Primer remembers everything from last session and is now going deeper, not starting over.\n`;
     }
 
-    userMessage += `\nGenerate question ${qNum} for ${safeMode} mode.`;
+    if (qNum === 1) {
+      userMessage += `\nGenerate question 1 for ${safeMode} mode. You have their INITIAL CAPTURE above. DO NOT ask them to restate it. Ask the specific follow-up their text is begging for.`;
+    } else {
+      const lastAnswer = previousQAs?.[previousQAs.length - 1]?.answer || "";
+      userMessage += `\nGenerate question 2 for ${safeMode} mode. The user's Q1 answer was: "${lastAnswer.slice(0, 300)}"\n\nYour question MUST reference something specific from this answer. Go one layer deeper than what they said. Do NOT repeat Q1 or ask anything similar to Q1.`;
+    }
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
