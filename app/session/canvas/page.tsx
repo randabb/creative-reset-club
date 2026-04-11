@@ -39,6 +39,13 @@ const DISC_COLORS: Record<string, { bg: string; border: string; label: string; d
 const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE", strategic: "#7ED6A8", critical: "#C4A6FF", creative: "#E8C97A" };
 const DIM_COLORS = ["#FF9090", "#6B8AFE", "#7ED6A8", "#C4A6FF", "#E8C97A"];
 const NOTE_ROTATIONS = [-0.8, -0.4, 0, 0.4, 0.8];
+const DIM_STYLES = [
+  { grad: "linear-gradient(145deg, #ff7e7e, #ff5a5a)", shadow: "0 8px 24px rgba(255,90,90,0.3)", noteBg: "linear-gradient(135deg, #fff8f8 0%, white 50%)", borderColor: "#ff7e7e" },
+  { grad: "linear-gradient(145deg, #5c7dff, #3d5cf5)", shadow: "0 8px 24px rgba(61,92,245,0.3)", noteBg: "linear-gradient(135deg, #f6f8ff 0%, white 50%)", borderColor: "#5c7dff" },
+  { grad: "linear-gradient(145deg, #5ecf94, #3ab876)", shadow: "0 8px 24px rgba(58,184,118,0.3)", noteBg: "linear-gradient(135deg, #f5fff9 0%, white 50%)", borderColor: "#5ecf94" },
+  { grad: "linear-gradient(145deg, #b890ff, #9d6fff)", shadow: "0 8px 24px rgba(157,111,255,0.3)", noteBg: "linear-gradient(135deg, #faf6ff 0%, white 50%)", borderColor: "#b890ff" },
+  { grad: "linear-gradient(145deg, #e8c97a, #d4b460)", shadow: "0 8px 24px rgba(212,180,96,0.3)", noteBg: "linear-gradient(135deg, #fffcf5 0%, white 50%)", borderColor: "#e8c97a" },
+];
 
 const RAW_PLACEHOLDERS = ["type what comes to mind...", "just start writing...", "say it rough...", "write anything...", "start here...", "what are you thinking...", "go ahead, type..."];
 const rawPh = (seed?: string) => { if (!seed) return RAW_PLACEHOLDERS[0]; let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0; return RAW_PLACEHOLDERS[Math.abs(h) % RAW_PLACEHOLDERS.length]; };
@@ -1255,8 +1262,8 @@ function CanvasInner() {
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 35,
         height: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "rgba(250,247,240,0.95)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(0,3,50,0.04)", padding: "0 20px",
+        background: "rgba(242,239,233,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(0,3,50,0.07)", padding: "0 20px",
         fontFamily: "'Codec Pro',sans-serif",
       }}>
         {/* LEFT: Back to Studio */}
@@ -1666,7 +1673,9 @@ function CanvasInner() {
                             </div>
                           )}
                           <div style={{
-                            borderLeft: `3px solid ${discColor}`, paddingLeft: 12, paddingBottom: 2,
+                            background: "#fff", borderRadius: 10, padding: "10px 12px",
+                            borderLeft: `2px solid ${discColor}`,
+                            boxShadow: "0 1px 6px rgba(0,3,50,0.06)",
                             animation: "sidebarIn 0.3s ease-out forwards",
                           }}>
                             <p style={{ fontSize: 13, color: "#000332", lineHeight: 1.5 }}>{d.text}</p>
@@ -1678,7 +1687,8 @@ function CanvasInner() {
                       const actIcon = p.suggestedAction && ACT[p.suggestedAction as Action] ? ACT[p.suggestedAction as Action] : null;
                       return (
                         <div key={`p${i}`} style={{
-                          border: "1.5px dashed rgba(0,3,50,0.2)", borderRadius: 8,
+                          background: "#fff", border: "1.5px dashed rgba(0,3,50,0.12)", borderRadius: 10,
+                          boxShadow: "0 1px 6px rgba(0,3,50,0.06)",
                           padding: "12px 14px",
                           animation: "sidebarIn 0.3s ease-out forwards",
                         }}>
@@ -1747,7 +1757,8 @@ function CanvasInner() {
         <div style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 30,
           maxWidth: 560, width: "calc(100% - 48px)",
-          background: "#fff", borderRadius: 12, padding: "14px 20px",
+          background: "rgba(242,239,233,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          borderRadius: 12, padding: "14px 20px",
           boxShadow: "0 4px 20px rgba(0,3,50,0.08)",
           borderLeft: `3px solid ${
             statusState.type === "loading" ? "rgba(0,3,50,0.15)"
@@ -1874,8 +1885,8 @@ function CanvasInner() {
             minHeight: Math.max(2000, Math.max(...notes.map(n => n.y + 300), 0) + 500),
             transform: `scale(${zoom})`,
             transformOrigin: "top left",
-            background: "#FAF7F0",
-            backgroundImage: "radial-gradient(ellipse at 30% 20%, rgba(255,144,144,0.03) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(107,138,254,0.03) 0%, transparent 60%), radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px)",
+            background: "#F2EFE9",
+            backgroundImage: "radial-gradient(ellipse at 15% 10%, rgba(255,144,144,0.08) 0%, transparent 45%), radial-gradient(ellipse at 85% 90%, rgba(107,138,254,0.07) 0%, transparent 45%), radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px)",
             backgroundSize: "100% 100%, 100% 100%, 24px 24px",
           }}
         >
@@ -1944,20 +1955,20 @@ function CanvasInner() {
                   style={{
                     position: "absolute", left: n.x, top: n.y,
                     width: 220, padding: "14px 16px",
-                    borderRadius: 12,
-                    background: "linear-gradient(135deg, #000332 0%, #000a4a 100%)",
-                    borderTop: `3px solid ${DIM_COLORS[(n.dimIndex ?? 0) % DIM_COLORS.length]}`,
-                    boxShadow: "0 8px 24px rgba(0,3,50,0.2), 0 2px 6px rgba(0,3,50,0.12)",
+                    borderRadius: 12, overflow: "hidden",
+                    background: DIM_STYLES[(n.dimIndex ?? 0) % DIM_STYLES.length].grad,
+                    boxShadow: DIM_STYLES[(n.dimIndex ?? 0) % DIM_STYLES.length].shadow,
                     zIndex: 10,
                     cursor: "default",
                     animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : activeDimQuestion === n.dimLabel ? "dimGlow 1s ease-in-out 1" : undefined,
-                    transition: "background 0.4s, box-shadow 0.2s, transform 0.2s",
-                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "linear-gradient(135deg, #0a0a40 0%, #101060 100%)" } : {}),
+                    transition: "box-shadow 0.2s ease, transform 0.2s ease",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,3,50,0.25), 0 4px 8px rgba(0,3,50,0.15)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,3,50,0.2), 0 2px 6px rgba(0,3,50,0.12)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px) scale(1.02)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
                 >
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: DIM_COLORS[(n.dimIndex ?? 0) % DIM_COLORS.length], opacity: 0.7, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
+                  {/* Shine overlay */}
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 60%)", pointerEvents: "none", borderRadius: 12 }} />
+                  <div style={{ position: "relative", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.5)", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
                     <span>DIMENSION {(n.dimIndex ?? 0) + 1}</span>
                     {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards" }}>✓</span>}
                   </div>
@@ -2003,10 +2014,10 @@ function CanvasInner() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setActiveDimQuestion(n.dimLabel || ""); }}
                       style={{
-                        marginTop: 8, padding: "4px 12px", borderRadius: 100,
-                        border: `1px solid ${ACT[dimSuggestions[n.dimLabel || ""].action].color}4D`,
-                        background: `${ACT[dimSuggestions[n.dimLabel || ""].action].color}26`,
-                        color: ACT[dimSuggestions[n.dimLabel || ""].action].color,
+                        position: "relative", marginTop: 8, padding: "4px 12px", borderRadius: 100,
+                        border: "1px solid rgba(255,255,255,0.25)",
+                        background: "rgba(255,255,255,0.18)",
+                        color: "rgba(255,255,255,0.85)",
                         fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                         display: "flex", alignItems: "center", gap: 4,
                       }}
@@ -2269,14 +2280,27 @@ function CanvasInner() {
                 ref={el => { if (el) noteRefsMap.current.set(n.id, el); }}
                 onMouseDown={e => startDrag(n.id, e)}
                 onDoubleClick={e => { e.stopPropagation(); e.preventDefault(); dispatch({ type: "SET_DRAG_ID", payload: null }); const cn = (e.target as HTMLElement).closest(".cn"); editPreHeight.current = cn ? cn.clientHeight : 0; startEditCapture(n.id); dispatch({ type: "SET_EDIT_ID", payload: n.id }); }}
-                style={{
-                  position: "absolute", left: n.x, top: n.y,
+                style={(() => {
+                  // Determine which dimension this note belongs to for tinting
+                  const noteDimIdx = n.dimIndex ?? (() => {
+                    const dimHeaders = notes.filter(dn => dn.source === "dimension");
+                    if (dimHeaders.length === 0) return -1;
+                    let closest = dimHeaders[0];
+                    let closestDist = Math.abs(n.x - dimHeaders[0].x);
+                    dimHeaders.forEach(d => { const dist = Math.abs(n.x - d.x); if (dist < closestDist) { closestDist = dist; closest = d; } });
+                    return closest.dimIndex ?? 0;
+                  })();
+                  const dimStyle = noteDimIdx >= 0 ? DIM_STYLES[noteDimIdx % DIM_STYLES.length] : null;
+                  const userNoteBg = dimStyle && n.source === "user" ? dimStyle.noteBg : "#FFFEF9";
+                  const userBorderLeft = dimStyle && n.source === "user" ? `3px solid ${dimStyle.borderColor}` : undefined;
+                  return {
+                  position: "absolute" as const, left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
-                  borderRadius: 12,
-                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#FFFEF9",
+                  borderRadius: 14,
+                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : userNoteBg,
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].border : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
-                  borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
-                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 4px 12px rgba(0,3,50,0.08)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 4px 12px rgba(0,3,50,0.08), 0 1px 3px rgba(0,3,50,0.06), 0 0 0 1px rgba(0,3,50,0.04)",
+                  borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : userBorderLeft,
+                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 2px 10px rgba(0,3,50,0.07)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 2px 10px rgba(0,3,50,0.07), 0 1px 3px rgba(0,3,50,0.04)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : editId === n.id ? "default" : "grab",
                   zIndex: dragId === n.id ? 50 : isSel ? 15 : 10,
                   opacity: dragId === n.id ? 0.9 : 1,
@@ -2287,7 +2311,7 @@ function CanvasInner() {
                     : isAi ? "noteIn 0.3s ease-out forwards"
                     : n.source === "user" ? "noteEntrance 0.3s ease-out forwards" : undefined,
                   animationDelay: isAi && !responseFlow ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
-                }}
+                }; })()}
               >
                 {n.source !== "goal" && (
                   <button
@@ -2333,7 +2357,7 @@ function CanvasInner() {
                 )}
                 {n.promptQuestion && editId !== n.id && (
                   <p style={{
-                    fontFamily: "Georgia, serif", fontSize: 12, color: "rgba(0,3,50,0.35)", fontStyle: "italic",
+                    fontFamily: "Georgia, serif", fontSize: 11, color: "rgba(0,3,50,0.28)", fontStyle: "italic",
                     lineHeight: 1.4, marginBottom: 8,
                     display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
                   }}>
