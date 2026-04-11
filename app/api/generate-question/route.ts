@@ -61,6 +61,8 @@ export async function POST(req: Request) {
       userMessage += `\nGenerate question 2 for ${safeMode} mode. The user's Q1 answer was: "${lastAnswer.slice(0, 300)}"\n\nYour question MUST reference something specific from this answer. Go one layer deeper than what they said. Do NOT repeat Q1 or ask anything similar to Q1.`;
     }
 
+    userMessage += `\n\nRESPOND WITH VALID JSON ONLY: {"question":"your question here under 15 words","stateDetection":{"detected_state":"...","detection_signals":["..."],"framework_applied":"...","confidence":"high|medium|low"}}`;
+
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 200,
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
     const rawText = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
 
     // Try to parse as JSON for state detection logging
-    let question = rawText;
+    let question = "";
     let stateDetection: StateDetectionLog | null = null;
     try {
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -80,7 +82,20 @@ export async function POST(req: Request) {
         if (parsed.question) question = parsed.question;
         if (parsed.stateDetection) stateDetection = parsed.stateDetection;
       }
-    } catch { /* response was plain text, use as-is */ }
+    } catch { /* JSON parse failed */ }
+
+    // Fallback: if no question extracted from JSON, try to use raw text
+    if (!question && rawText) {
+      // Strip markdown or JSON artifacts and use as plain question
+      question = rawText.replace(/```json?\s*/gi, "").replace(/```/g, "").replace(/^\{[\s\S]*\}$/, "").replace(/^["']|["']$/g, "").trim();
+      // If still looks like JSON garbage, extract any quoted string
+      if (question.startsWith("{") || question.startsWith("[")) {
+        const quoted = rawText.match(/"question"\s*:\s*"([^"]+)"/);
+        question = quoted ? quoted[1] : "";
+      }
+    }
+
+    console.log("[generate-question] Raw response:", rawText.slice(0, 500), "| Extracted question:", question?.slice(0, 100));
 
     if (!question) throw new Error("Empty response");
 
