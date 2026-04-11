@@ -201,6 +201,7 @@ export async function POST(req: Request) {
     clearTimeout(timer);
 
     const text = message.content[0]?.type === "text" ? message.content[0].text.trim() : "";
+    console.log("[dimension-followup] Raw AI response:", text.slice(0, 500));
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) return NextResponse.json({ status: "continue", action: "expand", question: "What else is hiding here?", discovery: null });
 
