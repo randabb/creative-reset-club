@@ -1395,59 +1395,58 @@ function CanvasInner() {
                 This is your thinking, sharpened. Edit anything, then take it with you.
               </p>
               {synthesis.thinking_approaches && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 14, paddingTop: 12 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 6 }}>HOW YOU THOUGHT THROUGH THIS</div>
-                  <p style={{ fontSize: 13, color: "#000332", fontStyle: "italic", lineHeight: 1.55, fontWeight: 300 }}>
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 28, paddingTop: 20 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.35)", marginBottom: 6 }}>How you thought through this</div>
+                  <p style={{ fontSize: 13, color: "rgba(0,3,50,0.7)", fontStyle: "italic", lineHeight: 1.55, fontWeight: 400 }}>
                     {synthesis.thinking_approaches}
                   </p>
                 </div>
               )}
             </div>
           )}
-          {synthesis && !synthLoading && patterns.length > 0 && (
-            <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 14, paddingTop: 12, marginBottom: 14, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.3s forwards" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "#000332", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>WORTH REVISITING</div>
-              {patterns.map((p, i) => (
-                <div key={i} style={{ borderLeft: "3px dashed #000332", paddingLeft: 10, marginBottom: 8 }}>
-                  <p style={{ fontSize: 12, color: "#000332", lineHeight: 1.5 }}>
-                    <strong>{p.label}:</strong> {p.suggestion}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
           {/* Session analysis sections */}
           {synthesis && !synthLoading && sessionAnalysis && (
             <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
               {sessionAnalysis.strongestFragment && (
-                <div style={{ borderLeft: "3px solid #FF9090", paddingLeft: 12, marginBottom: 14 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>YOUR SHARPEST THOUGHT</div>
-                  <p style={{ fontSize: 14, color: "#000332", fontStyle: "italic", lineHeight: 1.55 }}>&ldquo;{sessionAnalysis.strongestFragment}&rdquo;</p>
+                <div style={{ marginTop: 8, marginBottom: 8 }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: "#FF9090", fontStyle: "italic", lineHeight: 1.5 }}>&ldquo;{sessionAnalysis.strongestFragment}&rdquo;</p>
                 </div>
               )}
               {sessionAnalysis.assumptions.length > 0 && (
-                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>BUILT ON THESE ASSUMPTIONS</div>
-                  {sessionAnalysis.assumptions.map((a, i) => (
-                    <p key={i} style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5, marginBottom: 2 }}>• {a}</p>
-                  ))}
-                  <p style={{ fontSize: 11, color: "rgba(0,3,50,0.35)", marginTop: 4 }}>None of these have been tested.</p>
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>BUILT ON THESE ASSUMPTIONS</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {sessionAnalysis.assumptions.map((a, i) => (
+                      <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{a}</p>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", marginTop: 8 }}>None of these have been tested.</p>
                 </div>
               )}
               {sessionAnalysis.avoidance && (
-                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>WORTH EXPLORING</div>
-                  <p style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5 }}>{sessionAnalysis.avoidance}</p>
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>WORTH EXPLORING</div>
+                  <p style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{sessionAnalysis.avoidance}</p>
                 </div>
               )}
               {sessionAnalysis.crossTensions.length > 0 && (
-                <div style={{ borderLeft: "3px dashed #000332", paddingLeft: 12, marginBottom: 14, background: "rgba(0,3,50,0.03)", borderRadius: "0 6px 6px 0", padding: "8px 10px 8px 14px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.35)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>UNRESOLVED</div>
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>UNRESOLVED</div>
                   {sessionAnalysis.crossTensions.map((t, i) => (
-                    <p key={i} style={{ fontSize: 12, color: "rgba(0,3,50,0.6)", lineHeight: 1.5, marginBottom: 4 }}>&ldquo;{t.from}&rdquo; vs &ldquo;{t.to}&rdquo; — {t.tension}</p>
+                    <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 6 }}>&ldquo;{t.from}&rdquo; vs &ldquo;{t.to}&rdquo; — {t.tension}</p>
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          {synthesis && !synthLoading && patterns.length > 0 && (
+            <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.3s forwards" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>WORTH REVISITING</div>
+              {patterns.map((p, i) => (
+                <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 8 }}>
+                  <strong>{p.label}:</strong> {p.suggestion}
+                </p>
+              ))}
             </div>
           )}
           {/* Confidence check */}
