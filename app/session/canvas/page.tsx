@@ -1712,7 +1712,7 @@ function CanvasInner() {
                     fontSize: 14, fontWeight: 700, cursor: allDimsComplete ? "pointer" : "default",
                     fontFamily: "inherit", textAlign: "left",
                     transition: "all 0.3s",
-                    animation: allDimsComplete ? "sidebarIn 0.3s ease-out forwards" : undefined,
+                    animation: allDimsComplete ? "synthButtonGlow 3s ease-in-out infinite" : undefined,
                   }}
                 >
                   See the bigger picture {allDimsComplete && "→"}
@@ -1860,9 +1860,9 @@ function CanvasInner() {
             minHeight: Math.max(2000, Math.max(...notes.map(n => n.y + 300), 0) + 500),
             transform: `scale(${zoom})`,
             transformOrigin: "top left",
-            background: "#F5F2ED",
-            backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
+            background: "#FAF7F0",
+            backgroundImage: "radial-gradient(ellipse at 30% 20%, rgba(255,144,144,0.03) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(107,138,254,0.03) 0%, transparent 60%), radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px)",
+            backgroundSize: "100% 100%, 100% 100%, 24px 24px",
           }}
         >
           {/* ARROWS SVG */}
@@ -1942,7 +1942,7 @@ function CanvasInner() {
                 >
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
                     <span>DIMENSION {(n.dimIndex ?? 0) + 1}</span>
-                    {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "slideIn 0.3s ease-out 0.1s forwards" }}>✓</span>}
+                    {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards" }}>✓</span>}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#FAF7F0", marginBottom: 4, lineHeight: 1.3 }}>
                     {n.dimLabel}
@@ -2255,17 +2255,18 @@ function CanvasInner() {
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
                   borderRadius: 10,
-                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#fff",
+                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#FDFCF8",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].border : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
-                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 1px 3px rgba(0,3,50,0.03)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 1px 3px rgba(0,3,50,0.03)",
+                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 2px 8px rgba(0,3,50,0.06)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 2px 8px rgba(0,3,50,0.06), 0 0 0 1px rgba(0,3,50,0.04)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : editId === n.id ? "default" : "grab",
                   zIndex: dragId === n.id ? 50 : isSel ? 15 : 10,
                   opacity: dragId === n.id ? 0.9 : 1,
                   transition: dragId === n.id ? "none" : "box-shadow 0.15s, opacity 0.3s",
                   animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3"
                     : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
-                    : isAi ? "noteIn 0.3s ease-out forwards" : undefined,
+                    : isAi ? "noteIn 0.3s ease-out forwards"
+                    : n.source === "user" ? "noteEntrance 0.3s ease-out forwards" : undefined,
                   animationDelay: isAi && !responseFlow ? `${(notes.indexOf(n) % 3) * 100}ms` : undefined,
                 }}
               >
@@ -2313,7 +2314,7 @@ function CanvasInner() {
                 )}
                 {n.promptQuestion && editId !== n.id && (
                   <p style={{
-                    fontSize: 11, color: "rgba(0,3,50,0.35)", fontStyle: "italic",
+                    fontSize: 12, color: "rgba(0,3,50,0.4)", fontStyle: "italic",
                     lineHeight: 1.4, marginBottom: 6,
                     display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
                   }}>
@@ -2548,7 +2549,10 @@ function CanvasInner() {
         @keyframes dimNudge { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 6px rgba(255,144,144,0.25), 0 2px 8px rgba(0,0,0,0.1); } }
         @keyframes synthExportFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes synthModalIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.97); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
-        @keyframes sidebarIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes noteEntrance { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes checkPop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+        @keyframes synthButtonGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,144,144,0); } 50% { box-shadow: 0 0 12px rgba(255,144,144,0.2); } }
+        @keyframes sidebarIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
         .sidebar-synth-ready:hover { background: #FF9090 !important; color: #000332 !important; border-color: #FF9090 !important; }
         .sidebar-feed::-webkit-scrollbar { width: 4px; }
         .sidebar-feed::-webkit-scrollbar-track { background: transparent; }
