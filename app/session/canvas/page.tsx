@@ -37,6 +37,8 @@ const DISC_COLORS: Record<string, { bg: string; border: string; label: string; d
   creative:  { bg: "rgba(232,201,122,0.06)", border: "rgba(232,201,122,0.3)", label: "Creative thinking", desc: "breaking the pattern" },
 };
 const DISC_DOT: Record<string, string> = { design: "#FF9090", systems: "#6B8AFE", strategic: "#7ED6A8", critical: "#C4A6FF", creative: "#E8C97A" };
+const DIM_COLORS = ["#FF9090", "#6B8AFE", "#7ED6A8", "#C4A6FF", "#E8C97A"];
+const NOTE_ROTATIONS = [-0.8, -0.4, 0, 0.4, 0.8];
 
 const RAW_PLACEHOLDERS = ["type what comes to mind...", "just start writing...", "say it rough...", "write anything...", "start here...", "what are you thinking...", "go ahead, type..."];
 const rawPh = (seed?: string) => { if (!seed) return RAW_PLACEHOLDERS[0]; let h = 0; for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0; return RAW_PLACEHOLDERS[Math.abs(h) % RAW_PLACEHOLDERS.length]; };
@@ -1942,17 +1944,20 @@ function CanvasInner() {
                   style={{
                     position: "absolute", left: n.x, top: n.y,
                     width: 220, padding: "14px 16px",
-                    borderRadius: 10,
-                    background: "#000332",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    borderRadius: 12,
+                    background: "linear-gradient(135deg, #000332 0%, #000a4a 100%)",
+                    borderTop: `3px solid ${DIM_COLORS[(n.dimIndex ?? 0) % DIM_COLORS.length]}`,
+                    boxShadow: "0 8px 24px rgba(0,3,50,0.2), 0 2px 6px rgba(0,3,50,0.12)",
                     zIndex: 10,
                     cursor: "default",
                     animation: nudgeDimIdx === (n.dimIndex ?? 0) ? "dimNudge 0.6s ease-in-out 2" : activeDimQuestion === n.dimLabel ? "dimGlow 1s ease-in-out 1" : undefined,
-                    transition: "background 0.4s, box-shadow 0.4s",
-                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "#0a0a40" } : {}),
+                    transition: "background 0.4s, box-shadow 0.2s, transform 0.2s",
+                    ...(dimStatus[n.dimLabel || ""] === "complete" ? { background: "linear-gradient(135deg, #0a0a40 0%, #101060 100%)" } : {}),
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,3,50,0.25), 0 4px 8px rgba(0,3,50,0.15)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,3,50,0.2), 0 2px 6px rgba(0,3,50,0.12)"; }}
                 >
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#FF9090", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: DIM_COLORS[(n.dimIndex ?? 0) % DIM_COLORS.length], opacity: 0.7, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
                     <span>DIMENSION {(n.dimIndex ?? 0) + 1}</span>
                     {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards" }}>✓</span>}
                   </div>
@@ -1998,8 +2003,9 @@ function CanvasInner() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setActiveDimQuestion(n.dimLabel || ""); }}
                       style={{
-                        marginTop: 8, padding: "4px 10px", borderRadius: 100,
-                        border: "none", background: `${ACT[dimSuggestions[n.dimLabel || ""].action].color}30`,
+                        marginTop: 8, padding: "4px 12px", borderRadius: 100,
+                        border: `1px solid ${ACT[dimSuggestions[n.dimLabel || ""].action].color}4D`,
+                        background: `${ACT[dimSuggestions[n.dimLabel || ""].action].color}26`,
                         color: ACT[dimSuggestions[n.dimLabel || ""].action].color,
                         fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                         display: "flex", alignItems: "center", gap: 4,
@@ -2266,15 +2272,16 @@ function CanvasInner() {
                 style={{
                   position: "absolute", left: n.x, top: n.y,
                   width: dimensions.length > 0 ? 190 : 200, padding: "10px 12px",
-                  borderRadius: 10,
-                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#FDFCF8",
+                  borderRadius: 12,
+                  background: n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].bg : isAi ? `${actColor}08` : n.source === "goal" ? "rgba(0,3,50,0.05)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.06)" : n.source === "thinking" ? "rgba(255,144,144,0.04)" : "#FFFEF9",
                   border: `${(n.source === "thinking" && n.qIndex === 3) ? "3px" : "1.5px"} solid ${editId === n.id ? "#FF9090" : isSel ? "#FF9090" : n.discipline && DISC_COLORS[n.discipline] ? DISC_COLORS[n.discipline].border : isAi ? actColor + "30" : n.source === "goal" ? "rgba(0,3,50,0.12)" : (n.source === "thinking" && n.qIndex === 3) ? "rgba(255,144,144,0.35)" : n.source === "thinking" ? "rgba(255,144,144,0.15)" : "rgba(0,3,50,0.06)"}`,
                   borderLeft: (n.source === "thinking" && n.qIndex === 3 && !isSel) ? "3px solid #FF9090" : undefined,
-                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 2px 8px rgba(0,3,50,0.06)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 2px 8px rgba(0,3,50,0.06), 0 0 0 1px rgba(0,3,50,0.04)",
+                  boxShadow: isSel ? "0 0 0 3px rgba(255,144,144,0.15), 0 4px 12px rgba(0,3,50,0.08)" : (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? undefined : "0 4px 12px rgba(0,3,50,0.08), 0 1px 3px rgba(0,3,50,0.06), 0 0 0 1px rgba(0,3,50,0.04)",
                   cursor: connecting ? "crosshair" : dragId === n.id ? "grabbing" : editId === n.id ? "default" : "grab",
                   zIndex: dragId === n.id ? 50 : isSel ? 15 : 10,
                   opacity: dragId === n.id ? 0.9 : 1,
-                  transition: dragId === n.id ? "none" : "box-shadow 0.15s, opacity 0.3s",
+                  transform: dragId === n.id ? undefined : `rotate(${NOTE_ROTATIONS[notes.indexOf(n) % 5]}deg)`,
+                  transition: dragId === n.id ? "none" : "box-shadow 0.15s, opacity 0.3s, transform 0.2s",
                   animation: (q4Pulsing && n.source === "thinking" && n.qIndex === 3) ? "q4Glow 2s ease-in-out 3"
                     : (responseFlow && n.aiInstruction && n.id === responseFlow.instructionIds[responseFlow.currentIdx]) ? "rfPulse 1.5s ease-in-out 2"
                     : isAi ? "noteIn 0.3s ease-out forwards"
@@ -2326,8 +2333,8 @@ function CanvasInner() {
                 )}
                 {n.promptQuestion && editId !== n.id && (
                   <p style={{
-                    fontSize: 12, color: "rgba(0,3,50,0.4)", fontStyle: "italic",
-                    lineHeight: 1.4, marginBottom: 6,
+                    fontFamily: "Georgia, serif", fontSize: 12, color: "rgba(0,3,50,0.35)", fontStyle: "italic",
+                    lineHeight: 1.4, marginBottom: 8,
                     display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
                   }}>
                     {n.promptQuestion}
