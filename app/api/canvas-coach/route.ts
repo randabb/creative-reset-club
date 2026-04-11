@@ -202,22 +202,22 @@ Do NOT generate a generic question of this action type. The question must resolv
       }
     } catch { /* plain text */ }
 
-    logStateDetection(undefined, "canvas-coach", stateDetection);
-
     const discMap: Record<string, string> = { clarify: "critical", expand: "creative", decide: "strategic", express: "design" };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       instruction: {
         discipline: discMap[action] || "strategic",
         title: questionText.split(/\s+/).slice(0, 4).join(" "),
         text: questionText,
       },
     });
+
+    try { logStateDetection(undefined, "canvas-coach", stateDetection); } catch { /* never block response */ }
+
+    return response;
   } catch (err) {
     console.error("[canvas-coach]", err);
-    const body = await req.clone().json().catch(() => ({}));
-    const action = body.action || "clarify";
-    const fb = FALLBACKS[action] || FALLBACKS.clarify;
+    const fb = FALLBACKS.clarify;
     return NextResponse.json({
       instruction: {
         discipline: "strategic",

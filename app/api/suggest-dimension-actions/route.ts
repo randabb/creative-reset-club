@@ -88,9 +88,11 @@ export async function POST(req: Request) {
       .filter((s) => s.dimension && validActions.includes(s.action) && s.question)
       .map((s) => ({ dimension: s.dimension, action: s.action, question: s.question }));
 
-    logStateDetection(undefined, "suggest-dimension-actions", stateDetection);
+    const response = NextResponse.json({ suggestions: filtered });
 
-    return NextResponse.json({ suggestions: filtered });
+    try { logStateDetection(undefined, "suggest-dimension-actions", stateDetection); } catch { /* never block response */ }
+
+    return response;
   } catch (err) {
     console.error("[suggest-dimension-actions]", err);
     return NextResponse.json({ suggestions: [] });

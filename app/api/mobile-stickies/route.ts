@@ -79,10 +79,11 @@ export async function POST(req: Request) {
       }
     } catch { /* plain text response */ }
 
-    const bodyData = await req.clone().json().catch(() => ({}));
-    logStateDetection(bodyData.sessionId, "mobile-stickies", stateDetection);
+    const response = NextResponse.json({ question: question || "What's the real situation here?" });
 
-    return NextResponse.json({ question: question || "What's the real situation here?" });
+    try { logStateDetection(undefined, "mobile-stickies", stateDetection); } catch { /* never block response */ }
+
+    return response;
   } catch (err) {
     console.error("[mobile-stickies]", err);
     return NextResponse.json({ question: "What's the real situation here?" });
