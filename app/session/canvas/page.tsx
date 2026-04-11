@@ -171,6 +171,8 @@ function CanvasInner() {
   const [suggestedDeliverable, setSuggestedDeliverable] = useState<{ deliverable: string; label: string } | null>(null);
   const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
   const [confidenceFeedback, setConfidenceFeedback] = useState<string | null>(null);
+  const [synthSectionsOpen, setSynthSectionsOpen] = useState<Set<string>>(new Set());
+  const toggleSynthSection = (key: string) => setSynthSectionsOpen(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
   const [sessionAnalysis, setSessionAnalysis] = useState<{ assumptions: string[]; avoidance: string | null; crossTensions: { from: string; to: string; tension: string }[]; strongestFragment: string | null } | null>(null);
   const [q4Pulsing, setQ4Pulsing] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -1391,62 +1393,74 @@ function CanvasInner() {
                   </div>
                 ))}
               </div>
-              <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", fontStyle: "italic", marginTop: 12, fontWeight: 300 }}>
-                This is your thinking, sharpened. Edit anything, then take it with you.
-              </p>
-              {synthesis.thinking_approaches && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 28, paddingTop: 20 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.35)", marginBottom: 6 }}>How you thought through this</div>
-                  <p style={{ fontSize: 13, color: "rgba(0,3,50,0.7)", fontStyle: "italic", lineHeight: 1.55, fontWeight: 400 }}>
-                    {synthesis.thinking_approaches}
-                  </p>
-                </div>
-              )}
             </div>
           )}
-          {/* Session analysis sections */}
-          {synthesis && !synthLoading && sessionAnalysis && (
-            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
-              {sessionAnalysis.strongestFragment && (
-                <div style={{ marginTop: 8, marginBottom: 8 }}>
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: "#FF9090", fontStyle: "italic", lineHeight: 1.5 }}>&ldquo;{sessionAnalysis.strongestFragment}&rdquo;</p>
-                </div>
-              )}
-              {sessionAnalysis.assumptions.length > 0 && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>BUILT ON THESE ASSUMPTIONS</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {sessionAnalysis.assumptions.map((a, i) => (
-                      <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{a}</p>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", marginTop: 8 }}>None of these have been tested.</p>
-                </div>
-              )}
-              {sessionAnalysis.avoidance && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>WORTH EXPLORING</div>
-                  <p style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{sessionAnalysis.avoidance}</p>
-                </div>
-              )}
-              {sessionAnalysis.crossTensions.length > 0 && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>UNRESOLVED</div>
-                  {sessionAnalysis.crossTensions.map((t, i) => (
-                    <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 6 }}>&ldquo;{t.from}&rdquo; vs &ldquo;{t.to}&rdquo; — {t.tension}</p>
+          {/* Collapsible secondary sections */}
+          {synthesis && !synthLoading && patterns.length > 0 && (
+            <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 20, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.3s forwards" }}>
+              <button onClick={() => toggleSynthSection("patterns")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0", fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)" }}>
+                <span>WORTH REVISITING</span>
+                <span style={{ fontSize: 10, transition: "transform 0.2s", transform: synthSectionsOpen.has("patterns") ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+              </button>
+              {synthSectionsOpen.has("patterns") && (
+                <div style={{ paddingBottom: 12 }}>
+                  {patterns.map((p, i) => (
+                    <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 8 }}>
+                      <strong>{p.label}:</strong> {p.suggestion}
+                    </p>
                   ))}
                 </div>
               )}
             </div>
           )}
-          {synthesis && !synthLoading && patterns.length > 0 && (
-            <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", paddingTop: 20, marginTop: 28, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.3s forwards" }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)", marginBottom: 8 }}>WORTH REVISITING</div>
-              {patterns.map((p, i) => (
-                <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 8 }}>
-                  <strong>{p.label}:</strong> {p.suggestion}
-                </p>
-              ))}
+          {synthesis && !synthLoading && sessionAnalysis && (
+            <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
+              {sessionAnalysis.assumptions.length > 0 && (
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 4 }}>
+                  <button onClick={() => toggleSynthSection("assumptions")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0", fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)" }}>
+                    <span>BUILT ON THESE ASSUMPTIONS</span>
+                    <span style={{ fontSize: 10, transition: "transform 0.2s", transform: synthSectionsOpen.has("assumptions") ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+                  </button>
+                  {synthSectionsOpen.has("assumptions") && (
+                    <div style={{ paddingBottom: 12 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {sessionAnalysis.assumptions.map((a, i) => (
+                          <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{a}</p>
+                        ))}
+                      </div>
+                      <p style={{ fontSize: 11, color: "rgba(0,3,50,0.3)", marginTop: 8 }}>None of these have been tested.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {sessionAnalysis.avoidance && (
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 4 }}>
+                  <button onClick={() => toggleSynthSection("avoidance")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0", fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)" }}>
+                    <span>WORTH EXPLORING</span>
+                    <span style={{ fontSize: 10, transition: "transform 0.2s", transform: synthSectionsOpen.has("avoidance") ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+                  </button>
+                  {synthSectionsOpen.has("avoidance") && (
+                    <div style={{ paddingBottom: 12 }}>
+                      <p style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6 }}>{sessionAnalysis.avoidance}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {sessionAnalysis.crossTensions.length > 0 && (
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.08)", marginTop: 4 }}>
+                  <button onClick={() => toggleSynthSection("tensions")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0", fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(0,3,50,0.3)" }}>
+                    <span>UNRESOLVED</span>
+                    <span style={{ fontSize: 10, transition: "transform 0.2s", transform: synthSectionsOpen.has("tensions") ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+                  </button>
+                  {synthSectionsOpen.has("tensions") && (
+                    <div style={{ paddingBottom: 12 }}>
+                      {sessionAnalysis.crossTensions.map((t, i) => (
+                        <p key={i} style={{ fontSize: 14, color: "rgba(0,3,50,0.75)", lineHeight: 1.6, marginBottom: 6 }}>&ldquo;{t.from}&rdquo; vs &ldquo;{t.to}&rdquo; — {t.tension}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {/* Confidence check */}
