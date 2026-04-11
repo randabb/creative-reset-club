@@ -216,12 +216,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Log state detection to Supabase (silent, non-blocking)
-    const stateDetection: StateDetectionLog | null = parsed.stateDetection || null;
-    const bodyData = await req.clone().json().catch(() => ({}));
-    logStateDetection(bodyData.sessionId, "dimension-followup", stateDetection);
-
-    return NextResponse.json({
+    // Return the response immediately
+    const response = NextResponse.json({
       status: userConfused ? "continue" : (parsed.status === "complete" ? "complete" : "continue"),
       action: validActions.includes(parsed.action) ? parsed.action : "expand",
       question: parsed.question || null,
@@ -229,6 +225,14 @@ export async function POST(req: Request) {
       framework: parsed.framework || null,
       rephrase: userConfused,
     });
+
+    // Log state detection to Supabase (fire-and-forget, never blocks response)
+    try {
+      const stateDetection: StateDetectionLog | null = parsed.stateDetection || null;
+      logStateDetection(undefined, "dimension-followup", stateDetection);
+    } catch { /* never block response */ }
+
+    return response;
   } catch (err) {
     console.error("[dimension-followup]", err);
     return NextResponse.json({ status: "continue", action: "expand", question: "What else is hiding here?", discovery: null });
