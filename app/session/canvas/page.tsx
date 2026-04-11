@@ -1452,57 +1452,46 @@ function CanvasInner() {
           )}
           {/* Confidence check */}
           {synthesis && !synthLoading && (
-            <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 20, paddingTop: 20, marginBottom: 20, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
-              <p style={{ fontSize: 15, fontWeight: 500, color: "#000332", textAlign: "center", marginBottom: 16 }}>
+            <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 16, paddingTop: 16, marginBottom: 12, opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.4s forwards" }}>
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.35)", textAlign: "center", marginBottom: 10 }}>
                 How certain do you feel about this?
               </p>
-              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 4 }}>
                 {[1, 2, 3, 4, 5].map(n => (
-                  <button
-                    key={n}
-                    onClick={() => handleConfidence(n)}
-                    style={{
-                      width: 28, height: 28, borderRadius: "50%",
-                      border: confidenceScore === n ? "none" : "1.5px solid rgba(0,3,50,0.2)",
-                      background: confidenceScore === n ? "#FF9090" : "transparent",
-                      cursor: confidenceScore ? "default" : "pointer",
-                      transition: "all 0.2s",
-                    }}
-                  />
+                  <button key={n} onClick={() => handleConfidence(n)} style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    border: confidenceScore === n ? "none" : "1.5px solid rgba(0,3,50,0.15)",
+                    background: confidenceScore === n ? "#FF9090" : "transparent",
+                    cursor: confidenceScore ? "default" : "pointer",
+                    transition: "all 0.2s",
+                  }} />
                 ))}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 180, margin: "0 auto", fontFamily: "'DM Mono', monospace", fontSize: 9, color: "rgba(0,3,50,0.25)", letterSpacing: "0.05em" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 150, margin: "0 auto", fontFamily: "'DM Mono', monospace", fontSize: 9, color: "rgba(0,3,50,0.2)", letterSpacing: "0.05em" }}>
                 <span>not sure</span>
                 <span>certain</span>
               </div>
               {confidenceFeedback && (
-                <p style={{
-                  fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.4)",
-                  textAlign: "center", marginTop: 14, lineHeight: 1.5, maxWidth: 280, margin: "14px auto 0",
-                  opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.1s forwards",
-                }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(0,3,50,0.4)", textAlign: "center", marginTop: 10, lineHeight: 1.5, maxWidth: 280, margin: "10px auto 0", opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.1s forwards" }}>
                   {confidenceFeedback}
                 </p>
               )}
             </div>
           )}
+          {/* Export actions */}
           {synthesis && !synthLoading && (
             <div style={{ opacity: 0, animation: "synthExportFadeIn 0.3s ease 0.2s forwards" }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: "#000332", marginBottom: 14 }}>Take it with you</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <button onClick={saveToStudio} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
-                <button onClick={copyPrompt} style={{ padding: "12px", borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
-                  Copy as AI prompt
-                  {suggestedDeliverable?.label && (
-                    <span style={{ display: "block", fontSize: 10, fontWeight: 400, color: "rgba(250,247,240,0.5)", marginTop: 2 }}>&rarr; includes: {suggestedDeliverable.label.toLowerCase()}</span>
-                  )}
-                </button>
-                <button onClick={downloadMd} style={{ padding: "12px", borderRadius: 10, border: "1px solid rgba(0,3,50,0.1)", background: "transparent", color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Download as text</button>
+              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                <button onClick={saveToStudio} style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: "#FF9090", color: "#000332", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save to Studio</button>
+                <button onClick={copyPrompt} style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: "#000332", color: "#FAF7F0", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Copy as AI prompt</button>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 8 }}>
+                <button onClick={downloadMd} style={{ background: "none", border: "none", fontSize: 13, color: "rgba(0,3,50,0.6)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}>Download as text</button>
               </div>
               {/* Resistance follow-up */}
               {resistancePrompt && (
-                <div style={{ borderTop: "1px solid rgba(0,3,50,0.06)", marginTop: 20, paddingTop: 16, opacity: 0, animation: "synthExportFadeIn 0.4s ease 1.5s forwards" }}>
-                  <p style={{ fontSize: 15, color: "#000332", textAlign: "center", lineHeight: 1.55, fontStyle: "italic", marginBottom: 14 }}>
+                <div style={{ borderTop: "1px solid rgba(0,3,50,0.1)", marginTop: 12, paddingTop: 14, opacity: 0, animation: "synthExportFadeIn 0.4s ease 1.5s forwards" }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: "rgba(0,3,50,0.7)", fontStyle: "italic", lineHeight: 1.55, marginBottom: 10 }}>
                     {resistancePrompt}
                   </p>
                   <button
@@ -1531,11 +1520,7 @@ function CanvasInner() {
                         }
                       } catch { /* silent */ }
                     }}
-                    style={{
-                      display: "block", width: "100%", padding: "12px", borderRadius: 10,
-                      border: "1.5px solid rgba(0,3,50,0.15)", background: "transparent",
-                      color: "#000332", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                    }}
+                    style={{ background: "none", border: "none", fontSize: 14, color: "#000332", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
                   >Think this through &rarr;</button>
                 </div>
               )}
