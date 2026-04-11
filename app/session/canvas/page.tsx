@@ -1291,12 +1291,12 @@ function CanvasInner() {
 
         {/* CENTER: Toolbar */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <button onClick={addNote} style={{ padding: "4px 12px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
-          <button onClick={() => { setConnecting(!connecting); setConnectFrom(null); }} style={{ padding: "4px 12px", borderRadius: 100, border: "none", background: connecting ? "rgba(0,3,50,0.08)" : "transparent", fontSize: 12, fontWeight: 600, color: connecting ? "#FF9090" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>Connect</button>
-          <button onClick={() => saveCanvas()} title="Save" style={{ padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, color: saveStatus === "saved" ? "rgba(0,3,50,0.25)" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>
+          <button onClick={addNote} style={{ display: "none", padding: "4px 12px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#000332", cursor: "pointer", fontFamily: "inherit" }}>+ Note</button>
+          <button onClick={() => { setConnecting(!connecting); setConnectFrom(null); }} style={{ display: "none", padding: "4px 12px", borderRadius: 100, border: "none", background: connecting ? "rgba(0,3,50,0.08)" : "transparent", fontSize: 12, fontWeight: 600, color: connecting ? "#FF9090" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>Connect</button>
+          <button onClick={() => saveCanvas()} title="Save" style={{ display: "none", padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent", fontSize: 12, color: saveStatus === "saved" ? "rgba(0,3,50,0.25)" : "#000332", cursor: "pointer", fontFamily: "inherit" }}>
             {saveStatus === "saving" ? "..." : saveStatus === "saved" ? "✓" : "💾"}
           </button>
-          <div style={{ width: 1, height: 18, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
+          <div style={{ display: "none", width: 1, height: 18, background: "rgba(0,3,50,0.1)", margin: "0 4px" }} />
           {(Object.keys(ACT) as Action[]).map(a => {
             const tooltips: Record<Action, string> = {
               clarify: "Cut to the core. What actually matters here?",
@@ -1305,7 +1305,7 @@ function CanvasInner() {
               express: "Structure it. How would you say this?",
             };
             return (
-              <div key={a} style={{ position: "relative" }} className="act-tip-wrap">
+              <div key={a} style={{ display: "none", position: "relative" }} className="act-tip-wrap">
                 <button onClick={() => runAction(a)} disabled={!hasSelection || aiLoading} style={{
                   padding: "4px 8px", borderRadius: 100, border: "none", background: "transparent",
                   fontSize: 14, color: hasSelection ? ACT[a].color : "rgba(0,3,50,0.2)",
