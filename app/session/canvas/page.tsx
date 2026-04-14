@@ -1968,14 +1968,14 @@ function CanvasInner() {
                 >
                   {/* Shine overlay */}
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 60%)", pointerEvents: "none", borderRadius: 12 }} />
-                  <div style={{ position: "relative", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.5)", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ position: "relative", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.7)", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
                     <span>DIMENSION {(n.dimIndex ?? 0) + 1}</span>
-                    {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#7ED6A8", fontSize: 12, opacity: 0, animation: "checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards" }}>✓</span>}
+                    {dimStatus[n.dimLabel || ""] === "complete" && <span style={{ color: "#fff", fontSize: 10, opacity: 0, background: "rgba(255,255,255,0.25)", borderRadius: "50%", width: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", animation: "checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards" }}>✓</span>}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#FAF7F0", marginBottom: 4, lineHeight: 1.3 }}>
+                  <div style={{ position: "relative", fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4, lineHeight: 1.3 }}>
                     {n.dimLabel}
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(250,247,240,0.5)", fontWeight: 300, lineHeight: 1.5 }}>
+                  <div style={{ position: "relative", fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 300, lineHeight: 1.5 }}>
                     {n.dimDesc}
                   </div>
                   {nudgeDimIdx === (n.dimIndex ?? 0) && (
@@ -2015,9 +2015,9 @@ function CanvasInner() {
                       onClick={(e) => { e.stopPropagation(); setActiveDimQuestion(n.dimLabel || ""); }}
                       style={{
                         position: "relative", marginTop: 8, padding: "4px 12px", borderRadius: 100,
-                        border: "1px solid rgba(255,255,255,0.25)",
-                        background: "rgba(255,255,255,0.18)",
-                        color: "rgba(255,255,255,0.85)",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        background: "rgba(0,0,0,0.15)",
+                        color: "#fff",
                         fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                         display: "flex", alignItems: "center", gap: 4,
                       }}
