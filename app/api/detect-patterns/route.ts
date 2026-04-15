@@ -149,7 +149,7 @@ Pattern types with labels, example behaviors, example questions, and action mapp
 
 Rules:
 - "label": use the EXACT label from the list above. NEVER "Tension".
-- "behavior": under 15 words. Name what you noticed in their specific situation. Do NOT assume you understand their meaning. Do NOT declare things incompatible or wrong. Point at the thing and let the question do the work. Start with "you" / "you keep" / "you haven't" / "every". NEVER use "not X, it's Y" or "it's Y, not X" constructions.
+- "behavior": under 15 words. Name what you noticed in their specific situation. Do NOT assume you understand their meaning. Do NOT declare things incompatible or wrong. Point at the thing and let the question do the work. Start with "you mentioned" / "you said" / "you used the word" / "every". NEVER start with "you keep" or "you always" or "you never" — these sound accusatory. The behavior is an observation like a friend saying "hey I noticed something", not a callout like "you keep doing this thing". NEVER use "not X, it's Y" or "it's Y, not X" constructions.
 - "question": under 10 words. A GENUINE question you do not know the answer to. It helps the user discover for themselves whether the pattern is real. Never a rhetorical gotcha.
 - "suggestedAction": use the action mapped to each pattern above.
 - Maximum 3 patterns per session. Skip if you already flagged something similar.
