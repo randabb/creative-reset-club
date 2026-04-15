@@ -189,6 +189,13 @@ export async function POST(req: Request) {
       userMsg += `\n=== PATTERN-RESOLUTION QUESTIONS ALREADY ADDRESSED ===\n${resolvedPatternQuestions}\n=== END ===\nDo NOT paraphrase any of these. The user already worked through the pattern they resolve.\n`;
     }
 
+    // Append already-asked list as the VERY LAST thing so it's freshest in context
+    if (dimensionQAs?.length) {
+      userMsg += `\n\nFINAL CHECK BEFORE YOU RESPOND: Here are the exact questions already asked in this dimension. Your question MUST NOT be the same as or a paraphrase of any of these:\n`;
+      (dimensionQAs as QA[]).forEach((qa, i) => { userMsg += `${i + 1}. ${qa.question}\n`; });
+      userMsg += `If your generated question matches any of these, throw it out and generate a completely different question. This is the most important rule.`;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
 
