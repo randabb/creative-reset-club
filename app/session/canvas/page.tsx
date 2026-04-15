@@ -18,6 +18,7 @@ interface ResponseFlow {
   currentIdx: number;
   sourceId: string;
   action: Action;
+  patternContext?: { label: string; behavior: string; question: string };
 }
 
 const THINKING_LABELS: Record<string, string[]> = {
@@ -883,7 +884,10 @@ function CanvasInner() {
       }
 
       // Start single-instruction response flow
-      setResponseFlow({ instructionIds: [instId], currentIdx: 0, sourceId: selId, action });
+      setResponseFlow({
+        instructionIds: [instId], currentIdx: 0, sourceId: selId, action,
+        ...(triggeringPattern ? { patternContext: { label: triggeringPattern.label, behavior: triggeringPattern.behavior || "", question: triggeringPattern.question || "" } } : {}),
+      });
       setResponseText("");
       setSelected(new Set());
       setStatusState({ type: "working", dimName: dim.label, message: pick(["Say whatever\u2019s in your head.", "Don\u2019t overthink it. Just write.", "Messy is fine. Go."]) });
@@ -1064,8 +1068,7 @@ function CanvasInner() {
     // Re-analyze notes (force bypass debounce)
 
     // Generate discovery line
-    console.log("[canvas] generate-discovery called with", discoveriesRef.current.length, "previous discoveries");
-    console.log("[canvas] generate-discovery sending", discoveriesRef.current.length, "previous discoveries:", discoveriesRef.current.map(d => d.text));
+    console.log("[canvas] generate-discovery called with", discoveriesRef.current.length, "previous discoveries", responseFlow?.patternContext ? "(pattern resolution)" : "");
     fetch("/api/generate-discovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1073,6 +1076,7 @@ function CanvasInner() {
         userResponse: respNote.text,
         dimensionLabel: dim.label,
         previousDiscoveries: discoveriesRef.current.map(d => d.text).join("\n") || undefined,
+        ...(responseFlow?.patternContext ? { patternContext: responseFlow.patternContext } : {}),
       }),
     }).then(r => r.json()).then(data => {
       if (data.discovery) {

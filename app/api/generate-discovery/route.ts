@@ -91,7 +91,7 @@ Respond with ONLY the discovery line. Nothing else.`;
 
 export async function POST(req: Request) {
   try {
-    const { userResponse, dimensionLabel, previousDiscoveries } = await req.json();
+    const { userResponse, dimensionLabel, previousDiscoveries, patternContext } = await req.json();
     if (!userResponse) return NextResponse.json({ discovery: null });
 
     let userMsg = `USER'S RESPONSE:\n${userResponse}`;
@@ -99,6 +99,10 @@ export async function POST(req: Request) {
     if (previousDiscoveries) {
       userMsg += `\n=== ALL DISCOVERIES ALREADY GENERATED IN THIS SESSION ===\n${previousDiscoveries}\n=== END OF PREVIOUS DISCOVERIES ===\nNEVER repeat any of these. Never use the same opening phrase, same structure, or same core idea. Each new discovery must be genuinely new. ALSO check the balance: if most are challenges, the next should affirm.`;
       console.log("[generate-discovery] received", previousDiscoveries.split("\n").length, "previous discoveries");
+    }
+    if (patternContext) {
+      userMsg += `\n\n=== PATTERN RESOLUTION CONTEXT ===\nThe user just answered a question that was resolving a detected pattern.\nPattern label: ${patternContext.label}\nBehavior observed: ${patternContext.behavior}\nQuestion asked: ${patternContext.question}\n=== END ===\nThe discovery should reflect what the user clarified or resolved by answering this question. Acknowledge the shift in their thinking. Do NOT repeat the pattern observation. If they genuinely resolved the tension or clarified the fuzzy term, name what became clear. If they did not fully resolve it, name what is still open.`;
+      console.log("[generate-discovery] PATTERN RESOLUTION context:", patternContext.label);
     }
 
     const controller = new AbortController();
