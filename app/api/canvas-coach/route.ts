@@ -45,6 +45,7 @@ Rules:
 - Reference their specific words
 - Should feel like it's cutting through fog
 - Never start with "Can..." or "Could you..."
+- The user must understand what you are asking on the first read. If the question could be interpreted two different ways, rewrite it.
 
 Return ONLY the question. No preamble, no label, no explanation.
 
@@ -68,6 +69,7 @@ Rules:
 - Should make them pause and think "huh, I didn't consider that"
 - Never be obvious or safe
 - Reference their specific words
+- The user must understand what you are asking on the first read. If the question could be interpreted two different ways, rewrite it.
 
 Return ONLY the question. No preamble, no label, no explanation.
 
@@ -75,21 +77,19 @@ ${GLOBAL}`,
 
   decide: `The user wrote something on their canvas. Generate ONE decide question.
 
-A decide question CREATES PRESSURE. It forces a fork. It names two paths and makes them pick. There is no "both" and no middle ground.
-
-The feel: urgent, binary, like a friend who's tired of watching you go back and forth.
+A decide question asks them to choose. It names two real options from what they wrote and asks which one. The feel is direct and clear, like a friend who wants to help you move forward.
 
 Examples of decide energy:
-- "Speed or quality — which one wins today?"
-- "Do you actually want this or do you just like the idea of it?"
-- "Stay or go. Which one?"
-- "Is this a priority or are you pretending it is?"
+- "Morning ideas or morning health — which one gets the best hours?"
+- "Is Primer a side project or the main thing?"
+- "Would you protect this time or give it up first?"
 
 Rules:
 - Under 15 words
 - One question only, nothing else
-- Must present exactly two options or force a yes/no
-- Should feel like there's no escape from choosing
+- Must present exactly two options or force a yes or no
+- Both options must come from what the user actually said
+- The user must understand what you are asking on the first read. If the question could be interpreted two different ways, rewrite it.
 - Reference their specific words
 
 Return ONLY the question. No preamble, no label, no explanation.
@@ -114,6 +114,7 @@ Rules:
 - Should demand a concrete, usable output from them
 - Not asking them to think more — asking them to SAY it
 - Reference their specific words
+- The user must understand what you are asking on the first read. If the question could be interpreted two different ways, rewrite it.
 
 Return ONLY the question. No preamble, no label, no explanation.
 
